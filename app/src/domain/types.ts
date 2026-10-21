@@ -54,7 +54,7 @@ export type SetTarget = { weight?: Weight; reps?: number; durationS?: number };
 export type TargetReason =
   | { kind: 'comeback'; weeksOff: number }
   | { kind: 'plateau' }
-  | { kind: 'load_up'; reachedReps: number }
+  | { kind: 'load_up'; reachedReps: number; assistanceDrop?: Weight } // assistanceDrop : type assisté uniquement
   | { kind: 'consolidate' }
   | { kind: 'reps_up' }
   | { kind: 'duration_up' };
@@ -79,6 +79,7 @@ export type WorkoutExercise = {
   restS: number | null;
   repRange?: RepRange;
   targetReason?: TargetReason;
+  targetCount?: number; // nombre de séries ayant reçu un objectif au démarrage (une série supprimée compte comme non atteinte)
   sets: WorkoutSet[];
 };
 
