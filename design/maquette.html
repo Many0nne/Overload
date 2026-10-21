@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overload · Maquette V1</title>
+<style>
+/* ---------- Jetons de design ---------- */
+:root{
+  --radius:14px; --radius-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;
+}
+[data-theme=dark]{
+  --page:#07080a; --bg:#0d0e11; --surface:#16181d; --surface-2:#1e2128; --line:#2a2e37;
+  --text:#f3f5f8; --text-2:#a3abb8; --muted:#6f7785;
+  --accent:#4c8dff; --accent-ink:#fff; --accent-soft:rgba(76,141,255,.15);
+  --done:#22c55e; --done-soft:rgba(34,197,94,.15);
+  --warm:#f5a524; --drop:#b197fc; --fail:#f87171; --gold:#f5c518;
+  --shadow:0 30px 80px rgba(0,0,0,.6);
+}
+[data-theme=light]{
+  --page:#e7eaf0; --bg:#ffffff; --surface:#f4f6f9; --surface-2:#eaedf2; --line:#e2e6ed;
+  --text:#101318; --text-2:#4b5563; --muted:#8a93a3;
+  --accent:#1f6fe5; --accent-ink:#fff; --accent-soft:rgba(31,111,229,.1);
+  --done:#16a34a; --done-soft:#dcf7e6;
+  --warm:#d98a00; --drop:#7c5cd6; --fail:#dc2626; --gold:#c99a00;
+  --shadow:0 30px 80px rgba(20,30,50,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--page);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+
+/* ---------- Habillage de la page ---------- */
+.topbar{display:flex;align-items:center;gap:16px;padding:16px 28px;border-bottom:1px solid var(--line)}
+.topbar h1{font-size:17px;font-weight:700}
+.topbar .sub{color:var(--muted);font-size:13px}
+.topbar .spacer{flex:1}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px}
+.seg button{padding:6px 12px;border-radius:8px;font-size:13px;color:var(--text-2)}
+.seg button.on{background:var(--bg);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.layout{display:flex;gap:40px;justify-content:center;padding:32px 24px}
+.sidenav{width:220px;flex-shrink:0;position:sticky;top:24px;align-self:flex-start}
+.sidenav h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.sidenav button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--text-2)}
+.sidenav button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sidenav p{font-size:12px;color:var(--muted);line-height:1.5;margin-top:16px}
+.notes{width:260px;flex-shrink:0;position:sticky;top:24px;align-self:flex-start;font-size:13px;line-height:1.55;color:var(--text-2)}
+.notes h3{font-size:14px;color:var(--text);margin-bottom:8px}
+.notes li{margin-left:16px;margin-bottom:6px}
+
+/* ---------- Téléphone ---------- */
+.phone{width:390px;height:844px;border-radius:54px;background:var(--bg);position:relative;overflow:hidden;
+  box-shadow:var(--shadow),0 0 0 10px #1b1c20,0 0 0 11px #3a3c42;flex-shrink:0;display:flex;flex-direction:column}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:20px;z-index:50}
+.statusbar{height:50px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 6px 36px;font-size:15px;font-weight:600;flex-shrink:0}
+.statusbar .icons{display:flex;gap:5px;align-items:center}
+.viewport{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:110px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{display:block}
+.screen.no-tab{padding-bottom:40px}
+
+/* ---------- Barre d'onglets + bandeau séance ---------- */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding-top:8px;z-index:20}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);width:90px}
+.tabbar button.on{color:var(--accent)}
+.tabbar svg{width:26px;height:26px}
+.banner{position:absolute;left:10px;right:10px;bottom:92px;background:var(--accent);color:var(--accent-ink);border-radius:14px;
+  padding:11px 14px;display:none;align-items:center;gap:10px;z-index:21;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.banner.show{display:flex}
+.banner b{font-variant-numeric:tabular-nums}
+.banner .go{margin-left:auto;font-weight:700}
+.dot-live{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* ---------- Composants communs ---------- */
+.head{display:flex;align-items:center;gap:10px;padding:8px 18px 12px;position:sticky;top:0;background:var(--bg);z-index:5}
+.head h2{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.head .title-sm{font-size:17px;font-weight:700;flex:1;text-align:center}
+.head .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.icon-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2)}
+.icon-btn:hover{background:var(--surface-2)}
+.icon-btn svg{width:22px;height:22px}
+.btn{height:44px;padding:0 18px;border-radius:12px;font-weight:650;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-soft{background:var(--surface-2);color:var(--text)}
+.btn-ghost{color:var(--accent)}
+.btn-danger{color:var(--fail)}
+.btn-block{width:100%}
+.btn-sm{height:34px;padding:0 14px;font-size:14px;border-radius:10px}
+.section{padding:0 18px;margin-top:18px}
+.section-title{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.card{background:var(--surface);border-radius:var(--radius);padding:14px 16px}
+.card+.card{margin-top:10px}
+.muted{color:var(--muted)} .t2{color:var(--text-2)}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:12px;background:var(--surface-2);font-size:12px;color:var(--text-2);font-weight:550}
+.tag.acc{background:var(--accent-soft);color:var(--accent)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 18px}
+.chip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;background:var(--surface-2);font-size:13px;font-weight:600;color:var(--text-2)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.stats-row{display:flex;gap:22px;padding:0 18px 12px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.stat .v.acc{color:var(--accent)}
+.row-link{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface);font-size:15px;font-weight:550;width:100%;text-align:left}
+.row-link:first-child{border-radius:var(--radius) var(--radius) 0 0}
+.row-link:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.row-link:only-child{border-radius:var(--radius)}
+.row-link+.row-link{border-top:1px solid var(--line)}
+.row-link .ico{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.row-link .ico svg{width:19px;height:19px}
+.row-link .end{margin-left:auto;color:var(--muted);font-size:14px;display:flex;align-items:center;gap:6px}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;flex-shrink:0}
+.ex-av{width:42px;height:42px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--text-2);flex-shrink:0}
+
+/* ---------- Accueil ---------- */
+.week{display:flex;justify-content:space-between;margin-top:14px}
+.week .d{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.week .d i{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:13px}
+.week .d.on i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.week .d.today i{border-color:var(--accent)}
+.streak{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:14px}
+.streak b{font-size:15px}
+.hist .top{display:flex;gap:12px;align-items:center}
+.hist h3{font-size:16px;font-weight:700}
+.hist .date{font-size:13px;color:var(--muted)}
+.hist .note{font-size:14px;color:var(--text-2);margin:10px 0}
+.hist .mini{display:flex;gap:18px;margin:10px 0 12px}
+.hist .mini .v{font-size:15px}
+.hist ul{list-style:none;border-top:1px solid var(--line);padding-top:10px}
+.hist li{font-size:14px;color:var(--text-2);padding:3px 0;display:flex;gap:8px}
+.hist li b{color:var(--text);font-weight:600;min-width:28px}
+.hist .more{font-size:13px;color:var(--accent);margin-top:6px}
+.photo{height:140px;border-radius:12px;margin-top:10px;background:linear-gradient(135deg,#2b3646,#1a2230 60%,#3b2f2a);display:grid;place-items:center;color:#9aa6b8;font-size:12px}
+.pr-pill{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--gold)}
+
+/* ---------- Onglet Séance ---------- */
+.folder-h{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;padding:6px 0 10px;width:100%;text-align:left}
+.folder-h .chev{transition:transform .2s;color:var(--muted)}
+.folder.closed .chev{transform:rotate(-90deg)}
+.folder.closed .folder-body{display:none}
+.folder-h .count{color:var(--muted);font-weight:500;font-size:13px}
+.folder-h .dots{margin-left:auto;color:var(--muted)}
+.routine h4{font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.routine p{font-size:13px;color:var(--muted);margin:5px 0 12px;line-height:1.45}
+
+/* ---------- Bibliothèque ---------- */
+.search{margin:0 18px 12px;height:42px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;gap:8px;padding:0 12px;color:var(--muted)}
+.search input{flex:1;background:none;border:0;outline:0;font-size:15px}
+.lib-item{display:flex;align-items:center;gap:12px;padding:10px 18px;width:100%;text-align:left}
+.lib-item:hover{background:var(--surface)}
+.lib-item .n{font-size:15px;font-weight:600}
+.lib-item .m{font-size:13px;color:var(--muted);margin-top:2px}
+.lib-letter{padding:14px 18px 4px;font-size:12px;font-weight:700;color:var(--muted)}
+
+/* ---------- Séance en direct ---------- */
+.live-head{position:sticky;top:0;background:var(--bg);z-index:6;border-bottom:1px solid var(--line)}
+.ex{padding:16px 0 6px;border-bottom:8px solid var(--surface)}
+.ex-top{display:flex;align-items:center;gap:12px;padding:0 18px}
+.ex-top .name{font-size:16px;font-weight:700;color:var(--accent);text-align:left;flex:1}
+.ex-note{margin:10px 18px 0;width:calc(100% - 36px);background:none;border:0;outline:0;font-size:14px;color:var(--text-2);resize:none}
+.ex-note::placeholder{color:var(--muted)}
+.rest-link{margin:6px 18px 8px;font-size:14px;color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.sets{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.sets th{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 4px;text-align:center}
+.sets th:first-child,.sets td:first-child{padding-left:18px;width:58px}
+.sets th:last-child,.sets td:last-child{padding-right:14px;width:56px}
+.sets td{text-align:center;padding:5px 4px;height:48px}
+.sets tr.set{transition:background .2s,transform .15s;touch-action:pan-y}
+.sets tr.set:nth-child(even){background:color-mix(in srgb,var(--surface) 55%,transparent)}
+.sets tr.set.done{background:var(--done-soft)}
+.type{width:34px;height:30px;border-radius:8px;font-weight:800;font-size:15px}
+.type.W{color:var(--warm)} .type.D{color:var(--drop)} .type.X{color:var(--fail)}
+.prev{font-size:14px;color:var(--muted);white-space:nowrap}
+.prev:hover{color:var(--text-2)}
+.val{width:64px;height:36px;border-radius:9px;border:0;background:var(--surface-2);text-align:center;font-size:17px;font-weight:700;outline:0}
+.val::placeholder{color:var(--muted);font-weight:600}
+.val:focus{box-shadow:0 0 0 2px var(--accent)}
+.val.err{box-shadow:0 0 0 2px var(--fail);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+tr.done .val{background:transparent}
+.check{width:38px;height:34px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;color:var(--muted);margin:auto}
+.check svg{width:20px;height:20px}
+tr.done .check{background:var(--done);color:#fff}
+.trophy{display:none;font-size:13px;margin-left:2px}
+tr.pr .trophy{display:inline}
+.add-set{margin:8px 18px 10px;width:calc(100% - 36px)}
+.rest-panel{position:absolute;left:10px;right:10px;bottom:16px;background:var(--surface-2);border-radius:20px;padding:14px 16px 16px;
+  z-index:22;box-shadow:0 10px 40px rgba(0,0,0,.45);display:none;border:1px solid var(--line)}
+.rest-panel.show{display:block;animation:up .25s ease}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.rest-panel .lbl{font-size:13px;color:var(--text-2)}
+.rest-panel .time{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
+.rest-panel .bar{height:6px;border-radius:3px;background:var(--line);margin:10px 0 14px;overflow:hidden}
+.rest-panel .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .3s linear}
+.rest-panel .ctrls{display:flex;gap:8px}
+.rest-panel .ctrls .btn{flex:1}
+
+/* ---------- Fiche exercice / graphiques ---------- */
+.subtabs{display:flex;border-bottom:1px solid var(--line);margin:0 18px}
+.subtabs button{flex:1;padding:12px 0;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.subtabs button.on{color:var(--accent);border-color:var(--accent)}
+.pane{display:none}.pane.on{display:block}
+.chart-wrap{position:relative;margin-top:6px}
+.chart-wrap svg{display:block;width:100%;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--text);color:var(--bg);font-size:12px;font-weight:600;padding:6px 9px;border-radius:8px;white-space:nowrap;
+  transform:translate(-50%,-110%);opacity:0;transition:opacity .1s;font-variant-numeric:tabular-nums}
+.tip.show{opacity:1}
+.tip span{display:block;font-weight:500;opacity:.7}
+.hero{font-size:30px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero small{font-size:15px;font-weight:600;color:var(--muted)}
+.delta{font-size:13px;font-weight:700;color:var(--done)}
+.rec-list{list-style:none}
+.rec-list li{display:flex;justify-content:space-between;padding:11px 0;font-size:15px;border-bottom:1px solid var(--line)}
+.rec-list li:last-child{border:0}
+.rec-list b{font-variant-numeric:tabular-nums}
+.reps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.reps-grid div{background:var(--surface-2);border-radius:10px;padding:10px;text-align:center}
+.reps-grid .k{font-size:12px;color:var(--muted)}
+.reps-grid .v{font-size:16px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.steps{counter-reset:s;list-style:none}
+.steps li{counter-increment:s;display:flex;gap:12px;padding:10px 0;font-size:15px;line-height:1.5;color:var(--text-2)}
+.steps li::before{content:counter(s);flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:13px}
+
+/* ---------- Récap ---------- */
+.recap-hero{text-align:center;padding:10px 18px 6px}
+.recap-hero .big{font-size:44px}
+.recap-hero h2{font-size:24px;font-weight:800;margin-top:6px}
+.recap-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px 18px 0}
+.recap-grid .card{padding:12px 4px;text-align:center}
+.recap-grid .card+.card{margin-top:0}
+.recap-grid .v{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.recap-grid .k{font-size:10.5px;color:var(--muted);margin-top:3px}
+.field{display:block;margin-top:12px}
+.field span{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+.field input,.field textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;outline:0;resize:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.field-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.photo-add{height:96px;border:1.5px dashed var(--line);border-radius:12px;display:grid;place-items:center;color:var(--muted);font-size:14px;margin-top:12px;width:100%}
+
+/* ---------- Profil / stats / paramètres ---------- */
+.profile{display:flex;align-items:center;gap:16px;padding:6px 18px 4px}
+.profile .avatar{width:68px;height:68px;font-size:26px}
+.profile h3{font-size:20px;font-weight:800}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.cal .h{font-size:11px;color:var(--muted);font-weight:700}
+.cal .c{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:13px;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.cal .c.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.cal .c.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal .c.fut{color:var(--muted);opacity:.5}
+.hbar{display:grid;grid-template-columns:86px 1fr 38px;align-items:center;gap:10px;font-size:13px;padding:5px 0}
+.hbar .track{height:10px}
+.hbar .fill{height:10px;border-radius:0 4px 4px 0;background:var(--accent)}
+.hbar .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surface);font-size:15px}
+.set-row+.set-row{border-top:1px solid var(--line)}
+.set-row:first-child{border-radius:var(--radius) var(--radius) 0 0}
+.set-row:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.set-row .seg button{padding:5px 10px}
+.switch{width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;transition:background .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch.on{background:var(--done)}
+.switch.on::after{transform:translateX(20px)}
+
+/* ---------- Dialogues / menu / toast ---------- */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:40;display:none;align-items:flex-end}
+.scrim.show{display:flex}
+.sheet{background:var(--bg);width:100%;border-radius:24px 24px 0 0;padding:10px 18px 34px;animation:up .25s ease}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
+.sheet h3{font-size:19px;font-weight:800;margin-bottom:8px}
+.sheet p,.sheet li{font-size:15px;color:var(--text-2);line-height:1.5}
+.sheet ul{margin:10px 0 0 18px}
+.sheet .acts{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.menu{position:absolute;right:16px;background:var(--surface-2);border-radius:14px;padding:6px;z-index:30;min-width:210px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:none;border:1px solid var(--line)}
+.menu.show{display:block}
+.menu button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:9px;font-size:15px}
+.menu button:hover{background:var(--surface)}
+.menu .danger{color:var(--fail)}
+.toast{position:absolute;left:50%;top:60px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:12px;font-size:13px;font-weight:600;
+  z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* ---------- Objectifs de progression ---------- */
+.goal-line{margin:8px 18px 0;font-size:13px;font-weight:650;display:flex;gap:8px;align-items:baseline;line-height:1.4}
+.goal-line .why{font-weight:500;color:var(--text-2)}
+.goal-line.up{color:var(--done)} .goal-line.down{color:var(--warm)} .goal-line.eq{color:var(--text)}
+.goal-line .tag{height:20px;font-size:11px;flex-shrink:0;margin-left:auto}
+.val.tgt{color:var(--accent)}
+tr.done .val.tgt{color:var(--text)}
+.goal-card .big{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
+.goal-card .why{font-size:13px;color:var(--text-2);margin-top:4px}
+.trend-info{display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:13px;color:var(--text-2)}
+.trend-info b{color:var(--text)}
+.legend{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;border-top:2px dashed var(--accent)}
+.legend i.gold{border-color:var(--gold)}
+.ok{color:var(--done);font-weight:700} .ko{color:var(--muted);font-weight:700}
+.goal-sum{font-size:13px;color:var(--text-2);margin:-4px 0 10px}
+
+/* ---------- Démarrage (invitation, inscription, connexion) ---------- */
+.logo{width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:900;font-size:17px;letter-spacing:-.04em}
+.brand{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 18px 6px;text-align:center}
+.brand .logo{width:64px;height:64px;border-radius:18px;font-size:34px}
+.brand h2{font-size:26px;font-weight:850;letter-spacing:-.02em}
+.brand p{font-size:15px;color:var(--text-2);line-height:1.45}
+.safari{display:flex;align-items:center;justify-content:center;gap:6px;margin:2px 14px 8px;height:34px;border-radius:11px;background:var(--surface-2);font-size:13px;color:var(--text-2)}
+.code-big{font-size:26px;font-weight:850;letter-spacing:.06em;text-align:center;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.field .hint{font-size:12px;color:var(--done);margin-top:5px;display:block;font-weight:600}
+.chips.wrap{flex-wrap:wrap;padding:0;overflow:visible}
+.link-c{display:block;text-align:center;margin-top:14px;font-size:14px;color:var(--accent);font-weight:600;width:100%}
+
+/* ---------- Édition de routine ---------- */
+.re-ex .top{display:flex;align-items:center;gap:10px}
+.re-ex .top b{font-size:15px;color:var(--accent);flex:1}
+.re-ex .grip{color:var(--muted);font-size:18px;cursor:grab}
+.re-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;margin-top:10px}
+.re-row small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.re-in{width:78px;height:34px;border-radius:9px;background:var(--surface-2);border:0;text-align:center;font-weight:700;font-size:15px;outline:0}
+.re-in:focus{box-shadow:0 0 0 2px var(--accent)}
+.re-sets{display:flex;gap:6px;flex-wrap:wrap}
+.re-sets span{min-width:58px;height:32px;padding:0 8px;border-radius:8px;background:var(--surface-2);display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
+.re-sets em{font-style:normal;font-weight:800;color:var(--muted)}
+.re-sets em.W{color:var(--warm)}
+
+/* ---------- Mode planche ---------- */
+body.board .layout{display:none}
+.boardview{display:none;flex-wrap:wrap;gap:56px 44px;justify-content:center;padding:40px 30px 80px}
+body.board .boardview{display:flex}
+.board-cell{display:flex;flex-direction:column;align-items:center;gap:18px}
+.board-cell .cap{font-size:14px;font-weight:700;color:var(--text-2)}
+.board-cell .phone{pointer-events:none}
+.board-cell .screen{display:block}
+@media (max-width:1100px){.notes{display:none}}
+@media (max-width:820px){.sidenav{display:none}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="logo">O</span><h1>Overload</h1><span class="sub">Maquette V1 · spec v0.7</span>
+  <span class="spacer"></span>
+  <div class="seg" id="modeSeg"><button class="on" data-mode="proto">Prototype</button><button data-mode="board">Planche</button></div>
+  <div class="seg" id="themeSeg"><button class="on" data-theme="dark">Sombre</button><button data-theme="light">Clair</button></div>
+</header>
+
+<div class="layout">
+  <nav class="sidenav" id="sidenav">
+    <h2>Démarrage</h2>
+    <button data-go="invite">Invitation (Safari)</button>
+    <button data-go="signup">Inscription</button>
+    <button data-go="login">Connexion</button>
+    <button data-go="reset">Mot de passe oublié (Safari)</button>
+    <h2>Accueil</h2>
+    <button data-go="accueil">Résumé + historique</button>
+    <h2>Séance</h2>
+    <button data-go="seance">Routines et dossiers</button>
+    <button data-go="routine">Édition de routine</button>
+    <button data-go="biblio">Bibliothèque d'exercices</button>
+    <button data-go="live">Séance en direct</button>
+    <button data-go="recap">Récapitulatif de fin</button>
+    <h2>Progression</h2>
+    <button data-go="fiche">Fiche exercice</button>
+    <h2>Profil</h2>
+    <button data-go="profil">Profil</button>
+    <button data-go="stats">Statistiques</button>
+    <button data-go="parametres">Paramètres</button>
+    <p>Tout est cliquable : démarrer une routine, cocher une série, toucher « Précédent », le numéro de série (type), glisser une série vers la gauche pour la supprimer, terminer la séance. Les valeurs en bleu viennent de l'objectif du jour.</p>
+  </nav>
+
+  <div class="phone" id="phone">
+    <div class="island"></div>
+    <div class="statusbar"><span>9:41</span><span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/><rect x="24" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5"/></svg>
+    </span></div>
+
+    <div class="viewport" id="viewport">
+
+      <!-- ================= INVITATION (Safari) ================= -->
+      <section class="screen no-tab" data-screen="invite" data-title="Invitation (Safari)">
+        <div class="safari">🔒 overload.pages.dev/i/RX7K2P9QD4MA</div>
+        <div class="brand"><span class="logo">O</span><h2>Bienvenue sur Overload</h2>
+          <p>Ton carnet de musculation. Installe l'app sur ton iPhone en 3 étapes.</p></div>
+        <div class="section">
+          <div class="card"><ol class="steps">
+            <li>Touche le bouton Partager <b style="color:var(--accent)">⬆</b> en bas de Safari.</li>
+            <li>Choisis « Sur l'écran d'accueil », puis « Ajouter ».</li>
+            <li>Ouvre Overload depuis son icône : ton code d'invitation sera déjà rempli.</li>
+          </ol></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Ton code d'invitation</div>
+          <div class="card" style="text-align:center;padding:18px 16px">
+            <div class="code-big">RX7K-2P9Q-D4MA</div>
+            <button class="btn btn-soft btn-block" style="margin-top:14px" data-toast="Code copié">Copier le code</button>
+          </div>
+          <p class="muted" style="font-size:13px;margin-top:10px;line-height:1.5">Si le code n'apparaît pas dans l'app, colle-le dans le formulaire d'inscription.</p>
+          <button class="btn btn-primary btn-block" style="margin-top:16px" data-go="signup">Simuler : ouvrir l'app installée</button>
+        </div>
+      </section>
+
+      <!-- ================= INSCRIPTION ================= -->
+      <section class="screen no-tab" data-screen="signup" data-title="Inscription">
+        <div class="brand" style="padding-top:8px"><span class="logo">O</span><h2>Créer mon compte</h2></div>
+        <div class="section" style="margin-top:4px">
+          <label class="field"><span>Code d'invitation</span><input value="RX7K-2P9Q-D4MA" style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em"><em class="hint">✓ Code valide</em></label>
+          <label class="field"><span>Nom affiché</span><input placeholder="ex. Paul" value="Paul"></label>
+          <label class="field"><span>E-mail</span><input type="email" value="paul@exemple.fr"></label>
+          <label class="field"><span>Mot de passe</span><input type="password" value="motdepasse"></label>
+          <button class="photo-add" style="height:64px" data-toast="Photo de profil facultative">+ Photo de profil (facultatif)</button>
+          <div class="field"><span>Unités</span><div class="seg" style="display:flex"><button class="on" style="flex:1" data-pick>kg · cm · km</button><button style="flex:1" data-pick>lb · in · mi</button></div></div>
+          <div class="field"><span>Depuis quand fais-tu de la musculation ? (facultatif)</span>
+            <div class="chips wrap" id="ageChips">
+              <button class="chip" data-pick>Je débute</button><button class="chip" data-pick>Moins de 6 mois</button><button class="chip" data-pick>6 mois à 1 an</button>
+              <button class="chip on" data-pick>1 à 2 ans</button><button class="chip" data-pick>2 à 5 ans</button><button class="chip" data-pick>Plus de 5 ans</button>
+            </div>
+            <em class="hint" style="color:var(--muted);font-weight:500">Sert à projeter ta progression. Modifiable dans les paramètres.</em></div>
+          <button class="btn btn-primary btn-block" style="margin-top:20px;height:52px" data-action="signup">Créer mon compte</button>
+          <button class="link-c" data-go="login">J'ai déjà un compte</button>
+        </div>
+      </section>
+
+      <!-- ================= CONNEXION ================= -->
+      <section class="screen no-tab" data-screen="login" data-title="Connexion">
+        <div class="brand" style="padding-top:40px"><span class="logo">O</span><h2>Overload</h2><p>Connecte-toi pour retrouver tes séances.</p></div>
+        <div class="section">
+          <label class="field"><span>E-mail</span><input type="email" value="paul@exemple.fr"></label>
+          <label class="field"><span>Mot de passe</span><input type="password" value="motdepasse"></label>
+          <button class="btn btn-primary btn-block" style="margin-top:20px;height:52px" data-go="accueil">Se connecter</button>
+          <button class="link-c" data-action="forgot">Mot de passe oublié ?</button>
+          <button class="link-c" style="color:var(--text-2);font-weight:500" data-go="signup">J'ai un code d'invitation</button>
+          <p class="muted" style="font-size:13px;margin-top:22px;text-align:center;line-height:1.5">Pas de compte ? L'inscription se fait uniquement avec le lien d'invitation d'un proche.</p>
+        </div>
+      </section>
+
+      <!-- ================= RÉINITIALISATION (Safari) ================= -->
+      <section class="screen no-tab" data-screen="reset" data-title="Mot de passe oublié (Safari)">
+        <div class="safari">🔒 overload.pages.dev/reset</div>
+        <div class="brand"><span class="logo">O</span><h2>Nouveau mot de passe</h2></div>
+        <div class="section" id="resetForm">
+          <label class="field"><span>Nouveau mot de passe</span><input type="password" value="nouveaumdp"></label>
+          <label class="field"><span>Confirmer</span><input type="password" value="nouveaumdp"></label>
+          <button class="btn btn-primary btn-block" style="margin-top:20px;height:52px" data-action="reset">Enregistrer</button>
+        </div>
+        <div class="section" id="resetDone" style="display:none">
+          <div class="card" style="text-align:center;padding:22px 16px">
+            <div style="font-size:36px">✅</div>
+            <b style="display:block;font-size:17px;margin-top:6px">Mot de passe modifié</b>
+            <p class="t2" style="font-size:14px;margin-top:8px;line-height:1.5">Retourne dans l'app Overload depuis ton écran d'accueil pour te connecter.</p>
+          </div>
+          <button class="btn btn-soft btn-block" style="margin-top:14px" data-go="login">Simuler : ouvrir l'app installée</button>
+        </div>
+      </section>
+
+      <!-- ================= ÉDITION DE ROUTINE ================= -->
+      <section class="screen no-tab" data-screen="routine" data-title="Édition de routine">
+        <div class="head"><button class="btn-ghost" style="font-weight:600" data-action="back">Annuler</button>
+          <span class="title-sm">Modifier la routine</span><button class="btn-ghost" style="font-weight:700" data-action="routine-save">Enregistrer</button></div>
+        <div class="section" style="margin-top:0">
+          <label class="field" style="margin-top:0"><span>Nom</span><input value="Push"></label>
+          <div class="set-row" style="margin-top:10px;border-radius:var(--radius)">Dossier<span class="t2">PPL ›</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Exercices <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">glisser ⠿ pour réordonner</span></div>
+          <div class="card re-ex">
+            <div class="top"><span class="grip">⠿</span><b>Développé couché (barre)</b><button class="icon-btn" data-toast="Remplacer · Supprimer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+            <div class="re-row"><div>Fourchette de reps<small>Séries de travail · « 8 » = nombre fixe</small></div><input class="re-in" value="6–8" inputmode="numeric"></div>
+            <div class="re-row" style="align-items:flex-start"><div>Séries<small>charge cible</small></div>
+              <div class="re-sets"><span><em class="W">É</em>40 kg</span><span><em>1</em>80 kg</span><span><em>2</em>80 kg</span><span><em>3</em>80 kg</span><span style="color:var(--accent)">+</span></div></div>
+            <div class="re-row">Repos<span style="color:var(--accent);font-weight:600">2 min ›</span></div>
+          </div>
+          <div class="card re-ex">
+            <div class="top"><span class="grip">⠿</span><b>Développé militaire (haltères)</b><button class="icon-btn" data-toast="Remplacer · Supprimer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+            <div class="re-row"><div>Fourchette de reps<small>Séries de travail · « 8 » = nombre fixe</small></div><input class="re-in" value="8–10" inputmode="numeric"></div>
+            <div class="re-row" style="align-items:flex-start"><div>Séries<small>charge cible</small></div>
+              <div class="re-sets"><span><em>1</em>24 kg</span><span><em>2</em>24 kg</span><span><em>3</em>24 kg</span><span style="color:var(--accent)">+</span></div></div>
+            <div class="re-row">Repos<span style="color:var(--accent);font-weight:600">1 min 30 ›</span></div>
+          </div>
+          <div class="card re-ex">
+            <div class="top"><span class="grip">⠿</span><b>Dips lestés</b><button class="icon-btn" data-toast="Remplacer · Supprimer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+            <div class="re-row"><div>Fourchette de reps<small>Séries de travail · « 8 » = nombre fixe</small></div><input class="re-in" value="6–8" inputmode="numeric"></div>
+            <div class="re-row" style="align-items:flex-start"><div>Séries<small>kg ajoutés</small></div>
+              <div class="re-sets"><span><em>1</em>+17,5</span><span><em>2</em>+17,5</span><span><em style="color:var(--fail)">X</em>+17,5</span><span style="color:var(--accent)">+</span></div></div>
+            <div class="re-row">Repos<span style="color:var(--accent);font-weight:600">1 min 30 ›</span></div>
+          </div>
+          <div class="card re-ex">
+            <div class="top"><span class="grip">⠿</span><b>Gainage</b><button class="icon-btn" data-toast="Remplacer · Supprimer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+            <div class="re-row" style="align-items:flex-start"><div>Séries<small>durée cible · pas de fourchette</small></div>
+              <div class="re-sets"><span><em>1</em>1:10</span><span><em>2</em>1:00</span><span style="color:var(--accent)">+</span></div></div>
+            <div class="re-row">Repos<span style="color:var(--accent);font-weight:600">1 min ›</span></div>
+          </div>
+          <button class="btn btn-soft btn-block" style="margin-top:12px;color:var(--accent)" data-toast="Ouvre la bibliothèque">+ Ajouter un exercice</button>
+          <button class="btn btn-danger btn-block" style="margin-top:6px" data-toast="Suppression après confirmation">Supprimer la routine</button>
+        </div>
+      </section>
+
+      <!-- ================= ACCUEIL ================= -->
+      <section class="screen" data-screen="accueil" data-tab="accueil" data-title="Accueil">
+        <div class="head"><h2>Accueil</h2><div class="right"><span class="tag" title="Éléments en attente de synchronisation">● Synchronisé</span></div></div>
+        <div class="section" style="margin-top:4px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <b style="font-size:16px">Cette semaine</b><span class="muted" style="font-size:13px">19 – 25 oct.</span>
+            </div>
+            <div class="stats-row" style="padding:12px 0 0">
+              <div class="stat"><div class="k">Séances</div><div class="v">3</div></div>
+              <div class="stat"><div class="k">Durée</div><div class="v">3 h 12</div></div>
+              <div class="stat"><div class="k">Volume</div><div class="v">18 450 kg</div></div>
+              <div class="stat"><div class="k">Séries</div><div class="v">62</div></div>
+            </div>
+            <div class="week">
+              <div class="d on"><i>L</i>19</div><div class="d on"><i>M</i>20</div><div class="d today on"><i>M</i>21</div>
+              <div class="d"><i>J</i>22</div><div class="d"><i>V</i>23</div><div class="d"><i>S</i>24</div><div class="d"><i>D</i>25</div>
+            </div>
+            <div class="streak"><span style="font-size:22px">🔥</span><div><b>6 semaines d'affilée</b><div class="muted" style="font-size:13px">au moins une séance chaque semaine</div></div></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Historique</div>
+          <div id="historyList">
+            <div class="card hist">
+              <div class="top"><div class="avatar">P</div><div><h3>Pull – mardi</h3><div class="date">mar. 20 oct. · 18:32</div></div></div>
+              <div class="mini">
+                <div class="stat"><div class="k">Durée</div><div class="v">1 h 04</div></div>
+                <div class="stat"><div class="k">Volume</div><div class="v">7 120 kg</div></div>
+                <div class="stat"><div class="k">Séries</div><div class="v">19</div></div>
+                <div class="stat"><div class="k">Records</div><div class="v"><span class="pr-pill">🏆 2</span></div></div>
+              </div>
+              <div class="goal-sum">🎯 Objectifs atteints : 5 / 6 exercices</div>
+              <ul><li><b>4 ×</b>Tractions lestées</li><li><b>4 ×</b>Rowing (barre)</li><li><b>3 ×</b>Tirage horizontal (poulie)</li></ul>
+              <div class="more">+ 3 autres exercices</div>
+            </div>
+            <div class="card hist">
+              <div class="top"><div class="avatar">P</div><div><h3>Legs – lundi</h3><div class="date">lun. 19 oct. · 07:10</div></div></div>
+              <p class="note">Squat qui monte bien, genou gauche ok. Prochaine fois +2,5 kg.</p>
+              <div class="mini">
+                <div class="stat"><div class="k">Durée</div><div class="v">1 h 18</div></div>
+                <div class="stat"><div class="k">Volume</div><div class="v">11 330 kg</div></div>
+                <div class="stat"><div class="k">Séries</div><div class="v">22</div></div>
+                <div class="stat"><div class="k">Records</div><div class="v"><span class="pr-pill">🏆 1</span></div></div>
+              </div>
+              <div class="goal-sum">🎯 Objectifs atteints : 4 / 5 exercices</div>
+              <div class="photo">photo de séance</div>
+              <ul style="margin-top:12px"><li><b>5 ×</b>Squat (barre)</li><li><b>4 ×</b>Soulevé de terre roumain</li><li><b>3 ×</b>Presse à cuisses</li></ul>
+              <div class="more">+ 2 autres exercices</div>
+            </div>
+            <div class="card hist">
+              <div class="top"><div class="avatar">P</div><div><h3>Push – jeudi</h3><div class="date">jeu. 15 oct. · 18:05</div></div></div>
+              <div class="mini">
+                <div class="stat"><div class="k">Durée</div><div class="v">58 min</div></div>
+                <div class="stat"><div class="k">Volume</div><div class="v">6 840 kg</div></div>
+                <div class="stat"><div class="k">Séries</div><div class="v">18</div></div>
+                <div class="stat"><div class="k">Records</div><div class="v muted">0</div></div>
+              </div>
+              <ul><li><b>4 ×</b>Développé couché (barre)</li><li><b>3 ×</b>Développé militaire (haltères)</li><li><b>3 ×</b>Dips lestés</li></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ONGLET SÉANCE ================= -->
+      <section class="screen" data-screen="seance" data-tab="seance" data-title="Séance">
+        <div class="head"><h2>Séance</h2></div>
+        <div class="section" style="margin-top:4px">
+          <button class="btn btn-primary btn-block" data-action="start-empty" style="height:52px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Démarrer une séance vide</button>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-soft" style="flex:1" data-go="biblio">Bibliothèque</button>
+            <button class="btn btn-soft" style="flex:1" data-toast="Saisie a posteriori : date, heure de début et durée">Séance passée</button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Routines <button class="btn-ghost" style="font-size:14px;text-transform:none;letter-spacing:0" data-go="routine">+ Nouvelle</button></div>
+          <div class="folder">
+            <button class="folder-h" data-action="fold"><span class="chev">▾</span> PPL <span class="count">3</span><span class="dots">⋯</span></button>
+            <div class="folder-body">
+              <div class="card routine">
+                <h4>Push <span style="display:flex;gap:6px;align-items:center"><span class="tag">~ 1 h</span><button class="tag acc" data-go="routine">Modifier</button></span></h4>
+                <p>Développé couché (barre), Développé militaire (haltères), Dips lestés, Gainage</p>
+                <button class="btn btn-primary btn-block btn-sm" data-action="start-routine">Démarrer</button>
+              </div>
+              <div class="card routine">
+                <h4>Pull <span class="tag">~ 1 h</span></h4>
+                <p>Tractions lestées, Rowing (barre), Tirage horizontal (poulie), Curl (haltères)…</p>
+                <button class="btn btn-soft btn-block btn-sm" data-action="start-routine">Démarrer</button>
+              </div>
+              <div class="card routine">
+                <h4>Legs <span class="tag">~ 1 h 15</span></h4>
+                <p>Squat (barre), Soulevé de terre roumain, Presse à cuisses, Mollets debout…</p>
+                <button class="btn btn-soft btn-block btn-sm" data-action="start-routine">Démarrer</button>
+              </div>
+            </div>
+          </div>
+          <div class="folder closed" style="margin-top:12px">
+            <button class="folder-h" data-action="fold"><span class="chev">▾</span> Full body <span class="count">2</span><span class="dots">⋯</span></button>
+            <div class="folder-body">
+              <div class="card routine"><h4>Full body A</h4><p>Squat (barre), Développé couché (barre), Rowing (barre)</p><button class="btn btn-soft btn-block btn-sm" data-action="start-routine">Démarrer</button></div>
+              <div class="card routine"><h4>Full body B</h4><p>Soulevé de terre, Développé militaire, Tractions</p><button class="btn btn-soft btn-block btn-sm" data-action="start-routine">Démarrer</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= BIBLIOTHÈQUE ================= -->
+      <section class="screen" data-screen="biblio" data-tab="seance" data-title="Bibliothèque">
+        <div class="head"><button class="icon-btn" data-action="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="title-sm" id="biblioTitle">Exercices</span><button class="btn-ghost" style="font-weight:650" data-toast="Créer un exercice personnalisé">Créer</button></div>
+        <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="libSearch" placeholder="Rechercher (ex. developpe)"></div>
+        <div class="chips" id="muscleChips"></div>
+        <div class="chips" style="margin-top:8px" id="equipChips"></div>
+        <div id="libList" style="margin-top:6px"></div>
+      </section>
+
+      <!-- ================= SÉANCE EN DIRECT ================= -->
+      <section class="screen no-tab" data-screen="live" data-title="Séance en direct">
+        <div class="live-head">
+          <div class="head" style="position:static;padding-bottom:6px">
+            <button class="icon-btn" data-action="minimize" title="Réduire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+            <span style="font-size:17px;font-weight:700">Push</span>
+            <div class="right">
+              <button class="icon-btn" data-toast="Écran maintenu allumé pendant la séance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></button>
+              <button class="btn btn-primary btn-sm" data-action="finish">Terminer</button>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stat"><div class="k">Durée</div><div class="v acc" id="liveDur">42:13</div></div>
+            <div class="stat"><div class="k">Volume</div><div class="v" id="liveVol">0 kg</div></div>
+            <div class="stat"><div class="k">Séries</div><div class="v" id="liveSets">0</div></div>
+          </div>
+        </div>
+        <div id="exList"></div>
+        <div class="section" style="margin-top:16px">
+          <button class="btn btn-soft btn-block" data-action="add-ex" style="color:var(--accent)">+ Ajouter un exercice</button>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-soft" style="flex:1" data-go="parametres">Paramètres</button>
+            <button class="btn btn-soft btn-danger" style="flex:1" data-action="discard">Abandonner</button>
+          </div>
+        </div>
+        <div style="height:160px"></div>
+      </section>
+
+      <!-- ================= RÉCAP ================= -->
+      <section class="screen no-tab" data-screen="recap" data-title="Récapitulatif">
+        <div class="head"><button class="icon-btn" data-go="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="title-sm">Enregistrer la séance</span><span style="width:38px"></span></div>
+        <div class="recap-hero"><div class="big">🎉</div><h2>Belle séance, Paul !</h2><p class="muted" style="margin-top:4px">mercredi 21 octobre</p></div>
+        <div class="recap-grid">
+          <div class="card"><div class="v" id="rcDur">58 min</div><div class="k">Durée</div></div>
+          <div class="card"><div class="v" id="rcVol">0 kg</div><div class="k">Volume</div></div>
+          <div class="card"><div class="v" id="rcSets">0</div><div class="k">Séries</div></div>
+          <div class="card"><div class="v" id="rcPr" style="color:var(--gold)">0</div><div class="k">Records</div></div>
+          <div class="card"><div class="v" id="rcGoal" style="color:var(--done)">0/0</div><div class="k">Objectifs</div></div>
+        </div>
+        <div class="section" id="rcGoalBlock">
+          <div class="section-title">Objectifs du jour</div>
+          <div class="card" id="rcGoalList"></div>
+        </div>
+        <div class="section" id="rcPrBlock">
+          <div class="section-title">Records battus</div>
+          <div class="card" id="rcPrList"></div>
+        </div>
+        <div class="section">
+          <label class="field"><span>Titre</span><input id="rcTitle" value="Push – mercredi"></label>
+          <label class="field"><span>Note</span><textarea rows="2" placeholder="Comment s'est passée la séance ?"></textarea></label>
+          <button class="photo-add" data-toast="1 photo par séance (Q2)">+ Ajouter une photo</button>
+          <div class="field-row">
+            <label class="field"><span>Date</span><input value="21/10/2026"></label>
+            <label class="field"><span>Début</span><input value="17:42"></label>
+            <label class="field"><span>Durée</span><input id="rcDurIn" value="0:58"></label>
+          </div>
+          <button class="btn btn-primary btn-block" style="margin-top:20px;height:52px" data-action="save">Enregistrer</button>
+          <button class="btn btn-danger btn-block" style="margin-top:6px" data-action="discard">Abandonner la séance</button>
+        </div>
+      </section>
+
+      <!-- ================= FICHE EXERCICE ================= -->
+      <section class="screen" data-screen="fiche" data-tab="profil" data-title="Fiche exercice">
+        <div class="head"><button class="icon-btn" data-action="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span class="title-sm">Développé couché (barre)</span><button class="icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 18px 12px">
+          <span class="tag acc">Pectoraux</span><span class="tag">Triceps</span><span class="tag">Épaules</span><span class="tag">Barre</span>
+        </div>
+        <div class="subtabs" id="ficheTabs"><button class="on" data-pane="resume">Résumé</button><button data-pane="histo">Historique</button><button data-pane="consignes">Consignes</button></div>
+
+        <div class="pane on" data-pane="resume">
+          <div class="section">
+            <div class="card goal-card">
+              <div class="muted" style="font-size:13px;display:flex;justify-content:space-between">Objectif de la prochaine séance<span class="tag" style="height:20px;font-size:11px">Fourchette 6–8</span></div>
+              <div class="big" style="color:var(--done)">↑ 82,5 kg × 6 <small class="muted" style="font-size:14px;font-weight:600">· 3 séries</small></div>
+              <div class="why">8 reps atteintes sur toutes les séries (80 kg × 8 / 8 / 8)</div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="muted" style="font-size:13px" id="chartLabel">1RM estimé · dernière séance</div>
+            <div style="display:flex;align-items:baseline;gap:10px"><div class="hero" id="chartHero">101,3 <small>kg</small></div><span class="delta" id="chartDelta">▲ +3,1 kg sur 3 mois</span></div>
+          </div>
+          <div class="chips" style="margin-top:12px" id="metricChips"></div>
+          <div class="section" style="margin-top:6px">
+            <div class="chart-wrap" id="lineChart"></div>
+            <div class="trend-info" id="trendInfo">
+              <div style="display:flex;gap:14px;flex-wrap:wrap"><span class="legend"><i></i>Tendance projetée (12 sem.)</span><span class="legend"><i class="gold"></i>Objectif à long terme</span></div>
+              <div>Rythme actuel : <b>+1,8 kg</b> de 1RM estimé par mois</div>
+              <div>🎯 <b>100 kg × 3</b> (110 kg de 1RM estimé) · atteint <b>vers avril 2027</b></div>
+            </div>
+            <div class="seg" id="periodSeg" style="display:flex;margin-top:10px"><button style="flex:1" data-p="1">1 mois</button><button style="flex:1" class="on" data-p="3">3 mois</button><button style="flex:1" data-p="12">1 an</button><button style="flex:1" data-p="0">Tout</button></div>
+          </div>
+          <div class="section">
+            <div class="section-title">Records</div>
+            <div class="card"><ul class="rec-list">
+              <li><span>Charge max</span><b>82,5 kg</b></li>
+              <li><span>Meilleur 1RM estimé</span><b>101,3 kg</b></li>
+              <li><span>Meilleure série (volume)</span><b>80 kg × 8</b></li>
+            </ul></div>
+            <div class="section-title" style="margin-top:16px">Meilleur poids à N reps (au moins)</div>
+            <div class="reps-grid">
+              <div><div class="k">1 rep</div><div class="v">82,5 kg</div></div><div><div class="k">3 reps</div><div class="v">82,5 kg</div></div><div><div class="k">5 reps</div><div class="v">82,5 kg</div></div>
+              <div><div class="k">8 reps</div><div class="v">80 kg</div></div><div><div class="k">10 reps</div><div class="v">70 kg</div></div><div><div class="k">12 reps</div><div class="v">60 kg</div></div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Réglages de progression</div>
+            <div class="set-row">Incrément<span class="t2" data-toast="Défaut barre : 2,5 kg (5 lb)">2,5 kg ›</span></div>
+            <div class="set-row"><span>Fourchette par défaut<small class="muted" style="display:block;font-size:12px">hors routine (séance vide)</small></span><span class="t2" data-toast="Sinon : fourchette de la dernière routine, puis 8–12">6–8 ›</span></div>
+            <div class="set-row">Objectif à long terme<span class="t2" data-toast="Charge × reps, de 1 à 12 reps">100 kg × 3 ›</span></div>
+          </div>
+        </div>
+        <div class="pane" data-pane="histo">
+          <div class="section">
+            <div class="card hist"><h3 style="font-size:15px">Push – jeudi</h3><div class="date">jeu. 15 oct. · <span class="ok">🎯 objectif atteint</span></div>
+              <ul style="margin-top:10px"><li><b style="color:var(--warm)">É</b>40 kg × 10</li><li><b>1</b>80 kg × 8</li><li><b>2</b>80 kg × 8</li><li><b>3</b>80 kg × 8</li></ul></div>
+            <div class="card hist"><h3 style="font-size:15px">Push – lundi</h3><div class="date">lun. 12 oct.</div>
+              <ul style="margin-top:10px"><li><b style="color:var(--warm)">É</b>40 kg × 10</li><li><b>1</b>82,5 kg × 5 <span class="pr-pill">🏆</span></li><li><b>2</b>75 kg × 8</li><li><b>3</b>75 kg × 8</li></ul></div>
+            <div class="card hist"><h3 style="font-size:15px">Full body A</h3><div class="date">jeu. 8 oct.</div>
+              <ul style="margin-top:10px"><li><b>1</b>75 kg × 8</li><li><b>2</b>75 kg × 8</li><li><b>3</b>75 kg × 6</li></ul></div>
+          </div>
+        </div>
+        <div class="pane" data-pane="consignes">
+          <div class="section"><ol class="steps">
+            <li>Allongé sur le banc, yeux sous la barre, pieds à plat au sol.</li>
+            <li>Saisir la barre un peu plus large que les épaules, omoplates serrées et basses.</li>
+            <li>Descendre la barre de façon contrôlée jusqu'au bas des pectoraux, coudes à environ 45°.</li>
+            <li>Pousser vers le haut en gardant les fessiers sur le banc, sans verrouiller brutalement.</li>
+          </ol>
+          <p class="muted" style="font-size:13px;margin-top:10px">Pas d'illustration en V1 (Q5) : muscles en étiquettes, consignes en texte.</p></div>
+        </div>
+      </section>
+
+      <!-- ================= PROFIL ================= -->
+      <section class="screen" data-screen="profil" data-tab="profil" data-title="Profil">
+        <div class="head"><h2>Profil</h2><div class="right"><button class="icon-btn" data-go="parametres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div></div>
+        <div class="profile"><div class="avatar">P</div><div><h3>Paul</h3><div class="muted" style="font-size:14px;margin-top:2px"><b style="color:var(--text)">128</b> séances</div></div></div>
+        <div class="section">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div class="muted" style="font-size:13px" id="barLabel">Durée · cette semaine</div><div class="hero" style="font-size:24px" id="barHero">3 h 12</div></div>
+            </div>
+            <div class="chart-wrap" id="barChart" style="margin-top:8px"></div>
+            <div class="seg" id="barSeg" style="display:flex;margin-top:10px"><button class="on" style="flex:1" data-m="dur">Durée</button><button style="flex:1" data-m="vol">Volume</button><button style="flex:1" data-m="n">Séances</button></div>
+          </div>
+        </div>
+        <div class="section">
+          <div>
+            <button class="row-link" data-go="stats"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Statistiques<span class="end">›</span></button>
+            <button class="row-link" data-go="fiche"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>Exercices et records<span class="end">›</span></button>
+            <button class="row-link" data-toast="Mesures : poids, % MG, tours (cou, bras G/D…)"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>Mesures corporelles<span class="end">78,4 kg ›</span></button>
+            <button class="row-link" data-toast="Lien d'invitation copié"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>Inviter un proche<span class="end">Copier ›</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STATISTIQUES ================= -->
+      <section class="screen" data-screen="stats" data-tab="profil" data-title="Statistiques">
+        <div class="head"><button class="icon-btn" data-action="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title-sm">Statistiques</span><span style="width:38px"></span></div>
+        <div class="section" style="margin-top:4px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Octobre 2026</b><span class="pr-pill" style="color:var(--text)">🔥 6 semaines</span></div>
+            <div class="cal" id="cal"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Séries par muscle · 30 jours</div>
+          <div class="card" id="muscleBars"></div>
+          <p class="muted" style="font-size:12px;margin-top:6px">Muscle principal = 1 série, secondaire = 0,5.</p>
+        </div>
+        <div class="section">
+          <div class="section-title">Records récents</div>
+          <div class="card"><ul class="rec-list">
+            <li><span>Tractions lestées · charge ajoutée max</span><b>+20 kg</b></li>
+            <li><span>Rowing (barre) · 1RM estimé</span><b>96,0 kg</b></li>
+            <li><span>Squat (barre) · meilleur poids à 5 reps</span><b>110 kg</b></li>
+          </ul></div>
+        </div>
+      </section>
+
+      <!-- ================= PARAMÈTRES ================= -->
+      <section class="screen" data-screen="parametres" data-tab="profil" data-title="Paramètres">
+        <div class="head"><button class="icon-btn" data-action="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title-sm">Paramètres</span><span style="width:38px"></span></div>
+        <div class="section" style="margin-top:4px">
+          <div class="section-title">Unités</div>
+          <div class="set-row">Poids<div class="seg"><button class="on">kg</button><button>lb</button></div></div>
+          <div class="set-row">Longueur<div class="seg"><button class="on">cm</button><button>in</button></div></div>
+          <div class="set-row">Distance<div class="seg"><button class="on">km</button><button>mi</button></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Séance</div>
+          <div class="set-row">Repos par défaut<span class="t2">1 min 30 ›</span></div>
+          <div class="set-row">Notification fin de repos<button class="switch on"></button></div>
+          <div class="set-row">Son du minuteur<button class="switch on"></button></div>
+          <div class="set-row">Garder l'écran allumé<button class="switch on"></button></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Progression</div>
+          <div class="set-row"><span>Objectifs de progression<small class="muted" style="display:block;font-size:12px">pré-remplissage et tendance projetée</small></span><button class="switch on"></button></div>
+          <div class="set-row">Ancienneté en musculation<span class="t2" data-toast="Je débute · < 6 mois · 6 mois à 1 an · 1 à 2 ans · 2 à 5 ans · > 5 ans · Non renseignée">1 à 2 ans ›</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Apparence</div>
+          <div class="set-row">Thème<div class="seg" id="themeSeg2"><button data-theme="light">Clair</button><button class="on" data-theme="dark">Sombre</button><button data-theme="auto">Auto</button></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Compte</div>
+          <div class="set-row">E-mail<span class="t2">paul@exemple.fr</span></div>
+          <div class="set-row">Lien d'invitation<span style="color:var(--accent)">Copier · Régénérer</span></div>
+          <div class="set-row">Exporter mes données<span class="t2">JSON · CSV ›</span></div>
+          <div class="set-row">Se déconnecter<span></span></div>
+          <div class="set-row" style="color:var(--fail)">Supprimer le compte<span></span></div>
+        </div>
+        <div class="section">
+          <div class="section-title">À propos</div>
+          <div class="set-row">Tester une notification<span style="color:var(--accent)" data-toast="Notification dans 10 s (verrouille l'iPhone)">Dans 10 s ›</span></div>
+          <div class="set-row">Journal d'erreurs<span class="t2">0 ›</span></div>
+          <div class="set-row">Version<span class="t2">Overload 1.0.0</span></div>
+        </div>
+      </section>
+
+      <div class="rest-panel" id="restPanel">
+        <div class="lbl" id="restLbl">Repos · Développé couché, série 2</div>
+        <div class="time" id="restTime">2:00</div>
+        <div class="bar"><i id="restBar" style="width:100%"></i></div>
+        <div class="ctrls"><button class="btn btn-soft" data-rest="-15">−15 s</button><button class="btn btn-soft" data-rest="15">+15 s</button><button class="btn btn-primary" data-rest="skip">Passer</button></div>
+      </div>
+      <div class="menu" id="exMenu">
+        <button data-menu="replace">Remplacer l'exercice</button>
+        <button data-menu="up">Monter</button>
+        <button data-menu="down">Descendre</button>
+        <button data-menu="rest">Modifier le temps de repos</button>
+        <button class="danger" data-menu="delete">Supprimer l'exercice</button>
+      </div>
+      <div class="scrim" id="scrim"><div class="sheet"><div class="grab"></div><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div class="acts" id="dlgActs"></div></div></div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="banner" id="banner" data-go="live"><span class="dot-live"></span>Séance en cours · <b id="bannerTime">42:13</b><span class="go">Reprendre</span></div>
+    <nav class="tabbar" id="tabbar">
+      <button data-go="accueil" data-t="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Accueil</button>
+      <button data-go="seance" data-t="seance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>Séance</button>
+      <button data-go="profil" data-t="profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profil</button>
+    </nav>
+  </div>
+
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<div class="boardview" id="boardview"></div>
+
+<script>
+/* =========================================================
+   Données de démonstration
+   ========================================================= */
+const COLS = {wr:['kg','Reps'], bw:['Reps'], add:['+kg','Reps'], assist:['−kg','Reps'], dur:['Temps'], wdur:['kg','Temps'], dist:['km','Temps']};
+const e1rm = v => (+v[1] > 12 ? 0 : (+v[1] === 1 ? +v[0] : +v[0] * (1 + v[1] / 30)));
+const secs = s => { const [m, x] = String(s).split(':'); return (+m) * 60 + (+x || 0); };
+const PR_METRIC = {wr: e1rm, add: v => +v[0], bw: v => +v[0], dur: v => secs(v[0])};
+
+// Objectifs figés au démarrage (§F7.10) : g = valeurs visées par série de travail, tg = champ encore pré-rempli par l'objectif.
+// Développé couché : 80 × 8/8/8 en 6–8 → montée de charge, Marzagao donne 82,5 × 6 (r′ = 6,98).
+const goalSets = (sets, goals) => sets.map((s, i) => goals[i] ? {...s, v: [...goals[i]], g: goals[i], tg: true} : s);
+const START_ROUTINE = () => [
+  {name:'Développé couché (barre)', type:'wr', rest:120, best:101.3, note:'', range:[6, 8],
+    reason:{dir:'up', text:'8 reps atteintes sur toutes les séries'},
+    last:[{t:'W',v:[40,10]},{t:'N',v:[80,8]},{t:'N',v:[80,8]},{t:'N',v:[80,8]}],
+    sets:goalSets([{t:'W',v:[40,10],done:true},{t:'N'},{t:'N'},{t:'N'}], [null, [82.5,6], [82.5,6], [82.5,6]])},
+  {name:'Développé militaire (haltères)', type:'wr', rest:90, best:31.2, note:'', range:[8, 10],
+    reason:{dir:'up', text:'+1 rep par série'},
+    last:[{t:'N',v:[24,10]},{t:'N',v:[24,9]},{t:'N',v:[24,10]}],
+    sets:goalSets([{t:'N'},{t:'N'},{t:'N'}], [[24,10], [24,10], [24,10]])},
+  {name:'Dips lestés', type:'add', rest:90, best:17.5, note:'', range:[6, 8],
+    reason:{dir:'eq', text:'On consolide'},
+    last:[{t:'N',v:[17.5,8]},{t:'N',v:[17.5,5]}],
+    sets:goalSets([{t:'N'},{t:'N'},{t:'X'}], [[17.5,8], [17.5,7], [17.5,7]])},
+  {name:'Gainage', type:'dur', rest:60, best:75, note:'',
+    reason:{dir:'up', text:'+5 % de durée'},
+    last:[{t:'N',v:['1:10']},{t:'N',v:['1:00']}],
+    sets:goalSets([{t:'N'},{t:'N'}], [['1:15'], ['1:05']])}
+].map(ex => ({...ex, goalCount: ex.sets.filter(s => s.g).length}));
+let workout = START_ROUTINE();
+let routineShape = shapeOf(workout);
+
+const LIB = [
+  ['Développé couché (barre)','Pectoraux','Barre','Triceps, Épaules'],['Développé incliné (haltères)','Pectoraux','Haltères','Épaules'],
+  ['Développé militaire (haltères)','Épaules','Haltères','Triceps'],['Dips lestés','Triceps','Poids du corps','Pectoraux'],
+  ['Écarté à la poulie','Pectoraux','Poulie',''],['Élévations latérales','Épaules','Haltères',''],
+  ['Curl (haltères)','Biceps','Haltères','Avant-bras'],['Gainage','Abdos','Poids du corps',''],
+  ['Presse à cuisses','Quadriceps','Machine','Fessiers'],['Rowing (barre)','Dos','Barre','Biceps, Trapèzes'],
+  ['Soulevé de terre roumain','Ischios','Barre','Fessiers, Lombaires'],['Squat (barre)','Quadriceps','Barre','Fessiers'],
+  ['Tirage horizontal (poulie)','Dos','Poulie','Biceps'],['Tractions assistées','Dos','Machine','Biceps'],['Tractions lestées','Dos','Poids du corps','Biceps']
+];
+const RECENT = ['Développé couché (barre)','Rowing (barre)','Squat (barre)'];
+
+const state = {screen:'accueil', prevScreen:'accueil', session:false, start:0, rest:null, pick:false, menuEx:-1, muscle:'Tous', equip:'Tout'};
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmtN = n => (+n).toLocaleString('fr-FR', {maximumFractionDigits:1});
+const fmtClock = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+
+/* =========================================================
+   Navigation
+   ========================================================= */
+// Cette méthode permet d'afficher un écran du prototype lorsque l'utilisateur touche un lien, un onglet ou la navigation latérale.
+function go(name) {
+  if (name === 'live' && !state.session) startSession();
+  if (name !== state.screen) state.prevScreen = state.screen;
+  state.screen = name;
+  $$('#viewport .screen').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+  const scr = $(`#viewport .screen[data-screen="${name}"]`);
+  const tab = scr.dataset.tab;
+  $('#tabbar').style.display = tab ? 'flex' : 'none';
+  $$('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+  $$('#sidenav button').forEach(b => b.classList.toggle('on', b.dataset.go === name));
+  $('#banner').classList.toggle('show', state.session && !!tab);
+  $('#restPanel').classList.toggle('show', name === 'live' && !!state.rest);
+  $('#exMenu').classList.remove('show');
+  scr.scrollTop = 0;
+  if (name === 'recap') renderRecap();
+  if (name === 'biblio') $('#biblioTitle').textContent = state.pick ? 'Ajouter un exercice' : 'Exercices';
+  renderNotes(name);
+}
+
+// Cette méthode permet de démarrer une séance (routine ou vide) lorsqu'aucune séance n'est en cours.
+function startSession(empty) {
+  workout = empty ? [] : START_ROUTINE();
+  routineShape = shapeOf(workout);
+  state.session = true;
+  state.start = Date.now() - (empty ? 0 : (42 * 60 + 13) * 1000);
+  state.rest = null;
+  renderLive();
+}
+
+// Cette méthode permet d'afficher un message bref lorsqu'une action n'est pas branchée dans la maquette.
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// Cette méthode permet d'ouvrir une feuille de dialogue en bas de l'écran lorsqu'une confirmation est nécessaire.
+function dialog(title, html, actions) {
+  $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = html;
+  const acts = $('#dlgActs'); acts.innerHTML = '';
+  actions.forEach(a => { const b = document.createElement('button'); b.className = 'btn btn-block ' + (a.cls || 'btn-soft'); b.textContent = a.label;
+    b.onclick = () => { $('#scrim').classList.remove('show'); a.fn && a.fn(); }; acts.appendChild(b); });
+  $('#scrim').classList.add('show');
+}
+
+/* =========================================================
+   Séance en direct
+   ========================================================= */
+// Cette méthode permet de retrouver la série « précédente » équivalente lorsque l'on associe les séries par type (1re normale ↔ 1re normale).
+function prevFor(ex, i) {
+  const t = ex.sets[i].t;
+  const k = ex.sets.slice(0, i).filter(s => s.t === t).length;
+  const same = ex.last.filter(s => s.t === t);
+  return same[k] ? same[k].v : null;
+}
+
+// Cette méthode permet de formater des valeurs de série selon le type de mesure lorsque l'on affiche la colonne « Précédent ».
+function fmtSet(ex, v) {
+  if (!v) return '—';
+  if (ex.type === 'dur') return v[0];
+  if (ex.type === 'bw') return '× ' + v[0];
+  return (ex.type === 'add' ? '+' : '') + fmtN(v[0]) + ' kg × ' + v[1];
+}
+
+// Cette méthode permet de résumer l'objectif d'un exercice en une ligne lorsqu'on l'affiche sous son nom (« 82,5 kg × 6 » ou « 17,5 kg × 8 / 7 / 7 »).
+function goalSummary(ex) {
+  const g = ex.sets.filter(s => s.g).map(s => s.g);
+  if (!g.length) return '';
+  if (ex.type === 'dur') return g.map(v => v[0]).join(' / ');
+  const kg = (ex.type === 'add' ? '+' : '') + fmtN(g[0][0]) + ' kg';
+  return g.every(v => v[0] === g[0][0] && v[1] === g[0][1]) ? `${kg} × ${g[0][1]}` : `${kg} × ${g.map(v => v[1]).join(' / ')}`;
+}
+
+// Cette méthode permet de savoir si un exercice a atteint son objectif lorsque l'on remplit le récapitulatif (undefined = exercice sans objectif).
+// Chaque série avec objectif doit être validée à charge et reps (ou durée) au moins égales ; une série supprimée compte comme manquée.
+function targetsMet(ex) {
+  if (!ex.goalCount) return undefined;
+  const ok = ex.sets.filter(s => s.g && s.done && (ex.type === 'dur' ? secs(s.v[0]) >= secs(s.g[0]) : +s.v[0] >= s.g[0] && +s.v[1] >= s.g[1])).length;
+  return ok === ex.goalCount;
+}
+
+// Cette méthode permet de calculer les badges records lorsque des séries sont validées, en comparant à tout ce qui précède (strictement meilleur, hors échauffement).
+function computePRs() {
+  workout.forEach(ex => {
+    let best = ex.best; const f = PR_METRIC[ex.type];
+    ex.sets.forEach(s => { s.pr = false;
+      if (!s.done || s.t === 'W' || !f) return;
+      const m = f(s.v); if (m > best) { s.pr = true; best = m; } });
+  });
+}
+
+// Cette méthode permet de dessiner tous les exercices et séries de la séance lorsque les données changent.
+function renderLive() {
+  computePRs();
+  const list = $('#exList'); list.innerHTML = '';
+  workout.forEach((ex, ei) => {
+    const cols = COLS[ex.type];
+    let n = 0;
+    const rows = ex.sets.map((s, si) => {
+      const lbl = s.t === 'N' ? ++n : ({W:'É', D:'D', X:'X'})[s.t];
+      const prev = prevFor(ex, si);
+      const inputs = cols.map((c, ci) => `<td><input class="val ${s.tg ? 'tgt' : ''}" inputmode="${c === 'Temps' ? 'text' : 'decimal'}" data-e="${ei}" data-s="${si}" data-c="${ci}" value="${s.v[ci] === '' ? '' : (c === 'Temps' ? s.v[ci] : fmtN(s.v[ci]))}" placeholder="${prev ? (c === 'Temps' ? prev[ci] : fmtN(prev[ci])) : ''}"></td>`).join('');
+      return `<tr class="set ${s.done ? 'done' : ''} ${s.pr ? 'pr' : ''}" data-e="${ei}" data-s="${si}">
+        <td><button class="type ${s.t}" data-act="type" title="Changer le type">${lbl}</button></td>
+        <td><button class="prev" data-act="prev">${fmtSet(ex, prev)}</button></td>${inputs}
+        <td><button class="check" data-act="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><span class="trophy">🏆</span></td></tr>`;
+    }).join('');
+    const el = document.createElement('div'); el.className = 'ex';
+    el.innerHTML = `<div class="ex-top"><div class="ex-av">${ex.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}</div>
+        <button class="name" data-go="fiche">${ex.name}</button>
+        <button class="icon-btn" data-exmenu="${ei}"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button></div>
+      ${ex.reason && ex.goalCount ? `<div class="goal-line ${ex.reason.dir}"><span>${({up: '↑', down: '↓', eq: '='})[ex.reason.dir]} ${goalSummary(ex)}</span><span class="why">${ex.reason.text}</span>${ex.range ? `<span class="tag">${ex.range[0]}–${ex.range[1]} reps</span>` : ''}</div>` : ''}
+      <textarea class="ex-note" rows="1" placeholder="Ajouter une note…">${ex.note}</textarea>
+      <button class="rest-link" data-restcycle="${ei}">⏱ Repos : ${ex.rest ? fmtRest(ex.rest) : 'Off'}</button>
+      <table class="sets"><thead><tr><th>Série</th><th>Précédent</th>${cols.map(c => `<th>${c}</th>`).join('')}<th>✓</th></tr></thead><tbody>${rows}</tbody></table>
+      <button class="btn btn-soft btn-block btn-sm add-set" data-addset="${ei}">+ Ajouter une série</button>`;
+    list.appendChild(el);
+  });
+  if (!workout.length) list.innerHTML = '<div class="section" style="text-align:center;padding:40px 18px"><div style="font-size:40px">🏋️</div><p class="t2" style="margin-top:8px">Séance vide. Ajoute ton premier exercice.</p></div>';
+  updateTotals();
+}
+const fmtRest = s => s >= 60 ? Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + s % 60 + ' s' : '') : s + ' s';
+
+// Cette méthode permet de recalculer volume et nombre de séries validées lorsque l'on coche ou modifie une série.
+function totals() {
+  let vol = 0, sets = 0, prs = [];
+  workout.forEach(ex => ex.sets.forEach(s => {
+    if (!s.done) return; sets++;
+    if (s.t !== 'W' && (ex.type === 'wr' || ex.type === 'add')) vol += (+s.v[0] || 0) * (+s.v[1] || 0);
+    if (s.pr) prs.push([ex, s]);
+  }));
+  return {vol, sets, prs};
+}
+function updateTotals() {
+  const t = totals();
+  $('#liveVol').textContent = fmtN(Math.round(t.vol)) + ' kg';
+  $('#liveSets').textContent = t.sets;
+}
+
+// Cette méthode permet de valider ou dévalider une série lorsque l'on touche la coche, en reprenant « Précédent » si un champ est vide.
+function toggleSet(ei, si) {
+  const ex = workout[ei], s = ex.sets[si], prev = prevFor(ex, si);
+  if (!s.done) {
+    const empty = s.v.map((x, i) => x === '' ? i : -1).filter(i => i >= 0);
+    if (empty.length) {
+      if (!prev) { empty.forEach(c => { const inp = $(`.val[data-e="${ei}"][data-s="${si}"][data-c="${c}"]`); inp.classList.remove('err'); void inp.offsetWidth; inp.classList.add('err'); });
+        toast('Champ vide et aucune valeur précédente'); return; }
+      empty.forEach(c => s.v[c] = prev[c]);
+    }
+    s.done = true;
+    if (ex.rest) startRest(ex, si);
+  } else s.done = false;
+  renderLive();
+  const tr = $(`tr.set[data-e="${ei}"][data-s="${si}"]`);
+  if (tr && tr.classList.contains('pr')) toast('🏆 Nouveau record !');
+}
+
+// Cette méthode permet de lancer le minuteur de repos basé sur l'heure réelle lorsqu'une série est validée.
+function startRest(ex, si) {
+  const n = ex.sets.slice(0, si + 1).filter(s => s.t !== 'W').length;
+  state.rest = {end: Date.now() + ex.rest * 1000, total: ex.rest, label: `${ex.name}, ${ex.sets[si].t === 'W' ? 'échauffement' : 'série ' + n}`};
+  $('#restLbl').textContent = 'Repos · ' + state.rest.label;
+  $('#restPanel').classList.add('show');
+  tickRest();
+}
+function tickRest() {
+  const r = state.rest; if (!r) return;
+  const left = r.end - Date.now();
+  if (left <= 0) { state.rest = null; $('#restPanel').classList.remove('show'); toast('🔔 Repos terminé – ' + r.label); return; }
+  $('#restTime').textContent = fmtClock(left + 999);
+  $('#restBar').style.width = Math.min(100, left / (r.total * 1000) * 100) + '%';
+}
+
+// Cette méthode permet de résumer la structure d'une séance lorsque l'on doit détecter une différence avec la routine (exercices, ordre, séries, types, repos).
+function shapeOf(w) { return w.map(ex => ({name: ex.name, rest: ex.rest, types: ex.sets.map(s => s.t).join('')})); }
+
+// Cette méthode permet de lister les différences de structure entre la séance et la routine lorsque l'on termine une séance issue d'une routine.
+function structureDiff() {
+  const now = shapeOf(workout.map(ex => ({...ex, sets: ex.sets.filter(s => s.done)})).filter(ex => ex.sets.length)), was = routineShape, out = [];
+  now.forEach(e => { const o = was.find(x => x.name === e.name);
+    if (!o) out.push('Exercice ajouté : ' + e.name);
+    else { if (o.types.length !== e.types.length) out.push(`${e.name} : ${o.types.length} → ${e.types.length} série${e.types.length > 1 ? 's' : ''}`);
+      else if (o.types !== e.types) out.push(`${e.name} : types de séries modifiés`);
+      if (o.rest !== e.rest) out.push(`${e.name} : repos ${fmtRest(o.rest)} → ${e.rest ? fmtRest(e.rest) : 'Off'}`); } });
+  was.forEach(o => { if (!now.find(e => e.name === o.name)) out.push('Exercice retiré : ' + o.name); });
+  if (!out.length && now.map(e => e.name).join() !== was.map(e => e.name).join()) out.push('Ordre des exercices modifié');
+  return out;
+}
+
+/* =========================================================
+   Récap / enregistrement
+   ========================================================= */
+// Cette méthode permet de remplir l'écran récapitulatif avec les chiffres de la séance lorsque l'on l'ouvre.
+function renderRecap() {
+  const t = totals(), d = Date.now() - state.start;
+  const mins = Math.round(d / 60000);
+  $('#rcDur').textContent = mins >= 60 ? Math.floor(mins / 60) + ' h ' + String(mins % 60).padStart(2, '0') : mins + ' min';
+  $('#rcDurIn').value = Math.floor(mins / 60) + ':' + String(mins % 60).padStart(2, '0');
+  $('#rcVol').textContent = fmtN(Math.round(t.vol)) + ' kg';
+  $('#rcSets').textContent = t.sets;
+  const uniq = [...new Map(t.prs.map(([ex, s]) => [ex.name, [ex, s]])).values()];
+  $('#rcPr').textContent = uniq.length;
+  $('#rcPrBlock').style.display = uniq.length ? '' : 'none';
+  const crit = {wr: '1RM estimé', add: 'Charge ajoutée max', dur: 'Plus longue durée', bw: 'Plus de reps'};
+  $('#rcPrList').innerHTML = '<ul class="rec-list">' + uniq.map(([ex, s]) => `<li><span>🏆 ${ex.name}<br><small class="muted">${crit[ex.type]}</small></span><b>${fmtSet(ex, s.v)}</b></li>`).join('') + '</ul>';
+  const withGoal = workout.filter(ex => targetsMet(ex) !== undefined), met = withGoal.filter(targetsMet).length;
+  $('#rcGoal').textContent = met + '/' + withGoal.length;
+  $('#rcGoalBlock').style.display = withGoal.length ? '' : 'none';
+  $('#rcGoalList').innerHTML = '<ul class="rec-list">' + withGoal.map(ex => `<li><span>${ex.name}<br><small class="muted">visé : ${goalSummary(ex)}</small></span>${targetsMet(ex) ? '<b class="ok">✓ atteint</b>' : '<b class="ko">non atteint</b>'}</li>`).join('') + '</ul>';
+}
+
+// Cette méthode permet de terminer la séance lorsque l'utilisateur touche « Terminer », en gérant les séries non validées.
+function finish() {
+  const t = totals(), pending = workout.some(ex => ex.sets.some(s => !s.done));
+  if (!t.sets) return dialog('Aucune série validée', '<p>Une séance sans série validée ne peut pas être enregistrée.</p>',
+    [{label: 'Abandonner la séance', cls: 'btn-soft btn-danger', fn: discard}, {label: 'Continuer la séance'}]);
+  if (pending) return dialog('Ignorer les séries non validées ?', '<p>Les séries non cochées ne seront pas enregistrées.</p>',
+    [{label: 'Ignorer et terminer', cls: 'btn-primary', fn: () => go('recap')}, {label: 'Continuer la séance'}]);
+  go('recap');
+}
+function discard() {
+  dialog('Abandonner la séance ?', '<p>Rien ne sera conservé.</p>', [{label: 'Abandonner', cls: 'btn-soft btn-danger', fn: () => {
+    state.session = false; state.rest = null; go('accueil'); }}, {label: 'Annuler'}]);
+}
+
+// Cette méthode permet d'enregistrer la séance et de proposer la mise à jour de la routine lorsque sa structure a changé.
+function save() {
+  const diff = structureDiff();
+  const done = () => { addHistoryCard(); state.session = false; state.rest = null; go('accueil'); toast('Séance enregistrée'); };
+  if (!diff.length || !routineShape.length) return done();
+  dialog('Mettre à jour la routine « Push » ?', '<p>La structure de la séance diffère de la routine :</p><ul>' + diff.map(d => `<li>${d}</li>`).join('') +
+    '</ul><p style="margin-top:10px;font-size:13px" class="muted">Les poids réalisés deviendront les nouvelles cibles. Les fourchettes de reps sont conservées.</p>',
+    [{label: 'Mettre à jour la routine', cls: 'btn-primary', fn: done}, {label: 'Garder la routine telle quelle', fn: done}]);
+}
+function addHistoryCard() {
+  const t = totals(), uniq = new Set(t.prs.map(p => p[0].name)).size;
+  const exs = workout.map(ex => [ex.name, ex.sets.filter(s => s.done).length]).filter(e => e[1]);
+  const withGoal = workout.filter(ex => targetsMet(ex) !== undefined), met = withGoal.filter(targetsMet).length;
+  const c = document.createElement('div'); c.className = 'card hist';
+  c.innerHTML = `<div class="top"><div class="avatar">P</div><div><h3>${$('#rcTitle').value}</h3><div class="date">aujourd'hui · 17:42</div></div></div>
+    <div class="mini"><div class="stat"><div class="k">Durée</div><div class="v">${$('#rcDur').textContent}</div></div>
+    <div class="stat"><div class="k">Volume</div><div class="v">${fmtN(Math.round(t.vol))} kg</div></div>
+    <div class="stat"><div class="k">Séries</div><div class="v">${t.sets}</div></div>
+    <div class="stat"><div class="k">Records</div><div class="v">${uniq ? `<span class="pr-pill">🏆 ${uniq}</span>` : '<span class="muted">0</span>'}</div></div></div>
+    ${withGoal.length ? `<div class="goal-sum">🎯 Objectifs atteints : ${met} / ${withGoal.length} exercices</div>` : ''}
+    <ul>${exs.slice(0, 3).map(e => `<li><b>${e[1]} ×</b>${e[0]}</li>`).join('')}</ul>${exs.length > 3 ? `<div class="more">+ ${exs.length - 3} autres exercices</div>` : ''}`;
+  $('#historyList').prepend(c);
+}
+
+/* =========================================================
+   Bibliothèque
+   ========================================================= */
+const MUSCLES = ['Tous', 'Pectoraux', 'Dos', 'Épaules', 'Biceps', 'Triceps', 'Quadriceps', 'Ischios', 'Abdos'];
+const EQUIPS = ['Tout', 'Barre', 'Haltères', 'Machine', 'Poulie', 'Poids du corps'];
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// Cette méthode permet de filtrer et afficher le catalogue lorsque l'on tape une recherche (insensible aux accents) ou change un filtre.
+function renderLib() {
+  $('#muscleChips').innerHTML = MUSCLES.map(m => `<button class="chip ${m === state.muscle ? 'on' : ''}" data-muscle="${m}">${m}</button>`).join('');
+  $('#equipChips').innerHTML = EQUIPS.map(m => `<button class="chip ${m === state.equip ? 'on' : ''}" data-equip="${m}">${m}</button>`).join('');
+  const q = norm($('#libSearch').value);
+  const ok = e => (!q || norm(e[0]).includes(q)) && (state.muscle === 'Tous' || e[1] === state.muscle || e[3].includes(state.muscle)) && (state.equip === 'Tout' || e[2] === state.equip);
+  const item = e => `<button class="lib-item" data-ex="${e[0]}"><div class="ex-av">${e[0].split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}</div><div><div class="n">${e[0]}</div><div class="m">${e[1]}${e[3] ? ' · ' + e[3] : ''} · ${e[2]}</div></div></button>`;
+  const rec = LIB.filter(e => RECENT.includes(e[0]) && ok(e));
+  let html = rec.length ? '<div class="lib-letter">RÉCENTS</div>' + rec.map(item).join('') : '';
+  let L = '';
+  LIB.filter(ok).forEach(e => { const l = norm(e[0])[0].toUpperCase(); if (l !== L) { L = l; html += `<div class="lib-letter">${l}</div>`; } html += item(e); });
+  $('#libList').innerHTML = html || '<p class="muted" style="padding:30px 18px;text-align:center">Aucun exercice. Créer « ' + $('#libSearch').value + ' » ?</p>';
+}
+
+/* =========================================================
+   Graphiques (SVG, une seule série, survol = info-bulle)
+   ========================================================= */
+const SERIES = {
+  e1rm: {label: '1RM estimé', unit: 'kg', base: [88, 89.5, 90, 91.2, 90.5, 92, 93.3, 93, 94.5, 95, 96.2, 95.8, 97, 98.2, 97.5, 98.2, 99, 98.2, 101.3]},
+  max: {label: 'Charge max', unit: 'kg', base: [72.5, 72.5, 75, 75, 75, 77.5, 77.5, 77.5, 80, 77.5, 80, 80, 80, 82.5, 80, 77.5, 82.5, 77.5, 80]},
+  vol: {label: 'Volume de séance', unit: 'kg', base: [1900, 1960, 2010, 2100, 2050, 2180, 2200, 2160, 2280, 2300, 2350, 2290, 2400, 2380, 2420, 2410, 2460, 2380, 2520]},
+  reps: {label: 'Total de reps', unit: 'reps', base: [30, 31, 30, 32, 31, 32, 33, 32, 33, 34, 33, 33, 34, 33, 34, 33, 34, 33, 33]}
+};
+const DATES = ['14 mai', '28 mai', '11 juin', '25 juin', '9 juil.', '23 juil.', '6 août', '20 août', '27 août', '3 sept.', '10 sept.', '14 sept.', '21 sept.', '28 sept.', '1 oct.', '5 oct.', '8 oct.', '15 oct.', '21 oct.'];
+const chartState = {metric: 'e1rm', period: 3};
+
+// Cette méthode permet de dessiner la courbe d'évolution d'un exercice lorsque l'on change de métrique ou de période, avec réticule et info-bulle au survol.
+function drawLine(host) {
+  const s = SERIES[chartState.metric], cut = {1: 4, 3: 9, 12: 15, 0: 19}[chartState.period];
+  const ys = s.base.slice(-cut), xs = DATES.slice(-cut);
+  const W = 354, H = 170, P = {l: 34, r: 8, t: 12, b: 24};
+  // Tendance projetée (1RM estimé seulement) : a + b ln(t) jusqu'à +12 semaines, plus l'objectif à long terme (100 × 3 → 110 kg).
+  const proj = chartState.metric === 'e1rm', TREND = [[0, 100.9], [4 / 12, 102.5], [1, 104.9]], GOAL = 110;
+  const span = proj ? .76 : 1;
+  const all = proj ? ys.concat(TREND.map(p => p[1]), GOAL) : ys;
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .2 || 1; lo -= pad; hi += pad;
+  const X = i => P.l + (W - P.l - P.r) * span * (ys.length === 1 ? .5 : i / (ys.length - 1)), Y = v => P.t + (H - P.t - P.b) * (1 - (v - lo) / (hi - lo));
+  const XP = f => P.l + (W - P.l - P.r) * (span + (1 - span) * f);
+  const trendSvg = !proj ? '' : `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(GOAL)}" y2="${Y(GOAL)}" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="${P.l + 4}" y="${Y(GOAL) - 5}" font-size="10" font-weight="700" fill="var(--gold)">🎯 ${fmtN(GOAL)}</text>
+    <path d="M${TREND.map(p => XP(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' L')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 4" opacity=".8"/>
+    <circle r="3.5" cx="${XP(1)}" cy="${Y(TREND[2][1])}" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <text x="${W - P.r}" y="${H - 6}" font-size="10" fill="var(--muted)" text-anchor="end">+12 sem.</text>`;
+  $('#trendInfo').style.display = proj ? '' : 'none';
+  const ticks = [0, .5, 1].map(f => lo + (hi - lo) * f);
+  const d = ys.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+  const area = d + ` L${X(ys.length - 1)} ${H - P.b} L${X(0)} ${H - P.b} Z`;
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${s.label}">
+    <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    ${ticks.map(t => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${P.l - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${fmtN(Math.round(t))}</text>`).join('')}
+    <text x="${X(0)}" y="${H - 6}" font-size="10" fill="var(--muted)">${xs[0]}</text><text x="${X(ys.length - 1)}" y="${H - 6}" font-size="10" fill="var(--muted)" text-anchor="end">${xs[xs.length - 1]}</text>
+    <path d="${area}" fill="url(#ga)"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${trendSvg}
+    <line class="xh" y1="${P.t}" y2="${H - P.b}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0"/>
+    <circle class="dotp" r="5" fill="var(--accent)" stroke="var(--bg)" stroke-width="2" cx="${X(ys.length - 1)}" cy="${Y(ys[ys.length - 1])}"/>
+    <rect x="${P.l}" y="0" width="${(W - P.l - P.r) * span}" height="${H}" fill="transparent" class="hit"/></svg><div class="tip"></div>`;
+  const svg = host.querySelector('svg'), tip = host.querySelector('.tip'), xh = svg.querySelector('.xh'), dot = svg.querySelector('.dotp');
+  const last = ys.length - 1, show = i => {
+    xh.setAttribute('x1', X(i)); xh.setAttribute('x2', X(i)); xh.setAttribute('opacity', i === last && !show.h ? 0 : 1);
+    dot.setAttribute('cx', X(i)); dot.setAttribute('cy', Y(ys[i]));
+    tip.innerHTML = `${fmtN(ys[i])} ${s.unit}<span>${xs[i]}</span>`;
+    const r = svg.getBoundingClientRect(); tip.style.left = X(i) / W * r.width + 'px'; tip.style.top = Y(ys[i]) / H * r.height - 8 + 'px';
+  };
+  svg.querySelector('.hit').addEventListener('pointermove', e => { show.h = true; const r = svg.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width * W; let i = Math.round((px - P.l) / ((W - P.l - P.r) * span) * last); i = Math.max(0, Math.min(last, i)); show(i); tip.classList.add('show'); });
+  svg.querySelector('.hit').addEventListener('pointerleave', () => { show.h = false; show(last); tip.classList.remove('show'); });
+  $('#chartLabel').textContent = s.label + ' · dernière séance';
+  $('#chartHero').innerHTML = fmtN(ys[last]) + ` <small>${s.unit}</small>`;
+  const dv = ys[last] - ys[0];
+  $('#chartDelta').textContent = (dv >= 0 ? '▲ +' : '▼ ') + fmtN(dv) + ' ' + s.unit + ' sur la période';
+  $('#chartDelta').style.color = dv >= 0 ? 'var(--done)' : 'var(--fail)';
+  $('#metricChips').innerHTML = Object.entries(SERIES).map(([k, v]) => `<button class="chip ${k === chartState.metric ? 'on' : ''}" data-metric="${k}">${v.label}</button>`).join('');
+}
+
+const WEEKS = ['3 août', '10 août', '17 août', '24 août', '31 août', '7 sept.', '14 sept.', '21 sept.', '28 sept.', '5 oct.', '12 oct.', '19 oct.'];
+const BARS = {dur: {label: 'Durée', vals: [3.1, 4.2, 2.0, 3.8, 4.5, 3.9, 4.1, 2.9, 4.4, 4.0, 3.6, 3.2], fmt: v => Math.floor(v) + ' h ' + String(Math.round(v % 1 * 60)).padStart(2, '0')},
+  vol: {label: 'Volume', vals: [16.2, 22.1, 9.8, 20.4, 24.0, 21.1, 22.6, 15.3, 23.8, 22.0, 19.7, 18.45], fmt: v => fmtN(Math.round(v * 1000)) + ' kg'},
+  n: {label: 'Séances', vals: [3, 4, 2, 4, 5, 4, 4, 3, 4, 4, 4, 3], fmt: v => v + (v > 1 ? ' séances' : ' séance')}};
+let barMetric = 'dur';
+// Cette méthode permet de dessiner l'histogramme hebdomadaire du profil lorsque l'on choisit durée, volume ou séances.
+function drawBars(host) {
+  const b = BARS[barMetric], W = 354, H = 140, P = {l: 4, r: 4, t: 8, b: 22}, n = b.vals.length, max = Math.max(...b.vals) * 1.1;
+  const slot = (W - P.l - P.r) / n, bw = slot - 6;
+  const bars = b.vals.map((v, i) => { const h = (H - P.t - P.b) * v / max, x = P.l + i * slot + 3, y = H - P.b - h;
+    return `<path d="M${x} ${H - P.b}V${y + 4}q0 -4 4 -4h${bw - 8}q4 0 4 4V${H - P.b}z" fill="var(--accent)" opacity="${i === n - 1 ? 1 : .55}"/>
+      <rect class="bh" data-i="${i}" x="${P.l + i * slot}" y="0" width="${slot}" height="${H}" fill="transparent"/>`; }).join('');
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${b.label} par semaine">
+    <line x1="${P.l}" x2="${W - P.r}" y1="${H - P.b}" y2="${H - P.b}" stroke="var(--line)"/>${bars}
+    <text x="${P.l}" y="${H - 6}" font-size="10" fill="var(--muted)">${WEEKS[0]}</text><text x="${W - P.r}" y="${H - 6}" font-size="10" fill="var(--muted)" text-anchor="end">cette semaine</text></svg><div class="tip"></div>`;
+  const svg = host.querySelector('svg'), tip = host.querySelector('.tip');
+  svg.querySelectorAll('.bh').forEach(r => { r.addEventListener('pointerenter', () => { const i = +r.dataset.i, rc = svg.getBoundingClientRect();
+      tip.innerHTML = `${b.fmt(b.vals[i])}<span>sem. du ${WEEKS[i]}</span>`; tip.style.left = (P.l + (i + .5) * slot) / W * rc.width + 'px';
+      tip.style.top = (H - P.b - (H - P.t - P.b) * b.vals[i] / max) / H * rc.height - 6 + 'px'; tip.classList.add('show'); });
+    r.addEventListener('pointerleave', () => tip.classList.remove('show')); });
+  $('#barLabel').textContent = b.label + ' · cette semaine'; $('#barHero').textContent = b.fmt(b.vals[n - 1]);
+}
+
+// Cette méthode permet de construire le calendrier du mois et la répartition musculaire lorsque l'écran Statistiques est préparé.
+function renderStats() {
+  const on = [1, 2, 5, 6, 8, 9, 12, 13, 15, 19, 20, 21];
+  let h = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<div class="h">${d}</div>`).join('') + '<div></div><div></div><div></div>';
+  for (let d = 1; d <= 31; d++) h += `<div class="c ${on.includes(d) ? 'on' : ''} ${d === 21 ? 'today' : ''} ${d > 21 ? 'fut' : ''}">${d}</div>`;
+  $('#cal').innerHTML = h;
+  const M = [['Dos', 48], ['Pectoraux', 41], ['Quadriceps', 33], ['Épaules', 29.5], ['Triceps', 24], ['Biceps', 19.5], ['Ischios', 16], ['Abdos', 9]];
+  $('#muscleBars').innerHTML = M.map(([m, v]) => `<div class="hbar"><span>${m}</span><div class="track"><div class="fill" style="width:${v / 48 * 100}%"></div></div><span class="n">${fmtN(v)}</span></div>`).join('');
+}
+
+/* =========================================================
+   Notes de conception (colonne de droite)
+   ========================================================= */
+const NOTES = {
+  invite: ['Page web ouverte dans Safari depuis le lien d\'invitation (§P1).', 'Installation en 3 étapes, code affiché en gros avec « Copier » : sur iOS, l\'app installée ne partage pas le stockage de Safari (§7.1).', 'Aucun lien n\'est créé entre l\'invitant et l\'invité.'],
+  signup: ['Code d\'invitation pré-rempli par le manifeste ; sinon, l\'utilisateur le colle (§7.1).', 'Ancienneté facultative : elle fixe l\'origine du temps de la tendance projetée (§7.10, Q9).', 'Après création : proposition d\'activer les notifications, puis première routine ou séance vide.'],
+  login: ['Connexion e-mail + mot de passe.', 'Pas d\'inscription libre : uniquement sur invitation (Q3).'],
+  reset: ['Le lien de réinitialisation s\'ouvre dans Safari, pas dans la PWA (§7.1).', 'Après validation, la page invite à revenir dans l\'app installée.'],
+  routine: ['Fourchette de reps saisie une fois par exercice, pas par série (§7.3) : « 8 » = fourchette fixe 8–8.', 'Les séries portent le type et la charge cible ; les reps viennent de la fourchette.', 'Pas de fourchette pour les types sans reps (durée).', 'Glisser-déposer par la poignée ⠿.'],
+  accueil: ['Résumé de la semaine (lun.–dim.) et série de semaines consécutives (§7.6).', 'Historique : date, titre, note, photo, durée, volume, séries, records, objectifs atteints, 3 premiers exercices (§7.5).', 'Pastille de synchro discrète en haut (§9).'],
+  seance: ['Séance vide en bouton principal, routines rangées en dossiers repliables (§7.3).', '« Modifier » ouvre l\'éditeur de routine.', '« Séance passée » = saisie a posteriori, possible même pendant une séance en cours.'],
+  biblio: ['Recherche insensible aux accents : tape « developpe ».', 'Filtres muscle + équipement, récents en tête (§7.2).', 'Pas d\'illustration en V1 : pastille avec initiales.'],
+  live: ['Objectif du jour sous le nom de l\'exercice, avec sa raison (§7.10) : montée de charge (82,5 × 6 par Marzagao), +1 rep, consolidation, +5 % de durée.', 'Valeurs en bleu = pré-remplies par l\'objectif. Un champ modifié repasse en blanc et n\'est plus jamais réécrit.', 'L\'échauffement n\'a pas d\'objectif : il reprend la valeur précédente.', 'Colonnes Série | Précédent | champs du type de mesure | ✓ : voir les 4 types (kg/Reps, +kg/Reps, Temps).', 'Touche le numéro : Normale → É → D → X. « Précédent » suit le type.', 'Cocher une série vide reprend « Précédent » ; sans précédent, le champ est mis en évidence (Gainage série 2 : essaie avec une valeur effacée).', 'Glisse une série vers la gauche pour la supprimer.', 'Minuteur basé sur l\'heure réelle, −15 s / +15 s / Passer.', 'Record strict : la série 3 à 80 × 8 n\'est pas un record après la série 1.'],
+  recap: ['Durée, volume, séries, records (au plus un par exercice et critère), objectifs atteints n / m (exercices sans objectif exclus).', 'Titre, note, photo, date, début et durée modifiables.', 'Enregistrer propose la mise à jour de la routine seulement si la structure a changé.'],
+  fiche: ['Trois onglets : Résumé, Historique, Consignes (§7.2).', 'Objectif de la prochaine séance en tête du Résumé.', 'Sur le 1RM estimé : tendance projetée en pointillés jusqu\'à +12 semaines, rythme actuel, objectif à long terme en doré et date estimée (§7.10).', 'Réglages de progression : incrément, fourchette par défaut, objectif à long terme.', 'Courbe à une seule série, survol = réticule et info-bulle.', 'Meilleur poids « à au moins N reps ».'],
+  profil: ['Photo, nom, nombre de séances, graphique hebdo au choix (§7.1).', 'Aucune fonction sociale (v0.4).'],
+  stats: ['Calendrier des jours d\'entraînement, séries par muscle (principal 1, secondaire 0,5), records récents.'],
+  parametres: ['Sombre par défaut (usage en salle).', 'Unités, minuteur, écran allumé, notifications, compte et export.', 'Progression : objectifs activés ou non, ancienneté modifiable (§7.8).', 'À propos : bouton de test de notification (lot L0) et journal d\'erreurs local.']
+};
+function renderNotes(name) {
+  $('#notes').innerHTML = `<h3>${$(`#viewport .screen[data-screen="${name}"]`).dataset.title}</h3><ul>${(NOTES[name] || []).map(n => `<li>${n}</li>`).join('')}</ul>`;
+}
+
+/* =========================================================
+   Planche (tous les écrans côte à côte, statique)
+   ========================================================= */
+// Cette méthode permet de construire la planche de tous les écrans lorsque l'on passe en mode « Planche ».
+function buildBoard() {
+  const bv = $('#boardview'); bv.innerHTML = '';
+  const live = state.session;
+  if (!live) startSession();
+  renderRecap();
+  $$('#viewport .screen').forEach(s => {
+    const cell = document.createElement('div'); cell.className = 'board-cell';
+    const ph = document.createElement('div'); ph.className = 'phone';
+    ph.innerHTML = $('#phone').querySelector('.island').outerHTML + $('#phone').querySelector('.statusbar').outerHTML;
+    const vp = document.createElement('div'); vp.className = 'viewport';
+    const clone = s.cloneNode(true); clone.removeAttribute('id'); clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    vp.appendChild(clone);
+    if (s.dataset.screen === 'live') { const rp = $('#restPanel').cloneNode(true); rp.removeAttribute('id'); rp.classList.add('show');
+      rp.querySelector('.time').textContent = '1:47'; rp.querySelector('.bar i').style.width = '89%'; vp.appendChild(rp); }
+    ph.appendChild(vp);
+    if (s.dataset.tab) { const tb = $('#tabbar').cloneNode(true); tb.removeAttribute('id'); tb.style.display = 'flex';
+      tb.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === s.dataset.tab)); ph.appendChild(tb); }
+    cell.innerHTML = `<div class="cap">${s.dataset.title}</div>`; cell.appendChild(ph); bv.appendChild(cell);
+  });
+  // Les graphiques clonés perdent leurs écouteurs : ils restent statiques, c'est voulu.
+}
+
+/* =========================================================
+   Événements
+   ========================================================= */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, [data-go], [data-toast], .hist[data-open]');
+  if (!e.target.closest('#exMenu') && !e.target.closest('[data-exmenu]')) $('#exMenu').classList.remove('show');
+  if (!t) return;
+  const ds = t.dataset;
+  if (ds.go) return go(ds.go);
+  if (ds.open) return go(ds.open);
+  if (ds.toast) return toast(ds.toast);
+  if (ds.action === 'start-routine') { if (state.session) return go('live'); startSession(); return go('live'); }
+  if (ds.action === 'start-empty') { if (state.session) { toast('Une séance est déjà en cours'); return go('live'); } startSession(true); return go('live'); }
+  if (ds.action === 'fold') return t.parentElement.classList.toggle('closed');
+  if (ds.pick !== undefined) { [...t.parentElement.children].forEach(b => b.classList.toggle('on', b === t)); return; }
+  if (ds.action === 'signup') return dialog('Activer les notifications ?', '<p>Overload te prévient à la fin du temps de repos, même écran verrouillé.</p>',
+    [{label: 'Activer', cls: 'btn-primary', fn: () => { go('seance'); toast('Crée ta première routine ou démarre une séance vide'); }}, {label: 'Plus tard', fn: () => go('seance')}]);
+  if (ds.action === 'forgot') return dialog('E-mail envoyé', '<p>Ouvre le lien reçu à paul@exemple.fr. Il s\'ouvre dans Safari, pas dans l\'app : choisis ton nouveau mot de passe, puis reviens ici.</p>',
+    [{label: 'Simuler : ouvrir le lien', cls: 'btn-primary', fn: () => { $('#resetForm').style.display = ''; $('#resetDone').style.display = 'none'; go('reset'); }}, {label: 'OK'}]);
+  if (ds.action === 'reset') { $('#resetForm').style.display = 'none'; $('#resetDone').style.display = ''; return; }
+  if (ds.action === 'routine-save') { toast('Routine enregistrée'); return go('seance'); }
+  if (ds.action === 'back') return go(state.prevScreen === state.screen ? 'accueil' : state.prevScreen);
+  if (ds.action === 'minimize') return go('accueil');
+  if (ds.action === 'finish') return finish();
+  if (ds.action === 'discard') return discard();
+  if (ds.action === 'save') return save();
+  if (ds.action === 'add-ex') { state.pick = true; return go('biblio'); }
+  if (ds.ex) { if (state.pick) { state.pick = false;
+      workout.push({name: ds.ex, type: ds.ex.includes('Gainage') ? 'dur' : 'wr', rest: 90, best: 0, note: '', last: [], sets: [{t: 'N', v: ds.ex.includes('Gainage') ? [''] : ['', '']}]});
+      renderLive(); return go('live'); } return go('fiche'); }
+  if (ds.muscle) { state.muscle = ds.muscle; return renderLib(); }
+  if (ds.equip) { state.equip = ds.equip; return renderLib(); }
+  if (ds.metric) { chartState.metric = ds.metric; return drawLine($('#lineChart')); }
+  if (ds.p !== undefined && t.closest('#periodSeg')) { $$('#periodSeg button').forEach(b => b.classList.toggle('on', b === t)); chartState.period = +ds.p; return drawLine($('#lineChart')); }
+  if (ds.m) { $$('#barSeg button').forEach(b => b.classList.toggle('on', b === t)); barMetric = ds.m; return drawBars($('#barChart')); }
+  if (ds.pane) { $$('#ficheTabs button').forEach(b => b.classList.toggle('on', b === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === ds.pane)); return; }
+  if (t.classList.contains('switch')) return t.classList.toggle('on');
+  if (ds.theme) return setTheme(ds.theme === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : ds.theme, ds.theme);
+  if (ds.mode) { $$('#modeSeg button').forEach(b => b.classList.toggle('on', b === t)); document.body.classList.toggle('board', ds.mode === 'board'); if (ds.mode === 'board') buildBoard(); return; }
+  if (t.closest('.set-row .seg')) { [...t.parentElement.children].forEach(b => b.classList.toggle('on', b === t)); return; }
+  if (ds.rest) { const r = state.rest; if (!r) return; if (ds.rest === 'skip') { state.rest = null; $('#restPanel').classList.remove('show'); return; }
+    r.end += +ds.rest * 1000; r.total = Math.max(r.total, (r.end - Date.now()) / 1000); return tickRest(); }
+  if (ds.addset !== undefined) { const ex = workout[+ds.addset], l = ex.sets[ex.sets.length - 1];
+    ex.sets.push({t: 'N', v: l ? [...l.v] : (ex.type === 'dur' ? [''] : ['', ''])}); return renderLive(); }
+  if (ds.restcycle !== undefined) { const ex = workout[+ds.restcycle], c = [0, 60, 90, 120, 180]; ex.rest = c[(c.indexOf(ex.rest) + 1) % c.length]; return renderLive(); }
+  if (ds.exmenu !== undefined) { state.menuEx = +ds.exmenu; const m = $('#exMenu'), r = t.getBoundingClientRect(), v = $('#viewport').getBoundingClientRect();
+    m.style.top = (r.bottom - v.top + 4) + 'px'; m.classList.add('show'); return; }
+  if (ds.menu) { const i = state.menuEx; $('#exMenu').classList.remove('show');
+    if (ds.menu === 'delete') workout.splice(i, 1);
+    if (ds.menu === 'up' && i > 0) [workout[i - 1], workout[i]] = [workout[i], workout[i - 1]];
+    if (ds.menu === 'down' && i < workout.length - 1) [workout[i + 1], workout[i]] = [workout[i], workout[i + 1]];
+    if (ds.menu === 'rest') { const c = [0, 60, 90, 120, 180]; workout[i].rest = c[(c.indexOf(workout[i].rest) + 1) % c.length]; }
+    if (ds.menu === 'replace') { state.pick = true; workout.splice(i, 1); renderLive(); return go('biblio'); }
+    return renderLive(); }
+  const tr = t.closest('tr.set');
+  if (tr) { const ei = +tr.dataset.e, si = +tr.dataset.s, ex = workout[ei], s = ex.sets[si];
+    if (ds.act === 'check') return toggleSet(ei, si);
+    if (ds.act === 'prev') { const p = prevFor(ex, si); if (p) { s.v = [...p]; s.tg = false; renderLive(); } return; }
+    if (ds.act === 'type') { const o = ['N', 'W', 'D', 'X']; s.t = o[(o.indexOf(s.t) + 1) % 4]; return renderLive(); } }
+});
+document.addEventListener('input', e => {
+  if (e.target.matches('.val')) { const {e: ei, s: si, c} = e.target.dataset, ex = workout[ei], raw = e.target.value.trim();
+    ex.sets[si].v[c] = raw === '' ? '' : (COLS[ex.type][c] === 'Temps' ? raw : +raw.replace(',', '.'));
+    ex.sets[si].tg = false; // champ modifié : il n'est plus réécrit par l'objectif
+    $$(`.val[data-e="${ei}"][data-s="${si}"]`).forEach(i => i.classList.remove('tgt'));
+    e.target.classList.remove('err'); if (ex.sets[si].done) { computePRs(); updateTotals(); } }
+  if (e.target.id === 'libSearch') renderLib();
+  if (e.target.matches('.ex-note')) workout[[...$$('.ex-note')].indexOf(e.target)].note = e.target.value;
+});
+// Glisser une série vers la gauche pour la supprimer
+let sw = null;
+document.addEventListener('pointerdown', e => { const tr = e.target.closest('tr.set'); if (tr && !e.target.matches('input')) sw = {tr, x: e.clientX}; });
+document.addEventListener('pointermove', e => { if (sw) { const dx = Math.min(0, e.clientX - sw.x); sw.tr.style.transform = `translateX(${dx}px)`; } });
+document.addEventListener('pointerup', e => { if (!sw) return; const dx = e.clientX - sw.x; sw.tr.style.transform = '';
+  if (dx < -70) { const ex = workout[+sw.tr.dataset.e]; ex.sets.splice(+sw.tr.dataset.s, 1); renderLive(); toast('Série supprimée'); } sw = null; });
+
+// Cette méthode permet d'appliquer le thème clair ou sombre lorsque l'on utilise une des bascules de thème.
+function setTheme(th, choice) {
+  document.documentElement.dataset.theme = th;
+  $$('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.theme === th));
+  $$('#themeSeg2 button').forEach(b => b.classList.toggle('on', b.dataset.theme === (choice || th)));
+  drawLine($('#lineChart')); drawBars($('#barChart'));
+  if (document.body.classList.contains('board')) buildBoard();
+}
+
+// Horloge : durée de séance et minuteur de repos recalculés depuis l'heure réelle
+setInterval(() => {
+  if (state.session) { const c = fmtClock(Date.now() - state.start); $('#liveDur').textContent = c; $('#bannerTime').textContent = c; }
+  tickRest();
+}, 250);
+
+renderLib(); renderStats(); drawLine($('#lineChart')); drawBars($('#barChart'));
+startSession(); state.session = false;
+go('accueil');
+</script>
+</body>
+</html>
