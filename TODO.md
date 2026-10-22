@@ -20,13 +20,14 @@ Toutes les fonctionnalités de la V1 sont codées. Reste : tests, finitions, dé
 
 ## 1. Tests de synchro — `feat/sync-tests` (§17 spec technique, ligne « Sync »)
 Vitest + fake-indexeddb sur `app/src/data/sync/engine.ts`, Supabase local pour l'aller-retour serveur.
-- [ ] Dernier gagne sur `client_updated_at` (horloge appareil).
-- [ ] Égalité d'horodatage départagée par l'identifiant d'appareil.
-- [ ] Écriture rejetée après reprise de la séance sur un autre appareil (`take_over_workout`).
-- [ ] Outbox non écrasée par un pull (élément local en attente conservé).
-- [ ] Reprise après coupure au milieu d'un lot (ni perte ni doublon).
-- [ ] Brancher dans la CI (job `app`, ou job dédié s'il faut Supabase local).
-Livrable : tests verts en local et en CI.
+- [x] Dernier gagne sur `client_updated_at` (horloge appareil).
+- [x] Égalité d'horodatage départagée par l'identifiant d'appareil.
+- [x] Écriture rejetée après reprise de la séance sur un autre appareil (`take_over_workout`).
+- [x] Outbox non écrasée par un pull (élément local en attente conservé).
+- [x] Reprise après coupure au milieu d'un lot (ni perte ni doublon).
+- [x] Brancher dans la CI (job `app`, ou job dédié s'il faut Supabase local).
+Livrable : tests verts en local et en CI. Fait : `npm run test:sync` (16 tests, `app/tests/sync/`), job CI `sync`.
+      Bug corrigé au passage : égalité d'horodatage au pull départagée par appareil (`shouldApply`).
 
 ## 2. E2E Playwright — `feat/e2e` (§17, ligne « E2E »)
 Le paquet et le script `npm run e2e` existent ; `app/tests/` est vide, pas de `playwright.config.ts`.

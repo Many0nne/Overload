@@ -4,6 +4,7 @@ PWA de suivi de musculation. Specs : `SPEC.md` (fonctionnelle, §F), `SPEC-TECHN
 Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`.
 
 - Front : `app/` (React 19, Vite, Dexie, Zustand). `npm run typecheck | lint | test | build` depuis `app/`.
+  Tests de synchro contre Supabase local (démarré) : `npm run test:sync` (`app/tests/sync/`).
 - Domaine pur et testé : `app/src/domain/` (types partagés dans `types.ts`).
 - Backend : `supabase/` (migrations, Edge Functions, pgTAP). Local : `npx supabase start`, tests `npx supabase test db`.
 - Catalogue : `scripts/build-catalog.ts` génère `supabase/seed.sql`.

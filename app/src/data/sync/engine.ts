@@ -93,6 +93,7 @@ export async function push(): Promise<{ rejected: string[] }> {
 
 // Cette méthode permet de décider si une ligne reçue remplace la ligne locale (outbox plus récente = on garde le local, §6.3).
 // Exception : une séance en cours reprise par un autre appareil s'applique toujours (§6.4).
+// À horodatage égal, même départage que le serveur : l'identifiant d'appareil le plus grand gagne (l'entrée en attente est de cet appareil).
 export function shouldApply(
   table: SyncTable,
   incoming: Record<string, unknown>,
@@ -104,7 +105,9 @@ export function shouldApply(
     const w = incoming as unknown as WorkoutRow;
     if (w.status === 'in_progress' && w.owner_device_id !== me && w.deleted_at == null) return true;
   }
-  return (incoming.client_updated_at as number) >= pending.client_updated_at;
+  const ts = incoming.client_updated_at as number;
+  if (ts !== pending.client_updated_at) return ts > pending.client_updated_at;
+  return String(incoming.client_device_id) > me;
 }
 
 // Cette méthode permet de récupérer les lignes modifiées depuis les curseurs et de les appliquer localement, page par page.
