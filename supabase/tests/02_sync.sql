@@ -117,7 +117,9 @@ insert into public.folders (id, user_id, name, client_updated_at, client_device_
 select gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001', 'f' || g, 1, gen_random_uuid() from generate_series(1, 520) g;
 select tests.authenticate_as('aaaaaaaa-0000-0000-0000-000000000001');
 create temp table pull2 as select public.sync_pull('{}'::jsonb) as r;
-select is((select jsonb_array_length(r -> 'changes' -> 'catalog') from pull2), 1, 'catalogue renvoyé sous la clé catalog');
+-- Le catalogue peut contenir le seed : on vérifie la présence de l'exercice de test, pas le nombre total.
+select ok((select (r -> 'changes' -> 'catalog') @> '[{"id": "cccccccc-0000-0000-0000-000000000009"}]'::jsonb from pull2),
+  'catalogue renvoyé sous la clé catalog');
 select is((select jsonb_array_length(r -> 'changes' -> 'folders') from pull2), 500, 'page de 500');
 select is((select (r ->> 'has_more')::boolean from pull2), true, 'has_more vrai');
 select is((select jsonb_array_length(public.sync_pull((select r -> 'cursors' from pull2)) -> 'changes' -> 'folders')), 21,

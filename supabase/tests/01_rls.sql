@@ -25,7 +25,10 @@ select tests.authenticate_as('aaaaaaaa-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.folders), 1, 'A ne voit que son dossier');
 select is((select count(*)::int from public.profiles), 1, 'A ne voit que son profil');
 select is((select count(*)::int from public.workouts), 0, 'A ne voit pas les séances de B');
-select is((select count(*)::int from public.exercises), 1, 'A voit le catalogue mais pas les exercices perso de B');
+-- Le catalogue peut contenir le seed : on ne compte que l'exercice de test et les exercices personnels visibles.
+select is((select count(*)::int from public.exercises
+  where user_id is not null or id = 'cccccccc-0000-0000-0000-000000000001'), 1,
+  'A voit le catalogue mais pas les exercices perso de B');
 select throws_ok($$insert into public.folders (id, user_id, name, client_updated_at, client_device_id)
   values (gen_random_uuid(), 'bbbbbbbb-0000-0000-0000-000000000002', 'pirate', 1, gen_random_uuid())$$,
   '42501', null, 'A ne peut pas écrire pour B');
