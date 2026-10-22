@@ -4,12 +4,12 @@ import { db } from '../db';
 import { deviceIdSync } from '../device';
 import { notifyLocalWrite } from '../sync/scheduler';
 
-export type RowOf<T extends SyncTable> = Parameters<(typeof db)[T]['put']>[0];
+export type RowOf<T extends SyncTable> = (typeof db)[T] extends Dexie.Table<infer R, string> ? R : never;
 export type Draft<T extends SyncTable> = Omit<RowOf<T>, keyof SyncMeta> & Partial<SyncMeta>;
 
 // Cette méthode permet d'enregistrer un élément complet et sa trace dans l'outbox, dans une même transaction (§6.1).
 // L'horodatage est rendu strictement croissant par élément pour que la dernière modification gagne toujours.
-export async function saveRow<T extends SyncTable>(table: T, row: Draft<T>): Promise<RowOf<T>> {
+export async function saveRow<T extends SyncTable>(table: T, row: Draft<T>): Promise<RowOf<T> & { id: string }> {
   const t = db[table] as unknown as Dexie.Table<SyncMeta & { id: string }, string>;
   let saved!: SyncMeta & { id: string };
   await db.transaction('rw', t, db.outbox, async () => {
@@ -23,7 +23,7 @@ export async function saveRow<T extends SyncTable>(table: T, row: Draft<T>): Pro
     else await db.outbox.add({ table, row_id: id, client_updated_at: now });
   });
   notifyLocalWrite();
-  return saved as unknown as RowOf<T>;
+  return saved as unknown as RowOf<T> & { id: string };
 }
 
 // Cette méthode permet de supprimer logiquement un élément (tombstone propagé par la synchro).
