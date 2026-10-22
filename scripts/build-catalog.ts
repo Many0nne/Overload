@@ -1,4 +1,5 @@
 // Génère le catalogue d'exercices (spec technique §13) : supabase/seed.sql et app/src/data/catalog.generated.json.
+// Les exercices absents de la source sont rédigés en entier dans scripts/catalog-extra.json.
 // Usage : npx tsx scripts/build-catalog.ts
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -34,6 +35,9 @@ type FrEntry = {
   primary_muscle?: Muscle;
   secondary_muscles?: Muscle[];
 };
+
+// Exercice rédigé pour l'app (absent de la source) : tous les champs sont obligatoires.
+type ExtraEntry = Required<FrEntry>;
 
 const MUSCLES: readonly Muscle[] = [
   'chest', 'back', 'shoulders', 'biceps', 'triceps', 'forearms', 'abs',
@@ -121,7 +125,12 @@ function sqlTextArray(values: string[]): string {
 }
 
 // Cette méthode permet de construire le catalogue complet lorsque la source, la liste blanche et le fichier FR sont chargés.
-function buildRows(source: SourceExercise[], allowlist: string[], fr: Record<string, FrEntry>): ExerciseRow[] {
+function buildRows(
+  source: SourceExercise[],
+  allowlist: string[],
+  fr: Record<string, FrEntry>,
+  extra: Record<string, ExtraEntry>,
+): ExerciseRow[] {
   const byId = new Map(source.map((e) => [e.id, e]));
   const names = new Set<string>();
   const rows: ExerciseRow[] = [];
@@ -131,25 +140,36 @@ function buildRows(source: SourceExercise[], allowlist: string[], fr: Record<str
     if (!allowlist.includes(id)) throw new Error(`catalog-fr.json : id absent de la liste blanche : ${id}`);
   }
 
-  for (const id of allowlist) {
+  const entries: { id: string; f: FrEntry; src?: SourceExercise }[] = allowlist.map((id) => {
     const src = byId.get(id);
     if (!src) throw new Error(`Id de la liste blanche absent de la source : ${id}`);
-    const f = fr[id];
+    return { id, f: fr[id], src };
+  });
+  for (const [id, f] of Object.entries(extra)) {
+    if (!id.startsWith('overload:')) throw new Error(`catalog-extra.json : préfixe « overload: » attendu : ${id}`);
+    if (!f.equipment || !f.primary_muscle || !f.secondary_muscles || !f.measurement_type) {
+      throw new Error(`catalog-extra.json : équipement, muscles et type de mesure obligatoires : ${id}`);
+    }
+    entries.push({ id, f });
+  }
+
+  for (const { id, f, src } of entries) {
     if (!f) throw new Error(`Traduction manquante dans catalog-fr.json : ${id}`);
     if (!f.instructions?.length || f.instructions.length > 5) throw new Error(`Consignes : 1 à 5 étapes attendues : ${id}`);
 
-    const equipment = f.equipment ?? mapEquipment(src.equipment);
-    const primary = f.primary_muscle ?? (src.category === 'cardio' ? 'cardio' : mapMuscle(src.primaryMuscles[0]));
+    // Sans source (catalog-extra.json), les champs sont tous fournis et les déductions ne s'appliquent pas.
+    const s = src as SourceExercise;
+    const equipment = f.equipment ?? mapEquipment(s.equipment);
+    const primary = f.primary_muscle ?? (s.category === 'cardio' ? 'cardio' : mapMuscle(s.primaryMuscles[0]));
     const secondary =
-      f.secondary_muscles ??
-      [...new Set(src.secondaryMuscles.map(mapMuscle))].filter((m) => m !== primary).slice(0, 4);
+      f.secondary_muscles ?? [...new Set(s.secondaryMuscles.map(mapMuscle))].filter((m) => m !== primary).slice(0, 4);
     // Les muscles principaux additionnels de la source (rare) passent en secondaires.
     if (!f.secondary_muscles) {
-      for (const extra of src.primaryMuscles.slice(1).map(mapMuscle)) {
-        if (extra !== primary && !secondary.includes(extra) && secondary.length < 4) secondary.push(extra);
+      for (const more of s.primaryMuscles.slice(1).map(mapMuscle)) {
+        if (more !== primary && !secondary.includes(more) && secondary.length < 4) secondary.push(more);
       }
     }
-    const measurement = f.measurement_type ?? deduceMeasurement(src, equipment);
+    const measurement = f.measurement_type ?? deduceMeasurement(s, equipment);
 
     if (!EQUIPMENTS.includes(equipment)) throw new Error(`Équipement invalide (${id}) : ${equipment}`);
     if (!MUSCLES.includes(primary) || secondary.some((m) => !MUSCLES.includes(m))) throw new Error(`Muscle invalide : ${id}`);
@@ -190,7 +210,7 @@ function buildSeed(rows: ExerciseRow[]): string {
   );
   return [
     '-- Fichier généré par scripts/build-catalog.ts : ne pas modifier à la main.',
-    `-- Source : free-exercise-db @ ${SOURCE_SHA} (${rows.length} exercices).`,
+    `-- Source : free-exercise-db @ ${SOURCE_SHA} + scripts/catalog-extra.json (${rows.length} exercices).`,
     'insert into public.exercises',
     '  (id, user_id, name, name_search, equipment, primary_muscle, secondary_muscles, measurement_type, instructions, source_id, client_updated_at, client_device_id)',
     'values',
@@ -229,8 +249,12 @@ async function main(): Promise<void> {
   const source = (await res.json()) as SourceExercise[];
   const allowlist = JSON.parse(readFileSync(resolve(root, 'scripts/catalog-allowlist.json'), 'utf8')) as string[];
   const fr = JSON.parse(readFileSync(resolve(root, 'scripts/catalog-fr.json'), 'utf8')) as Record<string, FrEntry>;
+  const extra = JSON.parse(readFileSync(resolve(root, 'scripts/catalog-extra.json'), 'utf8')) as Record<
+    string,
+    ExtraEntry
+  >;
 
-  const rows = buildRows(source, allowlist, fr);
+  const rows = buildRows(source, allowlist, fr, extra);
   writeFileSync(resolve(root, 'supabase/seed.sql'), buildSeed(rows));
   writeFileSync(resolve(root, 'app/src/data/catalog.generated.json'), `${JSON.stringify(rows, null, 2)}\n`);
   printStats(rows);

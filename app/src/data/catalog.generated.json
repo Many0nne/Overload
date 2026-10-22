@@ -3099,7 +3099,7 @@
       "calves",
       "glutes"
     ],
-    "measurement_type": "weight_reps",
+    "measurement_type": "weighted_bw",
     "instructions": "Cale les pieds dans la machine, hanches au bord du support.\nDescends le buste puis remonte en contractant les ischios.\nGarde le dos aligné.",
     "source_id": "Glute_Ham_Raise",
     "archived_at": null,
@@ -3928,6 +3928,44 @@
     "measurement_type": "duration",
     "instructions": "Tiens une corde dans chaque main, genoux fléchis.\nFais des ondulations rapides avec les bras.\nGarde le buste gainé.",
     "source_id": "Battling_Ropes",
+    "archived_at": null,
+    "client_updated_at": 1767225600000,
+    "client_device_id": "00000000-0000-0000-0000-000000000000",
+    "deleted_at": null
+  },
+  {
+    "id": "669ae059-ae73-5a03-893d-7cf72549722f",
+    "user_id": null,
+    "name": "Tractions assistées (machine)",
+    "name_search": "tractions assistees (machine)",
+    "equipment": "machine",
+    "primary_muscle": "back",
+    "secondary_muscles": [
+      "biceps",
+      "shoulders"
+    ],
+    "measurement_type": "assisted_bw",
+    "instructions": "Règle l'assistance et monte sur la plateforme, genoux ou pieds posés dessus.\nSaisis les poignées en pronation, mains plus larges que les épaules.\nTire-toi jusqu'à passer le menton au-dessus des poignées.\nRedescends lentement jusqu'aux bras tendus.",
+    "source_id": "overload:Machine_Assisted_Pull-Up",
+    "archived_at": null,
+    "client_updated_at": 1767225600000,
+    "client_device_id": "00000000-0000-0000-0000-000000000000",
+    "deleted_at": null
+  },
+  {
+    "id": "5e58bef7-69c9-59a2-8dc3-0d8733e688a6",
+    "user_id": null,
+    "name": "Dips assistés (machine)",
+    "name_search": "dips assistes (machine)",
+    "equipment": "machine",
+    "primary_muscle": "triceps",
+    "secondary_muscles": [
+      "chest",
+      "shoulders"
+    ],
+    "measurement_type": "assisted_bw",
+    "instructions": "Règle l'assistance et pose les genoux ou les pieds sur la plateforme.\nSaisis les poignées, bras tendus, épaules basses.\nDescends en fléchissant les coudes jusqu'à ce que les bras soient parallèles au sol.\nPousse jusqu'à l'extension des bras.",
+    "source_id": "overload:Machine_Assisted_Dip",
     "archived_at": null,
     "client_updated_at": 1767225600000,
     "client_device_id": "00000000-0000-0000-0000-000000000000",

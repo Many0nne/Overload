@@ -1,0 +1,4 @@
+{
+  "overload:Machine_Assisted_Pull-Up": { "name": "Tractions assistées (machine)", "equipment": "machine", "primary_muscle": "back", "secondary_muscles": ["biceps", "shoulders"], "measurement_type": "assisted_bw", "instructions": ["Règle l'assistance et monte sur la plateforme, genoux ou pieds posés dessus.", "Saisis les poignées en pronation, mains plus larges que les épaules.", "Tire-toi jusqu'à passer le menton au-dessus des poignées.", "Redescends lentement jusqu'aux bras tendus."] },
+  "overload:Machine_Assisted_Dip": { "name": "Dips assistés (machine)", "equipment": "machine", "primary_muscle": "triceps", "secondary_muscles": ["chest", "shoulders"], "measurement_type": "assisted_bw", "instructions": ["Règle l'assistance et pose les genoux ou les pieds sur la plateforme.", "Saisis les poignées, bras tendus, épaules basses.", "Descends en fléchissant les coudes jusqu'à ce que les bras soient parallèles au sol.", "Pousse jusqu'à l'extension des bras."] }
+}

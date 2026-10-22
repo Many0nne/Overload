@@ -120,7 +120,7 @@ L'app est un site web que l'on **ajoute à l'écran d'accueil** de l'iPhone (Saf
    - Les **fourchettes de reps** déjà définies sont conservées. Un exercice ajouté pendant la séance reçoit sa fourchette par défaut (§7.10).
 
 ### P3. Séance improvisée
-Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exercices depuis la bibliothèque. À la fin, il peut **enregistrer la séance comme routine**.
+Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exercices depuis la bibliothèque. Un exercice ajouté reprend la structure de séries de la dernière fois qu'il a été fait (nombre et type de séries), sinon une seule série normale. À la fin, une feuille propose d'**enregistrer la séance comme routine** (nom modifiable, « Créer la routine » ou « Non merci »).
 
 ### P4. Consulter sa progression
 1. Il ouvre un exercice, depuis son profil, son historique ou une séance.
