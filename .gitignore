@@ -27,5 +27,11 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
+<<<<<<< HEAD
 # Worktrees des sous-agents
 .claude/worktrees/
+=======
+# Fichiers temporaires locaux
+.tmp/
+>>>>>>> origin/main
+.tmp-local-env

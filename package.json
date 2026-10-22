@@ -1,1 +1,19 @@
-{"private":true,"type":"module","devDependencies":{"tsx":"^4.23.15","uuid":"^14.0.3"},"scripts":{"catalog":"tsx scripts/build-catalog.ts"}}
+{
+  "name": "overload",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "catalog": "tsx scripts/build-catalog.ts",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "gen:vapid": "tsx scripts/gen-vapid.ts",
+    "create-admin": "tsx scripts/create-admin.ts"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "supabase": "^2.121.0",
+    "tsx": "^4.23.15",
+    "uuid": "^14.0.3"
+  }
+}
