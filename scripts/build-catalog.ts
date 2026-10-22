@@ -13,7 +13,7 @@ const SOURCE_URL = `https://raw.githubusercontent.com/yuhonas/free-exercise-db/$
 // Namespace UUID v5 fixe : ne jamais le modifier (les ids du catalogue en dépendent).
 const NAMESPACE = '6f1b3c0e-5a7d-4f2e-9b8a-0c4d1e2f3a4b';
 const CLIENT_DEVICE_ID = '00000000-0000-0000-0000-000000000000';
-const CLIENT_UPDATED_AT = Date.UTC(2026, 0, 1); // fixe pour une sortie reproductible
+const CLIENT_UPDATED_AT = Date.UTC(2026, 0, 1); // ms epoch, figé pour un seed idempotent
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -181,7 +181,7 @@ function buildRows(source: SourceExercise[], allowlist: string[], fr: Record<str
 
 // Cette méthode permet de générer le fichier seed.sql lorsque les lignes du catalogue sont prêtes.
 function buildSeed(rows: ExerciseRow[]): string {
-  const ts = `'${new Date(CLIENT_UPDATED_AT).toISOString()}'`;
+  const ts = String(CLIENT_UPDATED_AT);
   const values = rows.map(
     (r) =>
       `  (${sqlString(r.id)}, null, ${sqlString(r.name)}, ${sqlString(r.name_search)}, ${sqlString(r.equipment)}, ` +
