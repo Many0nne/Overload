@@ -23,6 +23,32 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx vitest run
       - run: npx vite build
+      # Budget du JS initial (§15) : bloquant.
+      - run: npm run budget
+
+  # Lighthouse CI (§15) : rapport indicatif, jamais bloquant (scores trop bruités sur les runners partagés).
+  lighthouse:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npx vite build
+      - run: npm run lighthouse
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse
+          path: app/lhci/
+          retention-days: 14
 
   # Tests de synchro (§17) : moteur réel + fake-indexeddb contre Supabase local (Auth + PostgREST).
   sync:

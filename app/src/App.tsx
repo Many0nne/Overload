@@ -4,13 +4,24 @@ import { initAuth } from '@/data/auth';
 import { deviceIdSync } from '@/data/device';
 import { useInProgressWorkouts, useSettings } from '@/data/queries';
 import { useSession } from '@/data/session';
+import { useStorageUsage } from '@/data/storageUsage';
+import { useSyncStatus } from '@/data/sync/status';
+import { formatClockSkew, isClockSkewed } from '@/domain/clock';
 import { formatClock } from '@/domain/format';
-import { InstallPage, InvitePage, LoginPage, ResetPage, SignupPage } from '@/features/auth/AuthScreens';
-import { ToastHost } from '@/ui/components';
+import { isStorageNearQuota } from '@/domain/quota';
+import { Sheet, ToastHost } from '@/ui/components';
 import { DumbbellIcon, HomeIcon, UserIcon } from '@/ui/icons';
 import { isIos, isStandalone } from '@/ui/platform';
 import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { useNow } from '@/ui/useNow';
+
+// Écrans publics en lazy : absents du JS initial d'un utilisateur déjà connecté (budget §15).
+const auth = () => import('@/features/auth/AuthScreens');
+const InstallPage = lazy(() => auth().then((m) => ({ default: m.InstallPage })));
+const InvitePage = lazy(() => auth().then((m) => ({ default: m.InvitePage })));
+const LoginPage = lazy(() => auth().then((m) => ({ default: m.LoginPage })));
+const ResetPage = lazy(() => auth().then((m) => ({ default: m.ResetPage })));
+const SignupPage = lazy(() => auth().then((m) => ({ default: m.SignupPage })));
 
 const HomePage = lazy(() => import('@/features/home/HomePage'));
 const SeancePage = lazy(() => import('@/features/routines/SeancePage'));
@@ -184,10 +195,35 @@ function Root() {
   if (status === 'signed_out') return <SignedOutRoutes />;
   return (
     <>
-      {needsReauth && location.pathname !== '/login' && <ReauthNotice />}
+      <TopNotices showReauth={needsReauth && location.pathname !== '/login'} />
       <UpdatePrompt />
       <SignedInRoutes />
     </>
+  );
+}
+
+// Cette méthode permet d'empiler en haut à droite les pastilles d'alerte (reconnexion, horloge décalée, quota admin).
+function TopNotices(props: { showReauth: boolean }) {
+  const clockSkewMs = useSyncStatus((s) => s.clockSkewMs);
+  const skewed = isClockSkewed(clockSkewMs);
+  const { usedBytes, quotaBytes } = useStorageUsage();
+  const nearQuota = isStorageNearQuota(usedBytes, quotaBytes);
+  const navigate = useNavigate();
+  if (!props.showReauth && !skewed && !nearQuota) return null;
+  return (
+    <div className="top-notices">
+      {props.showReauth && <ReauthNotice />}
+      {skewed && clockSkewMs !== null && <ClockNotice skewMs={clockSkewMs} />}
+      {nearQuota && usedBytes !== null && (
+        <button
+          className="tag"
+          style={{ color: 'var(--warm)' }}
+          onClick={() => navigate('/profile/settings')}
+        >
+          Stockage {Math.floor((usedBytes / quotaBytes) * 100)} %
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -196,17 +232,7 @@ function ReauthNotice() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
-        className="tag"
-        style={{
-          position: 'fixed',
-          top: 'calc(8px + env(safe-area-inset-top))',
-          right: 12,
-          zIndex: 30,
-          color: 'var(--warm)',
-        }}
-        onClick={() => setOpen(true)}
-      >
+      <button className="tag" style={{ color: 'var(--warm)' }} onClick={() => setOpen(true)}>
         Reconnexion requise
       </button>
       {open && (
@@ -220,6 +246,34 @@ function ReauthNotice() {
   );
 }
 
+// Cette méthode permet de prévenir que l'horloge de l'appareil s'écarte de plus de 5 min de l'heure serveur :
+// « dernier gagne » pourrait alors garder la mauvaise version d'une donnée modifiée sur deux appareils (§19).
+function ClockNotice(props: { skewMs: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button className="tag" style={{ color: 'var(--warm)' }} onClick={() => setOpen(true)}>
+        Horloge décalée
+      </button>
+      <Sheet
+        open={open}
+        title="Horloge décalée"
+        onClose={() => setOpen(false)}
+        actions={[{ label: 'Compris', kind: 'primary', onClick: () => setOpen(false) }]}
+      >
+        <p>
+          L'heure de cet appareil est {formatClockSkew(props.skewMs)} sur celle du serveur. Quand une même
+          donnée est modifiée sur deux appareils, c'est la modification la plus récente selon l'horloge de
+          chaque appareil qui est gardée : un écart peut faire perdre la bonne version.
+        </p>
+        <p style={{ marginTop: 8 }}>
+          Active le réglage automatique de la date et de l'heure dans les réglages du téléphone.
+        </p>
+      </Sheet>
+    </>
+  );
+}
+
 export function App() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -229,7 +283,9 @@ export function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <Root />
+        <Suspense fallback={<div className="page" />}>
+          <Root />
+        </Suspense>
         <ToastHost />
       </div>
     </BrowserRouter>

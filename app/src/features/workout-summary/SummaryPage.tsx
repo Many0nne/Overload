@@ -192,7 +192,7 @@ export default function SummaryPage() {
             </p>
             <label className="field">
               <span>Durée (h:mm:ss)</span>
-              <input value={duration} onChange={(e) => setDuration(e.target.value)} inputMode="text" />
+              <input value={duration} onChange={(e) => setDuration(e.target.value)} inputMode="numeric" />
             </label>
           </div>
         </div>

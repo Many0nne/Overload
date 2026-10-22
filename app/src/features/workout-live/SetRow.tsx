@@ -50,6 +50,23 @@ function isTargetValue(set: WorkoutSet, field: SetField): boolean {
   return false;
 }
 
+// Cette méthode permet de sélectionner toute la valeur d'un champ qui prend le focus, pour que la frappe la remplace,
+// y compris sous Safari où le toucher replace le curseur juste après le focus (sélection refaite au tour suivant).
+function selectAll(el: HTMLInputElement): void {
+  el.select();
+  setTimeout(() => {
+    if (document.activeElement === el) el.setSelectionRange(0, el.value.length);
+  }, 0);
+}
+
+// Noms lus par VoiceOver pour les champs d'une série.
+const FIELD_LABELS: Record<SetField, string> = {
+  weight: 'Poids',
+  reps: 'Répétitions',
+  duration: 'Durée',
+  distance: 'Distance',
+};
+
 // Cette méthode permet de saisir un champ numérique : texte libre pendant la frappe (« 82, »), valeur validée à chaque changement.
 function ValueInput(props: {
   field: SetField;
@@ -64,10 +81,11 @@ function ValueInput(props: {
   const external = fieldText(props.set, props.field, props.units);
   const [text, setText] = useState(external);
   const focused = useRef(false);
+  const justFocused = useRef(false);
   useEffect(() => {
     if (!focused.current) setText(external);
   }, [external]);
-  const mode = props.field === 'reps' ? 'numeric' : props.field === 'duration' ? 'text' : 'decimal';
+  const mode = props.field === 'reps' ? 'numeric' : props.field === 'duration' ? 'numeric' : 'decimal';
   return (
     <input
       className={`val${props.target ? ' tgt' : ''}${props.error ? ' err' : ''}`}
@@ -75,10 +93,16 @@ function ValueInput(props: {
       value={text}
       placeholder={props.placeholder}
       disabled={props.disabled}
-      aria-label={props.field}
+      aria-label={FIELD_LABELS[props.field]}
       onFocus={(e) => {
         focused.current = true;
-        e.currentTarget.select();
+        justFocused.current = true;
+        selectAll(e.currentTarget);
+      }}
+      onMouseUp={(e) => {
+        // Safari place le curseur au relâchement du toucher qui donne le focus, ce qui annule la sélection.
+        if (justFocused.current) e.preventDefault();
+        justFocused.current = false;
       }}
       onBlur={() => {
         focused.current = false;

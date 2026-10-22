@@ -44,3 +44,21 @@ test('P2 complet depuis une routine : objectifs pré-remplis validés en 1 touch
     .poll(async () => (await serverWorkouts(seeded)).map((w) => [w.status, doneSets(w)]))
     .toEqual([['completed', 6]]);
 });
+
+test('modifier un poids puis valider : 2 touchers et la saisie (§F9, 3 au plus)', async ({
+  page,
+  seeded,
+}) => {
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+  const row = setRow(page, BENCH.name, 0);
+  const weight = row.getByRole('textbox', { name: 'Poids' });
+
+  await weight.tap(); // 1er toucher : le champ s'ouvre sur le pavé numérique, valeur sélectionnée
+  await expect(weight).toHaveAttribute('inputmode', 'decimal');
+  await page.keyboard.type('62,5');
+  await row.getByRole('button', { name: 'Valider la série' }).tap(); // 2e toucher
+  await expect(row).toHaveClass(/\bdone\b/);
+  await expect(weight).toHaveValue('62,5');
+  await expect(row.getByRole('textbox', { name: 'Répétitions' })).toHaveAttribute('inputmode', 'numeric');
+});

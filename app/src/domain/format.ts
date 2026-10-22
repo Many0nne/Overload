@@ -58,10 +58,14 @@ export function formatDurationHuman(totalS: number): string {
   return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`;
 }
 
-// Cette méthode permet de lire une durée saisie (« 1:30 », « 1:02:03 », ou un nombre seul en secondes) ; undefined si invalide.
+// Cette méthode permet de lire une durée saisie (« 1:30 », « 1:02:03 ») ; undefined si invalide. Des chiffres seuls se
+// lisent comme sur un minuteur, pour le pavé numérique (§F9) : « 45 » = 0:45, « 130 » = 1:30, « 10000 » = 1:00:00.
 export function parseDuration(input: string): number | undefined {
   const s = input.trim();
-  if (/^\d+$/.test(s)) return Number(s);
+  if (/^\d+$/.test(s)) {
+    const n = Number(s);
+    return Math.floor(n / 10000) * 3600 + Math.floor((n % 10000) / 100) * 60 + (n % 100);
+  }
   const m = s.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
   if (!m) return undefined;
   if (m[3] !== undefined) return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
