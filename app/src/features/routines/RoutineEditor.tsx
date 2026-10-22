@@ -464,7 +464,7 @@ export default function RoutineEditor() {
                   </span>
                   <input
                     defaultValue={fieldText(editingSet, f, settings.units)}
-                    inputMode={f === 'duration' ? 'text' : 'decimal'}
+                    inputMode={f === 'duration' ? 'numeric' : 'decimal'}
                     onBlur={(ev) => {
                       const p = parseField(ev.target.value, f, settings.units);
                       if (!p) return toast('Valeur invalide');

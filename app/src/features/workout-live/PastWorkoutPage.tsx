@@ -44,7 +44,7 @@ export default function PastWorkoutPage() {
           </label>
           <label className="field">
             <span>Durée</span>
-            <input value={duration} onChange={(e) => setDuration(e.target.value)} />
+            <input value={duration} inputMode="numeric" onChange={(e) => setDuration(e.target.value)} />
           </label>
         </div>
         <button

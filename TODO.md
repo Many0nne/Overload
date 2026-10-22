@@ -7,6 +7,7 @@
 - PR #2 domaine pur `app/src/domain/` (72 tests Vitest verts).
 - PR #3 backend Supabase : migrations, RLS, RPC, pg_cron/pg_net, Edge Functions, 55 tests pgTAP, `DEPLOY.md`.
 - PR #4 front complet de la V1 (données, synchro, shell, tous les écrans, objectifs, notifications, CI).
+- PR #5 catalogue phase 0, #6 tests de synchro, #7 E2E Playwright, puis finitions (lot 3).
 
 Toutes les fonctionnalités de la V1 sont codées. Reste : tests, finitions, déploiement, usage réel.
 
@@ -43,12 +44,19 @@ Livrable : `npm run e2e` (10 tests, `app/tests/e2e/`), ~2 min en local. Bug corr
       forcé à l'accueil depuis la feuille « Reconnexion requise » en pleine séance).
 
 ## 3. Finitions manquantes — `feat/finitions` (§19 spec technique, lot L9)
-- [ ] Avertissement d'horloge décalée : écart > 5 min entre l'appareil et l'en-tête `Date` du serveur.
-- [ ] Alerte de quota photos à 80 % du 1 Go (Storage).
-- [ ] Budgets de performance + Lighthouse CI : écran de séance < 1 s, historique/statistiques < 2 s en 4G.
-      Constat E2E : au premier lancement, rien ne s'affiche tant que `seedCatalogIfEmpty` n'a pas écrit les 220
-      exercices dans IndexedDB (~4 s sous WebKit Windows). Piste : rendre d'abord, remplir le catalogue ensuite.
-- [ ] Revue des exigences §F9 (pavé numérique, nombre de touchers, contraste, taille de texte iOS agrandie).
+- [x] Avertissement d'horloge décalée : écart > 5 min avec l'heure serveur (RPC `server_now_ms`, l'en-tête `Date`
+      n'est pas lisible en CORS), mesuré après une synchro (au plus toutes les 10 min). Pastille « Horloge décalée » + feuille.
+- [x] Alerte de quota photos à 80 % du 1 Go : RPC `admin_storage_usage` (admin seul, pgTAP), ligne « Stockage photos »
+      dans Paramètres › Administration, pastille d'alerte au-delà de 80 %.
+- [x] Budgets de performance : `npm run budget` (JS initial < 180 Ko gzip, bloquant en CI, 176,9 Ko), test E2E
+      `perf.spec.ts` (séance de 6 exercices < 1 s, historique et stats < 2 s ; indicatif sous WebKit Windows),
+      Lighthouse CI indicatif (job `lighthouse`, rapports en artefact). Catalogue rempli en arrière-plan au premier
+      lancement ; écrans publics (connexion, inscription…) en lazy.
+- [x] Revue §F9 : contraste AA (tokens `--muted` et `--accent-fill`), zones tactiles ≥ 44 px (pseudo-élément
+      transparent), pavé numérique pour les durées (saisie façon minuteur : « 130 » = 1:30), libellés VoiceOver
+      en français, test E2E « modifier un poids puis valider » (2 touchers).
+      Bug corrigé au passage : sous Safari, le toucher sur un champ de série annulait la sélection (« 60 » + « 62,5 »
+      donnait « 662,50 »).
 
 ## 4. Déploiement prod — avec l'utilisateur (`DEPLOY.md` §2 à §7)
 Bloqué sur l'utilisateur : accès et secrets (passer par `request_secret`, jamais dans le chat).

@@ -1,16 +1,20 @@
+import { estimateClockSkew } from '@/domain/clock';
 import { logError } from '../errors';
 import { useSession } from '../session';
+import { refreshStorageUsage } from '../storageUsage';
 import { supabase, supabaseConfigured } from '../supabase';
 import { pull, push, SyncAuthError } from './engine';
 import { useSyncStatus } from './status';
 
 const DEBOUNCE_MS = 2000;
 const PULL_INTERVAL_MS = 30_000;
+const CLOCK_CHECK_INTERVAL_MS = 10 * 60_000;
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let running: Promise<void> | null = null;
 let again = false;
 let started = false;
+let lastClockCheckAt = 0;
 
 // Cette méthode permet de lancer un cycle push puis pull, sans jamais en exécuter deux en même temps.
 export function syncNow(): Promise<void> {
@@ -44,6 +48,8 @@ async function runOnce(): Promise<void> {
     await push();
     await pull();
     status.set({ lastCallFailed: false, lastSyncAt: Date.now() });
+    void checkClockSkew();
+    void refreshStorageUsage();
   } catch (e) {
     status.set({ lastCallFailed: true });
     if (e instanceof SyncAuthError) {
@@ -54,6 +60,19 @@ async function runOnce(): Promise<void> {
   } finally {
     status.set({ syncing: false });
   }
+}
+
+// Cette méthode permet de mesurer l'écart entre l'horloge de l'appareil et celle du serveur, au plus toutes les 10 min.
+// L'en-tête Date n'est pas lisible en CORS : on passe par la RPC server_now_ms (docs/contrat-serveur.md).
+async function checkClockSkew(): Promise<void> {
+  if (Date.now() - lastClockCheckAt < CLOCK_CHECK_INTERVAL_MS) return;
+  lastClockCheckAt = Date.now();
+  const t0 = Date.now();
+  const { data, error } = await supabase.rpc('server_now_ms');
+  const t1 = Date.now();
+  const serverMs = Number(data);
+  if (error || !Number.isFinite(serverMs)) return;
+  useSyncStatus.getState().set({ clockSkewMs: estimateClockSkew(t0, t1, serverMs) });
 }
 
 // Cette méthode permet de déclencher un push 2 s après la dernière écriture locale (anti-rebond).

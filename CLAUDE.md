@@ -7,6 +7,7 @@ Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`.
   Tests de synchro contre Supabase local (démarré) : `npm run test:sync` (`app/tests/sync/`).
   E2E Playwright (WebKit + Chromium, viewport iPhone) contre Supabase local : `npm run e2e` (`app/tests/e2e/`,
   build de prod servi par `vite preview` sur :4173 ; navigateurs : `npx playwright install chromium webkit`).
+  Budgets (§15) : `npm run budget` après `vite build` (JS initial < 180 Ko gzip), `npm run lighthouse` (indicatif).
 - Domaine pur et testé : `app/src/domain/` (types partagés dans `types.ts`).
 - Backend : `supabase/` (migrations, Edge Functions, pgTAP). Local : `npx supabase start`, tests `npx supabase test db`.
 - Catalogue : `scripts/build-catalog.ts` génère `supabase/seed.sql`.

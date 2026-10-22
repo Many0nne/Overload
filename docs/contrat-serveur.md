@@ -39,7 +39,8 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - `schedule_rest_timer(p_device_id uuid, p_ends_at_ms bigint, p_title text, p_body text) returns void` : upsert sur `device_id`, `sent_at = null`.
 - `cancel_rest_timer(p_device_id uuid) returns void`.
 - `health() returns text` : `'ok'`, accessible à `anon`.
-- `server_now_ms() returns bigint` : pour l'avertissement d'horloge.
+- `server_now_ms() returns bigint` : pour l'avertissement d'horloge (l'en-tête `Date` n'est pas lisible en CORS ; le client place l'heure serveur au milieu de l'aller-retour, alerte au-delà de 5 min).
+- `admin_storage_usage() returns jsonb` : `{ used_bytes, quota_bytes }`, occupation totale de Storage (tous buckets). Admin seulement, sinon `42501 forbidden`. Le client alerte à 80 %.
 
 ## Edge Functions
 - `signup-with-invite` (POST, sans JWT) : `{ code, email, password, display_name, settings }`. Le code est normalisé (majuscules, sans tirets ni espaces). Réponses : `200 { ok: true }`, `400 { error: 'invalid_code' | 'email_taken' | 'weak_password' | 'invalid_input' }`, `429 { error: 'rate_limited' }` (5 / IP / heure, table `signup_attempts`). Le client ouvre ensuite la session avec `signInWithPassword`.

@@ -51,6 +51,10 @@ describe('durées', () => {
     expect(parseDuration('1:30')).toBe(90);
     expect(parseDuration('1:02:03')).toBe(3723);
     expect(parseDuration('45')).toBe(45);
+    expect(parseDuration('90')).toBe(90);
+    expect(parseDuration('130')).toBe(90);
+    expect(parseDuration('2000')).toBe(1200);
+    expect(parseDuration('13000')).toBe(5400);
     expect(parseDuration('1:75')).toBeUndefined();
   });
 });

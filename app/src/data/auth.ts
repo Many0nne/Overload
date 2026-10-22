@@ -10,7 +10,7 @@ import { startSyncScheduler, syncNow } from './sync/scheduler';
 // Cette méthode permet de préparer la session au démarrage : session locale d'abord (hors ligne), puis écoute des changements.
 export async function initAuth(): Promise<void> {
   await getDeviceId();
-  await seedCatalogIfEmpty();
+  void seedCatalogIfEmpty().catch((e) => logError('catalog', e));
   if ('storage' in navigator && navigator.storage.persist) void navigator.storage.persist().catch(() => {});
   if (!supabaseConfigured) {
     useSession.getState().set({ status: 'signed_out' });
@@ -44,7 +44,7 @@ async function applySession(userId: string | null, email: string | null): Promis
   const known = await getMeta<string>('user_id');
   if (known && known !== userId) {
     await wipeLocalData();
-    await seedCatalogIfEmpty();
+    void seedCatalogIfEmpty().catch((e) => logError('catalog', e));
   }
   await setMeta('user_id', userId);
   useSession.getState().set({ status: 'signed_in', userId, email, needsReauth: false });

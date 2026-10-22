@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { signOut } from '@/data/auth';
 import { enablePush, sendTestNotification } from '@/data/push';
 import { useProfile, useSettings } from '@/data/queries';
 import { updateSettings } from '@/data/repositories';
 import { useSession } from '@/data/session';
+import { refreshStorageUsage, useStorageUsage } from '@/data/storageUsage';
 import { supabase } from '@/data/supabase';
 import { syncNow } from '@/data/sync/scheduler';
 import { TRAINING_AGE_LABELS } from '@/domain/labels';
+import { formatStorageUsage, isStorageNearQuota } from '@/domain/quota';
 import type { Settings, TrainingAgeBucket } from '@/domain/types';
 import { Seg, Sheet, SubHead, Switch, toast } from '@/ui/components';
 import { formatInviteCode } from '@/ui/platform';
@@ -18,6 +20,32 @@ import { exportData } from './exportData';
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
 
 // Cette méthode permet d'afficher et de modifier tous les paramètres de l'utilisateur (§F7.8).
+// Cette méthode permet d'afficher à l'admin l'occupation de Storage, relue à l'ouverture, en alerte au-delà de 80 % (§19).
+function AdminSection() {
+  const { usedBytes, quotaBytes } = useStorageUsage();
+  const near = isStorageNearQuota(usedBytes, quotaBytes);
+  useEffect(() => {
+    void refreshStorageUsage(true);
+  }, []);
+  return (
+    <div className="section">
+      <div className="section-title">Administration</div>
+      <div className="set-row">
+        Stockage photos
+        <span className={near ? undefined : 't2'} style={near ? { color: 'var(--warm)' } : undefined}>
+          {usedBytes === null ? '—' : formatStorageUsage(usedBytes, quotaBytes)}
+        </span>
+      </div>
+      {near && (
+        <p className="t2" style={{ padding: '0 16px 12px' }}>
+          Le quota de 1 Go approche : au-delà, l'envoi des photos échouera. Supprimer d'anciennes photos ou
+          passer à une offre Supabase supérieure.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const settings = useSettings();
@@ -172,6 +200,8 @@ export default function SettingsPage() {
           <span />
         </button>
       </div>
+
+      {profile?.is_admin && <AdminSection />}
 
       <div className="section">
         <div className="section-title">À propos</div>

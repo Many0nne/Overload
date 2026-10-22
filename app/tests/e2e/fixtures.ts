@@ -186,6 +186,26 @@ export async function waitForOfflineReady(page: Page): Promise<void> {
   await expect(page.getByRole('link', { name: 'Accueil' })).toBeVisible();
 }
 
+// Cette méthode permet de lire dans IndexedDB (base locale Dexie « overload ») le document d'une séance,
+// pour attendre qu'une saisie soit réellement écrite avant de recharger ou de couper l'app.
+export async function localWorkoutDoc(page: Page, workoutId: string): Promise<WorkoutDoc | undefined> {
+  return page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('overload');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    try {
+      return await new Promise<WorkoutDoc | undefined>((resolve) => {
+        const get = db.transaction('workouts').objectStore('workouts').get(id);
+        get.onsuccess = () => resolve((get.result as WorkoutRow | undefined)?.doc);
+      });
+    } finally {
+      db.close();
+    }
+  }, workoutId);
+}
+
 // Cette méthode permet de démarrer la routine depuis l'onglet Séance et d'attendre l'écran de séance.
 export async function startRoutine(page: Page, routineName: string): Promise<void> {
   await page.getByRole('link', { name: 'Séance' }).click();
