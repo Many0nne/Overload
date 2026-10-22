@@ -16,7 +16,7 @@ import { workoutVolumeKg } from '@/domain/volume';
 import { ExerciseList } from '@/features/library/ExerciseList';
 import { Sheet, toast } from '@/ui/components';
 import { ChevronDownIcon, TimerIcon } from '@/ui/icons';
-import { formatClock } from '@/ui/time';
+import { formatClock } from '@/domain/format';
 import { useNow } from '@/ui/useNow';
 import { useWakeLock } from '@/ui/wakeLock';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -222,7 +222,7 @@ export default function LiveWorkoutPage() {
     if (!id) return;
     await timer.skip();
     await deleteWorkout(id);
-    navigate('/seance', { replace: true });
+    navigate(live ? '/seance' : '/', { replace: true });
   };
 
   if (row === undefined || !doc) return <div className="page no-tab" />;
@@ -330,11 +330,9 @@ export default function LiveWorkoutPage() {
           <button className="btn btn-soft btn-block" style={{ color: 'var(--accent)' }} onClick={() => setPicker({})}>
             + Ajouter un exercice
           </button>
-          {live && (
-            <button className="btn btn-soft btn-danger btn-block" style={{ marginTop: 8 }} onClick={() => setDialog('discard')}>
-              Abandonner
-            </button>
-          )}
+          <button className="btn btn-soft btn-danger btn-block" style={{ marginTop: 8 }} onClick={() => setDialog('discard')}>
+            {live ? 'Abandonner' : 'Supprimer la séance'}
+          </button>
         </div>
       )}
 
@@ -381,14 +379,14 @@ export default function LiveWorkoutPage() {
       </Sheet>
       <Sheet
         open={dialog === 'discard'}
-        title="Abandonner la séance ?"
+        title={live ? 'Abandonner la séance ?' : 'Supprimer la séance ?'}
         onClose={() => setDialog(null)}
         actions={[
-          { label: 'Abandonner', kind: 'danger', onClick: discard },
+          { label: live ? 'Abandonner' : 'Supprimer', kind: 'danger', onClick: discard },
           { label: 'Continuer la séance', onClick: () => setDialog(null) },
         ]}
       >
-        <p>Rien ne sera conservé.</p>
+        <p>{live ? 'Rien ne sera conservé.' : 'Les records et statistiques seront recalculés.'}</p>
       </Sheet>
       <Sheet
         open={dialog === 'takeover'}

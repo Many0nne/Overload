@@ -9,7 +9,7 @@ import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { DumbbellIcon, HomeIcon, UserIcon } from '@/ui/icons';
 import { isIos, isStandalone } from '@/ui/platform';
 import { useNow } from '@/ui/useNow';
-import { formatClock } from '@/ui/time';
+import { formatClock } from '@/domain/format';
 import { deviceIdSync } from '@/data/device';
 
 const HomePage = lazy(() => import('@/features/home/HomePage'));

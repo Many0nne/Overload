@@ -11,17 +11,12 @@ import { syncNow } from '@/data/sync/scheduler';
 import { enablePush, sendTestNotification } from '@/data/push';
 import { Seg, Sheet, SubHead, Switch, toast } from '@/ui/components';
 import { formatInviteCode } from '@/ui/platform';
+import { formatRest } from '@/ui/time';
 import { exportData } from './exportData';
 import { DeleteAccountSheet } from './DeleteAccountSheet';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
 
-// Cette méthode permet d'afficher un temps de repos lisible (1 min 30, 45 s, Off).
-export function formatRest(s: number | null): string {
-  if (s === null) return 'Off';
-  if (s < 60) return `${s} s`;
-  return `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60}` : ''}`;
-}
 
 // Cette méthode permet d'afficher et de modifier tous les paramètres de l'utilisateur (§F7.8).
 export default function SettingsPage() {

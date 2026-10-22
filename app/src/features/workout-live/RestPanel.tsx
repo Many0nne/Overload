@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNow } from '@/ui/useNow';
-import { formatClock } from '@/ui/time';
+import { formatDuration } from '@/domain/format';
 import { playRestEndSound, useRestTimer } from './restTimer';
 
 // Cette méthode permet d'afficher le minuteur de repos (−15 s, +15 s, Passer), recalculé sur l'heure réelle (§8.1).
@@ -24,7 +24,7 @@ export function RestPanel(props: { sound: boolean; notify: boolean }) {
   return (
     <div className="rest-panel show" role="timer" aria-live="off">
       <div className="lbl">Repos · {timer.label}</div>
-      <div className="time">{left > 0 ? formatClock(Math.ceil(left)) : 'Terminé'}</div>
+      <div className="time">{left > 0 ? formatDuration(Math.ceil(left)) : 'Terminé'}</div>
       <div className="bar">
         <i style={{ width: `${pct}%` }} />
       </div>

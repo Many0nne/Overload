@@ -5,7 +5,7 @@ import { setLabels } from '@/domain/labels';
 import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
 import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
-import { formatRest } from '@/features/settings/SettingsPage';
+import { formatRest } from '@/ui/time';
 import { initials } from '@/features/library/ExerciseList';
 import { Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
