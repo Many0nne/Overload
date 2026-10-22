@@ -24,6 +24,27 @@ jobs:
       - run: npx vitest run
       - run: npx vite build
 
+  # Tests de synchro (§17) : moteur réel + fake-indexeddb contre Supabase local (Auth + PostgREST).
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start -x studio,imgproxy,mailpit,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+      - run: npm ci
+        working-directory: app
+      - run: npm run test:sync
+        working-directory: app
+        env:
+          SUPABASE_CLI: supabase
+
   database:
     runs-on: ubuntu-latest
     steps:

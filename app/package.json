@@ -12,6 +12,7 @@
     "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:sync": "vitest run --config vitest.sync.config.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

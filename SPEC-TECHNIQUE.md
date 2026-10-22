@@ -288,7 +288,7 @@ Toute modification passe par un repository qui, **dans une même transaction Dex
 ### 6.3 Pull
 - RPC `sync_pull(cursors jsonb)` : renvoie pour chaque table les lignes `rev > curseur` (lignes du compte, plus les exercices du catalogue), par pages de 500.
 - Déclenché au démarrage, au retour au premier plan, au retour du réseau, après chaque push, et **toutes les 30 s** quand l'app est visible. Cela tient l'objectif « visible sur l'autre appareil en moins d'une minute » sans Realtime.
-- Application locale : une ligne reçue remplace la ligne locale **sauf** si l'élément a une entrée dans l'outbox avec un `client_updated_at` plus récent (modification locale pas encore poussée).
+- Application locale : une ligne reçue remplace la ligne locale **sauf** si l'élément a une entrée dans l'outbox avec un `client_updated_at` plus récent (modification locale pas encore poussée). À horodatage égal, même départage que le serveur : la ligne reçue ne s'applique que si son `client_device_id` est supérieur à celui de cet appareil.
 - Le catalogue a son propre curseur (`rev` global sous verrou `catalog`), car il n'appartient à aucun compte.
 
 ### 6.4 Séance en cours sur plusieurs appareils
