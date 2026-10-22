@@ -204,20 +204,19 @@ export function SignupPage() {
 
 // Cette méthode permet d'afficher la connexion, avec la demande de réinitialisation du mot de passe.
 export function LoginPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Cette méthode permet de lancer la connexion et de revenir à l'accueil.
+  // Cette méthode permet de lancer la connexion. Pas de navigation ici : la session ouverte, le routeur quitte /login
+  // de lui-même, et l'écran où l'on est (séance en cours, onglet touché pendant la synchro) est conservé.
   const submit = async () => {
     setBusy(true);
     setError(null);
     const err = await signIn(email, password);
     setBusy(false);
     if (err) setError(err);
-    else navigate('/', { replace: true });
   };
 
   // Cette méthode permet d'envoyer l'e-mail de réinitialisation à l'adresse saisie.

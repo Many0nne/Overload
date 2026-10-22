@@ -30,19 +30,24 @@ Livrable : tests verts en local et en CI. Fait : `npm run test:sync` (16 tests, 
       Bug corrigé au passage : égalité d'horodatage au pull départagée par appareil (`shouldApply`).
 
 ## 2. E2E Playwright — `feat/e2e` (§17, ligne « E2E »)
-Le paquet et le script `npm run e2e` existent ; `app/tests/` est vide, pas de `playwright.config.ts`.
-- [ ] Config : WebKit + Chromium, viewport iPhone, serveur Vite + Supabase local, comptes de test seedés.
-- [ ] P2 complet depuis une routine ; objectif pré-rempli validé en 1 toucher ; compteur « objectifs atteints ».
-- [ ] P2 en `context.setOffline(true)` puis synchro au retour du réseau.
-- [ ] Rechargement en pleine séance sans perte.
-- [ ] Deux contextes = deux appareils : séance visible sur le second, reprise, lecture seule sur le premier.
-- [ ] Minuteur juste après un saut d'horloge simulé (`page.clock`).
-- [ ] Job CI (peut tourner seulement sur `main` si trop lent).
+- [x] Config : WebKit + Chromium, viewport iPhone 15, build de prod servi par `vite preview` (service worker actif),
+      Supabase local, un compte seedé par test (service_role : profil, routine « Push E2E », séance d'il y a 3 jours).
+- [x] P2 complet depuis une routine ; objectif pré-rempli validé en 1 toucher ; compteur « objectifs atteints » (2/2).
+- [x] P2 en `context.setOffline(true)` puis synchro au retour du réseau.
+- [x] Rechargement en pleine séance sans perte (en ligne puis hors ligne via le service worker).
+- [x] Deux contextes = deux appareils : séance visible sur le second, reprise, lecture seule sur le premier.
+- [x] Minuteur juste après un saut d'horloge simulé (`page.clock`).
+- [x] Job CI `e2e` (sur chaque PR ; rapport et traces en artefact en cas d'échec).
+Livrable : `npm run e2e` (10 tests, `app/tests/e2e/`), ~2 min en local. Bug corrigé au passage : après connexion,
+      `LoginPage` renvoyait à l'accueil à la fin de la première synchro (onglet touché entre-temps annulé, et retour
+      forcé à l'accueil depuis la feuille « Reconnexion requise » en pleine séance).
 
 ## 3. Finitions manquantes — `feat/finitions` (§19 spec technique, lot L9)
 - [ ] Avertissement d'horloge décalée : écart > 5 min entre l'appareil et l'en-tête `Date` du serveur.
 - [ ] Alerte de quota photos à 80 % du 1 Go (Storage).
 - [ ] Budgets de performance + Lighthouse CI : écran de séance < 1 s, historique/statistiques < 2 s en 4G.
+      Constat E2E : au premier lancement, rien ne s'affiche tant que `seedCatalogIfEmpty` n'a pas écrit les 220
+      exercices dans IndexedDB (~4 s sous WebKit Windows). Piste : rendre d'abord, remplir le catalogue ensuite.
 - [ ] Revue des exigences §F9 (pavé numérique, nombre de touchers, contraste, taille de texte iOS agrandie).
 
 ## 4. Déploiement prod — avec l'utilisateur (`DEPLOY.md` §2 à §7)
