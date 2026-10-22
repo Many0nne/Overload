@@ -1,7 +1,14 @@
 import { lazy, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
 import { useExerciseMap, useFolders, useRoutines } from '@/data/queries';
-import { createFolder, deleteFolder, deleteRoutine, duplicateRoutine, updateFolder, updateRoutine } from '@/data/repositories';
+import {
+  createFolder,
+  deleteFolder,
+  deleteRoutine,
+  duplicateRoutine,
+  updateFolder,
+  updateRoutine,
+} from '@/data/repositories';
 import type { FolderRow, RoutineRow } from '@/domain/types';
 import { startEmptyWorkout, startFromRoutine, WorkoutAlreadyRunning } from '@/features/workout-live/start';
 import { Sheet, toast } from '@/ui/components';
@@ -67,7 +74,10 @@ function SeanceHome() {
   const [confirm, setConfirm] = useState<{ title: string; run: () => Promise<void> } | null>(null);
 
   const groups: { folder: FolderRow | null; list: RoutineRow[] }[] = [
-    ...(folders ?? []).map((f) => ({ folder: f, list: (routines ?? []).filter((r) => r.folder_id === f.id) })),
+    ...(folders ?? []).map((f) => ({
+      folder: f,
+      list: (routines ?? []).filter((r) => r.folder_id === f.id),
+    })),
   ];
   const known = new Set((folders ?? []).map((f) => f.id));
   const loose = (routines ?? []).filter((r) => !r.folder_id || !known.has(r.folder_id));
@@ -133,14 +143,19 @@ function SeanceHome() {
         {groups.map(({ folder, list }) => {
           const closed = folder?.collapsed ?? false;
           return (
-            <div key={folder?.id ?? 'none'} className={`folder${closed ? ' closed' : ''}`} style={{ marginTop: 12 }}>
+            <div
+              key={folder?.id ?? 'none'}
+              className={`folder${closed ? ' closed' : ''}`}
+              style={{ marginTop: 12 }}
+            >
               {(folder || groups.length > 1) && (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <button
                     className="folder-h"
                     onClick={() => folder && void updateFolder(folder.id, { collapsed: !folder.collapsed })}
                   >
-                    <span className="chev">▾</span> {folder?.name ?? 'Mes routines'} <span className="count">{list.length}</span>
+                    <span className="chev">▾</span> {folder?.name ?? 'Mes routines'}{' '}
+                    <span className="count">{list.length}</span>
                   </button>
                   {folder && (
                     <button
@@ -177,7 +192,11 @@ function SeanceHome() {
                     </button>
                   </div>
                 ))}
-                {folder && list.length === 0 && <p className="muted" style={{ fontSize: '.8125rem', padding: '0 0 8px' }}>Dossier vide.</p>}
+                {folder && list.length === 0 && (
+                  <p className="muted" style={{ fontSize: '.8125rem', padding: '0 0 8px' }}>
+                    Dossier vide.
+                  </p>
+                )}
               </div>
             </div>
           );
@@ -201,8 +220,20 @@ function SeanceHome() {
           },
           ...(folderSheet && folderSheet !== 'new'
             ? [
-                { label: 'Monter', onClick: async () => (await moveFolder(folderSheet, -1), setFolderSheet(null)) },
-                { label: 'Descendre', onClick: async () => (await moveFolder(folderSheet, 1), setFolderSheet(null)) },
+                {
+                  label: 'Monter',
+                  onClick: async () => {
+                    await moveFolder(folderSheet, -1);
+                    setFolderSheet(null);
+                  },
+                },
+                {
+                  label: 'Descendre',
+                  onClick: async () => {
+                    await moveFolder(folderSheet, 1);
+                    setFolderSheet(null);
+                  },
+                },
                 {
                   label: 'Supprimer le dossier',
                   kind: 'danger' as const,
@@ -220,7 +251,9 @@ function SeanceHome() {
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. PPL" />
         </label>
         {folderSheet !== 'new' && (
-          <p style={{ fontSize: '.8125rem', marginTop: 8 }}>Supprimer le dossier garde ses routines dans « Mes routines ».</p>
+          <p style={{ fontSize: '.8125rem', marginTop: 8 }}>
+            Supprimer le dossier garde ses routines dans « Mes routines ».
+          </p>
         )}
       </Sheet>
 
@@ -231,7 +264,11 @@ function SeanceHome() {
         actions={
           routineSheet
             ? [
-                { label: 'Modifier', kind: 'primary', onClick: () => navigate(`/seance/routine/${routineSheet.id}`) },
+                {
+                  label: 'Modifier',
+                  kind: 'primary',
+                  onClick: () => navigate(`/seance/routine/${routineSheet.id}`),
+                },
                 {
                   label: 'Dupliquer',
                   onClick: async () => {

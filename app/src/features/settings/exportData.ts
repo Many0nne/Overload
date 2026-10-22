@@ -3,7 +3,12 @@ import { useSession } from '@/data/session';
 import { syncNow } from '@/data/sync/scheduler';
 import type { SetKind } from '@/domain/types';
 
-const KIND_FR: Record<SetKind, string> = { normal: 'Normale', warmup: 'Échauffement', drop: 'Dégressive', failure: 'Échec' };
+const KIND_FR: Record<SetKind, string> = {
+  normal: 'Normale',
+  warmup: 'Échauffement',
+  drop: 'Dégressive',
+  failure: 'Échec',
+};
 
 // Cette méthode permet d'échapper une cellule CSV (séparateur ;, guillemets doublés).
 function cell(v: unknown): string {
@@ -69,7 +74,8 @@ export async function buildCsv(): Promise<string> {
 // Cette méthode permet de rassembler toutes les données du compte dans un document JSON (§14).
 export async function buildJson(): Promise<string> {
   const userId = useSession.getState().userId;
-  const live = <T extends { deleted_at?: number | null }>(rows: T[]) => rows.filter((r) => r.deleted_at == null);
+  const live = <T extends { deleted_at?: number | null }>(rows: T[]) =>
+    rows.filter((r) => r.deleted_at == null);
   const data = {
     exportedAt: new Date().toISOString(),
     app: 'Overload',
@@ -77,7 +83,12 @@ export async function buildJson(): Promise<string> {
     workouts: live(await db.workouts.toArray()),
     routines: live(await db.routines.toArray()),
     folders: live(await db.folders.toArray()),
-    customExercises: live(await db.exercises.where('user_id').equals(userId ?? '').toArray()),
+    customExercises: live(
+      await db.exercises
+        .where('user_id')
+        .equals(userId ?? '')
+        .toArray(),
+    ),
     exercisePrefs: live(await db.exercise_prefs.toArray()),
     bodyMeasurements: live(await db.body_measurements.toArray()),
   };

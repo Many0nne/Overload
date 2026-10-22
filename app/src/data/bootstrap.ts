@@ -6,7 +6,9 @@ import { db } from './db';
 export async function seedCatalogIfEmpty(): Promise<void> {
   const count = await db.exercises.count();
   if (count > 0) return;
-  const { default: rows } = (await import('./catalog.generated.json')) as { default: Omit<ExerciseRow, 'rev'>[] };
+  const { default: rows } = (await import('./catalog.generated.json')) as {
+    default: Omit<ExerciseRow, 'rev'>[];
+  };
   const existing = await db.exercises.count();
   if (existing > 0) return;
   await db.exercises.bulkPut(rows as ExerciseRow[]);

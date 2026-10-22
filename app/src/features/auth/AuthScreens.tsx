@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { TRAINING_AGE_LABELS } from '@/domain/labels';
-import { DEFAULT_SETTINGS, type Settings, type TrainingAgeBucket } from '@/domain/types';
 import { requestPasswordReset, signIn, signUpWithInvite, updatePassword } from '@/data/auth';
 import { supabase } from '@/data/supabase';
+import { TRAINING_AGE_LABELS } from '@/domain/labels';
+import { DEFAULT_SETTINGS, type Settings, type TrainingAgeBucket } from '@/domain/types';
 import { Chips, Seg, toast } from '@/ui/components';
 import { formatInviteCode, normalizeInviteCode } from '@/ui/platform';
 
@@ -39,7 +39,10 @@ export function InvitePage() {
   }, [clean]);
   return (
     <div className="page no-tab center-page">
-      <Brand title="Bienvenue sur Overload" text="Ton carnet de musculation. Installe l'app sur ton iPhone en 3 étapes." />
+      <Brand
+        title="Bienvenue sur Overload"
+        text="Ton carnet de musculation. Installe l'app sur ton iPhone en 3 étapes."
+      />
       <div className="section">
         <div className="card">
           <ol className="steps">
@@ -60,7 +63,9 @@ export function InvitePage() {
           <button
             className="btn btn-soft btn-block"
             style={{ marginTop: 14 }}
-            onClick={() => void navigator.clipboard?.writeText(formatInviteCode(clean)).then(() => toast('Code copié'))}
+            onClick={() =>
+              void navigator.clipboard?.writeText(formatInviteCode(clean)).then(() => toast('Code copié'))
+            }
           >
             Copier le code
           </button>
@@ -141,7 +146,12 @@ export function SignupPage() {
         </label>
         <label className="field">
           <span>Nom affiché</span>
-          <input placeholder="ex. Paul" value={name} onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
+          <input
+            placeholder="ex. Paul"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="nickname"
+          />
         </label>
         <label className="field">
           <span>E-mail</span>
@@ -242,7 +252,12 @@ export function LoginPage() {
           />
         </label>
         {error && <p className="error-text">{error}</p>}
-        <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: 20, height: 52 }} disabled={busy}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 20, height: 52 }}
+          disabled={busy}
+        >
           {busy ? 'Connexion…' : 'Se connecter'}
         </button>
         <button type="button" className="link-c" onClick={() => void forgot()}>
@@ -251,7 +266,10 @@ export function LoginPage() {
         <Link className="link-c" style={{ color: 'var(--text-2)', fontWeight: 500 }} to="/signup">
           J'ai un code d'invitation
         </Link>
-        <p className="muted" style={{ fontSize: '.8125rem', marginTop: 22, textAlign: 'center', lineHeight: 1.5 }}>
+        <p
+          className="muted"
+          style={{ fontSize: '.8125rem', marginTop: 22, textAlign: 'center', lineHeight: 1.5 }}
+        >
           Pas de compte ? L'inscription se fait uniquement avec le lien d'invitation d'un proche.
         </p>
       </form>
@@ -306,7 +324,12 @@ export function ResetPage() {
           {!ready && <p className="muted">Vérification du lien…</p>}
           <label className="field">
             <span>Nouveau mot de passe</span>
-            <input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} autoComplete="new-password" />
+            <input
+              type="password"
+              value={pwd}
+              onChange={(e) => setPwd(e.target.value)}
+              autoComplete="new-password"
+            />
           </label>
           <label className="field">
             <span>Confirmer</span>

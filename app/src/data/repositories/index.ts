@@ -109,7 +109,10 @@ export async function createFolder(name: string) {
 }
 
 // Cette méthode permet de renommer, replier ou déplacer un dossier.
-export async function updateFolder(id: string, patch: Partial<Pick<FolderRow, 'name' | 'collapsed' | 'position'>>) {
+export async function updateFolder(
+  id: string,
+  patch: Partial<Pick<FolderRow, 'name' | 'collapsed' | 'position'>>,
+) {
   const prev = await db.folders.get(id);
   if (!prev) return;
   return saveRow('folders', { ...prev, ...patch });
@@ -138,7 +141,10 @@ export async function createRoutine(doc: RoutineDoc, folderId: string | null) {
 }
 
 // Cette méthode permet de modifier le contenu, le dossier ou la position d'une routine.
-export async function updateRoutine(id: string, patch: Partial<Pick<RoutineRow, 'doc' | 'folder_id' | 'position'>>) {
+export async function updateRoutine(
+  id: string,
+  patch: Partial<Pick<RoutineRow, 'doc' | 'folder_id' | 'position'>>,
+) {
   const prev = await db.routines.get(id);
   if (!prev) return;
   return saveRow('routines', { ...prev, ...patch });
@@ -198,8 +204,14 @@ export const deleteWorkout = (id: string) => softDelete('workouts', id);
 // ---------- Mesures corporelles ----------
 
 // Cette méthode permet d'enregistrer une mesure datée (création ou modification).
-export async function saveMeasurement(input: { id?: string; measured_on: string; values: BodyMeasurementValues }) {
-  const prev: Partial<BodyMeasurementRow> = input.id ? ((await db.body_measurements.get(input.id)) ?? {}) : {};
+export async function saveMeasurement(input: {
+  id?: string;
+  measured_on: string;
+  values: BodyMeasurementValues;
+}) {
+  const prev: Partial<BodyMeasurementRow> = input.id
+    ? ((await db.body_measurements.get(input.id)) ?? {})
+    : {};
   return saveRow('body_measurements', {
     ...prev,
     id: input.id ?? uuidv7(),
@@ -215,7 +227,10 @@ export const deleteMeasurement = (id: string) => softDelete('body_measurements',
 // ---------- Réglages de progression ----------
 
 // Cette méthode permet de modifier les réglages de progression d'un exercice (incrément, fourchette, objectif long terme).
-export async function saveExercisePrefs(exerciseId: string, patch: Partial<Omit<ExercisePrefsDoc, 'schemaVersion'>>) {
+export async function saveExercisePrefs(
+  exerciseId: string,
+  patch: Partial<Omit<ExercisePrefsDoc, 'schemaVersion'>>,
+) {
   const userId = currentUserId();
   const id = prefsId(userId, exerciseId);
   const prev = await db.exercise_prefs.get(id);

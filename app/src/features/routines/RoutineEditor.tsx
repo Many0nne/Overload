@@ -1,4 +1,12 @@
-import { closestCenter, DndContext, type DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from 'react';
@@ -18,15 +26,22 @@ import { DotsIcon } from '@/ui/icons';
 import { formatRest } from '@/ui/time';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
-const ROUTINE_FIELDS = (type: ExerciseRow['measurement_type']): SetField[] => fieldsFor(type).filter((f) => f !== 'reps');
+const ROUTINE_FIELDS = (type: ExerciseRow['measurement_type']): SetField[] =>
+  fieldsFor(type).filter((f) => f !== 'reps');
 
 // Cette méthode permet d'afficher la cible d'une série de routine (« 80 kg », « +17,5 », « 1:10 »).
 function setChipText(s: RoutineSet, ex: ExerciseRow | undefined, units: Settings['units']): string {
   if (!ex) return '';
-  const parts = ROUTINE_FIELDS(ex.measurement_type).map((f) => fieldText(s, f, units)).filter(Boolean);
+  const parts = ROUTINE_FIELDS(ex.measurement_type)
+    .map((f) => fieldText(s, f, units))
+    .filter(Boolean);
   if (parts.length === 0) return '';
-  const prefix = ex.measurement_type === 'weighted_bw' ? '+' : ex.measurement_type === 'assisted_bw' ? '−' : '';
-  const unit = ex.measurement_type === 'weight_reps' || ex.measurement_type === 'weight_duration' ? ` ${units.weight}` : '';
+  const prefix =
+    ex.measurement_type === 'weighted_bw' ? '+' : ex.measurement_type === 'assisted_bw' ? '−' : '';
+  const unit =
+    ex.measurement_type === 'weight_reps' || ex.measurement_type === 'weight_duration'
+      ? ` ${units.weight}`
+      : '';
   return `${prefix}${parts[0]}${parts.length === 1 ? unit : ` · ${parts.slice(1).join(' · ')}`}`;
 }
 
@@ -46,7 +61,9 @@ function SortableExercise(props: {
   onEditSet: (setId: string) => void;
   onRest: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.entry.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.entry.id,
+  });
   const { entry, exercise } = props;
   const [range, setRange] = useState(rangeText(entry.repRange));
   const labels = setLabels(entry.sets.map((s) => s.kind));
@@ -55,10 +72,23 @@ function SortableExercise(props: {
     <div
       ref={setNodeRef}
       className="card re-ex"
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1, zIndex: isDragging ? 2 : undefined, position: 'relative' }}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.7 : 1,
+        zIndex: isDragging ? 2 : undefined,
+        position: 'relative',
+      }}
     >
       <div className="top">
-        <span className="grip" {...attributes} {...listeners} style={{ touchAction: 'none', padding: '6px 4px' }} aria-label="Réordonner">
+        {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: rôle et focus fournis par les attributs dnd-kit */}
+        <span
+          className="grip"
+          {...attributes}
+          {...listeners}
+          style={{ touchAction: 'none', padding: '6px 4px' }}
+          aria-label="Réordonner"
+        >
           ⠿
         </span>
         <b>{exercise?.name ?? 'Exercice supprimé'}</b>
@@ -93,13 +123,28 @@ function SortableExercise(props: {
       <div className="re-row" style={{ alignItems: 'flex-start' }}>
         <div>
           Séries
-          <small>{ROUTINE_FIELDS(type).length ? 'cible (touche pour modifier)' : 'touche pour modifier'}</small>
+          <small>
+            {ROUTINE_FIELDS(type).length ? 'cible (touche pour modifier)' : 'touche pour modifier'}
+          </small>
         </div>
         <div className="re-sets" style={{ justifyContent: 'flex-end' }}>
           {entry.sets.map((s, i) => (
-            <button key={s.id} onClick={() => props.onEditSet(s.id)} style={{ all: 'unset', cursor: 'pointer' }}>
+            <button
+              key={s.id}
+              onClick={() => props.onEditSet(s.id)}
+              style={{ all: 'unset', cursor: 'pointer' }}
+            >
               <span>
-                <em className={s.kind === 'warmup' ? 'W' : undefined} style={s.kind === 'failure' ? { color: 'var(--fail)' } : s.kind === 'drop' ? { color: 'var(--drop)' } : undefined}>
+                <em
+                  className={s.kind === 'warmup' ? 'W' : undefined}
+                  style={
+                    s.kind === 'failure'
+                      ? { color: 'var(--fail)' }
+                      : s.kind === 'drop'
+                        ? { color: 'var(--drop)' }
+                        : undefined
+                  }
+                >
                   {labels[i]}
                 </em>
                 {setChipText(s, exercise, props.units)}
@@ -111,7 +156,13 @@ function SortableExercise(props: {
             onClick={() => {
               const last = entry.sets.at(-1);
               const { id: _id, ...rest } = last ?? { id: '', kind: 'normal' as SetKind };
-              props.onChange({ ...entry, sets: [...entry.sets, { ...rest, id: uuidv7(), kind: last?.kind === 'warmup' ? 'normal' : rest.kind }] });
+              props.onChange({
+                ...entry,
+                sets: [
+                  ...entry.sets,
+                  { ...rest, id: uuidv7(), kind: last?.kind === 'warmup' ? 'normal' : rest.kind },
+                ],
+              });
             }}
           >
             <span style={{ color: 'var(--accent)' }}>+</span>
@@ -133,7 +184,9 @@ export default function RoutineEditor() {
   const settings = useSettings();
   const folders = useFolders();
   const exercises = useExerciseMap();
-  const [doc, setDoc] = useState<RoutineDoc | null>(isNew ? { schemaVersion: 1, name: '', exercises: [] } : null);
+  const [doc, setDoc] = useState<RoutineDoc | null>(
+    isNew ? { schemaVersion: 1, name: '', exercises: [] } : null,
+  );
   const [folderId, setFolderId] = useState<string | null>(null);
   const [picker, setPicker] = useState<{ replace?: string } | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
@@ -168,13 +221,22 @@ export default function RoutineEditor() {
       id: uuidv7(),
       exerciseId: ex.id,
       restS: settings.defaultRestS,
-      ...(hasReps(ex.measurement_type) && ex.measurement_type !== 'bodyweight' ? { repRange: { min: 8, max: 12 } } : {}),
+      ...(hasReps(ex.measurement_type) && ex.measurement_type !== 'bodyweight'
+        ? { repRange: { min: 8, max: 12 } }
+        : {}),
       sets: Array.from({ length: 3 }, () => ({ id: uuidv7(), kind: 'normal' as SetKind })),
     };
     setDoc((d) => {
       if (!d) return d;
       if (!replace) return { ...d, exercises: [...d.exercises, entry] };
-      return { ...d, exercises: d.exercises.map((x) => (x.id === replace ? { ...entry, restS: x.restS, sets: x.sets.map((s) => ({ id: s.id, kind: s.kind })) } : x)) };
+      return {
+        ...d,
+        exercises: d.exercises.map((x) =>
+          x.id === replace
+            ? { ...entry, restS: x.restS, sets: x.sets.map((s) => ({ id: s.id, kind: s.kind })) }
+            : x,
+        ),
+      };
     });
   };
 
@@ -216,14 +278,25 @@ export default function RoutineEditor() {
       <div className="section" style={{ marginTop: 0 }}>
         <label className="field" style={{ marginTop: 0 }}>
           <span>Nom</span>
-          <input value={doc.name} onChange={(e) => setDoc({ ...doc, name: e.target.value })} placeholder="ex. Push" />
+          <input
+            value={doc.name}
+            onChange={(e) => setDoc({ ...doc, name: e.target.value })}
+            placeholder="ex. Push"
+          />
         </label>
         <label className="field">
           <span>Dossier</span>
           <select
             value={folderId ?? ''}
             onChange={(e) => setFolderId(e.target.value || null)}
-            style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '12px 14px', color: 'var(--text)' }}
+            style={{
+              width: '100%',
+              background: 'var(--surface)',
+              border: '1px solid var(--line)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              color: 'var(--text)',
+            }}
           >
             <option value="">Mes routines (sans dossier)</option>
             {(folders ?? []).map((f) => (
@@ -257,11 +330,19 @@ export default function RoutineEditor() {
             ))}
           </SortableContext>
         </DndContext>
-        <button className="btn btn-soft btn-block" style={{ marginTop: 12, color: 'var(--accent)' }} onClick={() => setPicker({})}>
+        <button
+          className="btn btn-soft btn-block"
+          style={{ marginTop: 12, color: 'var(--accent)' }}
+          onClick={() => setPicker({})}
+        >
           + Ajouter un exercice
         </button>
         {!isNew && (
-          <button className="btn btn-danger btn-block" style={{ marginTop: 6 }} onClick={() => setConfirmDelete(true)}>
+          <button
+            className="btn btn-danger btn-block"
+            style={{ marginTop: 6 }}
+            onClick={() => setConfirmDelete(true)}
+          >
             Supprimer la routine
           </button>
         )}
@@ -269,7 +350,15 @@ export default function RoutineEditor() {
 
       {picker && (
         <div className="scrim show" style={{ alignItems: 'stretch' }}>
-          <div className="sheet" style={{ height: '100%', overflowY: 'auto', borderRadius: 0, paddingTop: 'env(safe-area-inset-top)' }}>
+          <div
+            className="sheet"
+            style={{
+              height: '100%',
+              overflowY: 'auto',
+              borderRadius: 0,
+              paddingTop: 'env(safe-area-inset-top)',
+            }}
+          >
             <div className="head" style={{ padding: '8px 0 12px' }}>
               <button className="btn-ghost" onClick={() => setPicker(null)}>
                 Annuler
@@ -286,10 +375,18 @@ export default function RoutineEditor() {
 
       <Sheet
         open={menu !== null}
-        title={menu ? exercises.get(doc.exercises.find((e) => e.id === menu)?.exerciseId ?? '')?.name : undefined}
+        title={
+          menu ? exercises.get(doc.exercises.find((e) => e.id === menu)?.exerciseId ?? '')?.name : undefined
+        }
         onClose={() => setMenu(null)}
         actions={[
-          { label: "Remplacer l'exercice", onClick: () => (setPicker({ replace: menu! }), setMenu(null)) },
+          {
+            label: "Remplacer l'exercice",
+            onClick: () => {
+              setPicker({ replace: menu! });
+              setMenu(null);
+            },
+          },
           {
             label: "Retirer l'exercice",
             kind: 'danger',
@@ -329,7 +426,8 @@ export default function RoutineEditor() {
             label: 'Supprimer la série',
             kind: 'danger',
             onClick: () => {
-              if (editing) patchEntry({ ...editing, sets: editing.sets.filter((s) => s.id !== setEdit?.setId) });
+              if (editing)
+                patchEntry({ ...editing, sets: editing.sets.filter((s) => s.id !== setEdit?.setId) });
               setSetEdit(null);
             },
           },
@@ -343,9 +441,15 @@ export default function RoutineEditor() {
                 stretch
                 value={editingSet.kind}
                 onChange={(kind) =>
-                  patchEntry({ ...editing, sets: editing.sets.map((s) => (s.id === editingSet.id ? { ...s, kind } : s)) })
+                  patchEntry({
+                    ...editing,
+                    sets: editing.sets.map((s) => (s.id === editingSet.id ? { ...s, kind } : s)),
+                  })
                 }
-                options={(['normal', 'warmup', 'drop', 'failure'] as SetKind[]).map((k) => ({ value: k, label: SET_KIND_LABELS[k] }))}
+                options={(['normal', 'warmup', 'drop', 'failure'] as SetKind[]).map((k) => ({
+                  value: k,
+                  label: SET_KIND_LABELS[k],
+                }))}
               />
             </div>
             {editingEx &&
@@ -364,7 +468,10 @@ export default function RoutineEditor() {
                     onBlur={(ev) => {
                       const p = parseField(ev.target.value, f, settings.units);
                       if (!p) return toast('Valeur invalide');
-                      patchEntry({ ...editing, sets: editing.sets.map((s) => (s.id === editingSet.id ? { ...s, ...p } : s)) });
+                      patchEntry({
+                        ...editing,
+                        sets: editing.sets.map((s) => (s.id === editingSet.id ? { ...s, ...p } : s)),
+                      });
                     }}
                   />
                 </label>

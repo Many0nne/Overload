@@ -5,10 +5,10 @@ import { setLabels } from '@/domain/labels';
 import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
 import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
-import { formatRest } from '@/ui/time';
 import { initials } from '@/features/library/ExerciseList';
 import { Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
+import { formatRest } from '@/ui/time';
 import { type SetPatch, SetRow } from './SetRow';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
@@ -49,9 +49,12 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const name = props.exercise?.name ?? 'Exercice supprimé';
   const kinds = entry.sets.map((s) => s.kind);
   const labels = setLabels(kinds);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: comparaison par valeur des types de série
   const prev = useMemo(() => previousSets(kinds, props.previous), [kinds.join(), props.previous]);
   const cols = columnLabels(entry.measurementType, props.units);
-  const reason = entry.targetReason ? formatReason(entry.targetReason, entry.measurementType, props.units) : undefined;
+  const reason = entry.targetReason
+    ? formatReason(entry.targetReason, entry.measurementType, props.units)
+    : undefined;
   const targets = entry.sets.map((s) => s.target);
   const hasTargets = targets.some(Boolean);
 
@@ -141,16 +144,53 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         title={name}
         onClose={() => setMenu(false)}
         actions={[
-          { label: "Remplacer l'exercice", onClick: () => (setMenu(false), a.onReplace(entry.id)) },
-          ...(!props.isFirst ? [{ label: 'Monter', onClick: () => (setMenu(false), a.onMove(entry.id, -1)) }] : []),
-          ...(!props.isLast ? [{ label: 'Descendre', onClick: () => (setMenu(false), a.onMove(entry.id, 1)) }] : []),
+          {
+            label: "Remplacer l'exercice",
+            onClick: () => {
+              setMenu(false);
+              a.onReplace(entry.id);
+            },
+          },
+          ...(!props.isFirst
+            ? [
+                {
+                  label: 'Monter',
+                  onClick: () => {
+                    setMenu(false);
+                    a.onMove(entry.id, -1);
+                  },
+                },
+              ]
+            : []),
+          ...(!props.isLast
+            ? [
+                {
+                  label: 'Descendre',
+                  onClick: () => {
+                    setMenu(false);
+                    a.onMove(entry.id, 1);
+                  },
+                },
+              ]
+            : []),
           ...(props.showRest
-            ? [{ label: 'Modifier le temps de repos', onClick: () => (setMenu(false), setRestSheet(true)) }]
+            ? [
+                {
+                  label: 'Modifier le temps de repos',
+                  onClick: () => {
+                    setMenu(false);
+                    setRestSheet(true);
+                  },
+                },
+              ]
             : []),
           {
             label: "Supprimer l'exercice",
             kind: 'danger' as const,
-            onClick: () => (setMenu(false), a.onRemove(entry.id)),
+            onClick: () => {
+              setMenu(false);
+              a.onRemove(entry.id);
+            },
           },
         ]}
       />

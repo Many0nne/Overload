@@ -4,7 +4,7 @@ import { loadCompletedWorkouts } from '@/data/queries';
 import { createWorkout } from '@/data/repositories';
 import { useSession } from '@/data/session';
 import { uuidv7 } from '@/domain/ids';
-import { previousSets, exerciseInWorkout, lastTime, prefillValues } from '@/domain/previous';
+import { exerciseInWorkout, lastTime, prefillValues, previousSets } from '@/domain/previous';
 import { applyTargets, computeTargets, lastRoutineRepRange, resolveRepRange } from '@/domain/progression';
 import {
   DEFAULT_SETTINGS,
@@ -12,8 +12,8 @@ import {
   type ExerciseRow,
   type RoutineExercise,
   type RoutineRow,
-  type Settings,
   type SetKind,
+  type Settings,
   type WorkoutDoc,
   type WorkoutExercise,
   type WorkoutRow,
@@ -86,7 +86,8 @@ export function buildWorkoutExercise(
         repRange,
         plannedSets: kinds.map((kind) => ({ kind })),
         history: ctx.history.filter((w) => w.exercise_ids.includes(exercise.id)),
-        reference: reference && refWorkout ? { exercise: reference, startedAt: refWorkout.started_at } : undefined,
+        reference:
+          reference && refWorkout ? { exercise: reference, startedAt: refWorkout.started_at } : undefined,
         now: ctx.now,
       })
     : undefined;

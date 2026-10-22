@@ -47,7 +47,11 @@ export default function PastWorkoutPage() {
             <input value={duration} onChange={(e) => setDuration(e.target.value)} />
           </label>
         </div>
-        <button className="btn btn-primary btn-block" style={{ marginTop: 20, height: 52 }} onClick={() => void create()}>
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 20, height: 52 }}
+          onClick={() => void create()}
+        >
           Continuer
         </button>
       </div>

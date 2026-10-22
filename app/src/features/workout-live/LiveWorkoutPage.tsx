@@ -1,3 +1,4 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
@@ -5,21 +6,20 @@ import { deviceIdSync } from '@/data/device';
 import { useCompletedWorkouts, useExerciseMap, useSettings, useWorkout } from '@/data/queries';
 import { deleteWorkout, updateWorkout } from '@/data/repositories';
 import { takeOverWorkout } from '@/data/sync/engine';
-import { formatKg } from '@/domain/format';
+import { formatClock, formatKg } from '@/domain/format';
 import type { SetField } from '@/domain/measurement';
 import { checkSet, exerciseInWorkout, lastTime, previousSets } from '@/domain/previous';
 import { workoutBadges } from '@/domain/records';
-import { goalAchievedSet } from '@/domain/trend';
 import { doneSetCount, unvalidatedCount } from '@/domain/summary';
+import { goalAchievedSet } from '@/domain/trend';
 import type { ExercisePrefsDoc, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
 import { workoutVolumeKg } from '@/domain/volume';
 import { ExerciseList } from '@/features/library/ExerciseList';
 import { Sheet, toast } from '@/ui/components';
 import { ChevronDownIcon, TimerIcon } from '@/ui/icons';
-import { formatClock } from '@/domain/format';
 import { useNow } from '@/ui/useNow';
 import { useWakeLock } from '@/ui/wakeLock';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { type ExerciseActions, ExerciseBlock } from './ExerciseBlock';
 import {
   addSet,
   cycleKind,
@@ -30,7 +30,6 @@ import {
   removeExercise,
   removeSet,
 } from './editor';
-import { type ExerciseActions, ExerciseBlock } from './ExerciseBlock';
 import { RestPanel } from './RestPanel';
 import { unlockAudio, useRestTimer } from './restTimer';
 import { buildWorkoutExercise, loadBuildContext } from './start';
@@ -95,6 +94,7 @@ export default function LiveWorkoutPage() {
   );
 
   // « La dernière fois » de chaque exercice, pour la colonne Précédent (§10.4).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ne dépend que du début de la séance, pas de chaque saisie
   const previousByEntry = useMemo(() => {
     const m = new Map<string, ReturnType<typeof exerciseInWorkout>>();
     if (!row || !doc || !history) return m;
@@ -105,12 +105,14 @@ export default function LiveWorkoutPage() {
     return m;
   }, [row?.id, row?.routine_id, row?.started_at, doc, history]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dépendances choisies pour ne pas recalculer à chaque saisie
   const badges = useMemo(() => {
     if (!row || !doc || !history) return undefined;
     return workoutBadges({ ...row, doc } as WorkoutRow, history);
   }, [row?.id, row?.started_at, doc, history]);
 
   // Badge 🎯 : première série qui réalise l'objectif à long terme après sa fixation.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dépendances choisies pour ne pas recalculer à chaque saisie
   const goalSets = useMemo(() => {
     const m = new Map<string, string>();
     if (!row || !doc || !history) return m;
@@ -188,7 +190,8 @@ export default function LiveWorkoutPage() {
       },
       onDeleteSet: (entryId, setId) => commit((d) => removeSet(d, entryId, setId)),
       onAddSet: (entryId) => commit((d) => addSet(d, entryId)),
-      onNote: (entryId, note) => commit((d) => mapExercise(d, entryId, (e) => ({ ...e, note: note || undefined }))),
+      onNote: (entryId, note) =>
+        commit((d) => mapExercise(d, entryId, (e) => ({ ...e, note: note || undefined }))),
       onRest: (entryId, restS) => commit((d) => mapExercise(d, entryId, (e) => ({ ...e, restS }))),
       onMove: (entryId, delta) => commit((d) => moveExercise(d, entryId, delta)),
       onReplace: (entryId) => setPicker({ replace: entryId }),
@@ -245,7 +248,11 @@ export default function LiveWorkoutPage() {
     <div className="page no-tab live-wrap" style={{ paddingBottom: 200 }}>
       <div className="live-head">
         <div className="head" style={{ position: 'static', paddingBottom: 6 }}>
-          <button className="icon-btn" aria-label="Réduire" onClick={() => navigate(live ? '/' : `/history/${row.id}`)}>
+          <button
+            className="icon-btn"
+            aria-label="Réduire"
+            onClick={() => navigate(live ? '/' : `/history/${row.id}`)}
+          >
             <ChevronDownIcon />
           </button>
           <span style={{ fontSize: '1.0625rem', fontWeight: 700 }}>
@@ -258,7 +265,10 @@ export default function LiveWorkoutPage() {
               </span>
             )}
             {!readOnly && (
-              <button className="btn btn-primary btn-sm" onClick={live ? finish : () => navigate(`/workout/${id}/summary`)}>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={live ? finish : () => navigate(`/workout/${id}/summary`)}
+              >
                 {live ? 'Terminer' : 'Suivant'}
               </button>
             )}
@@ -289,9 +299,14 @@ export default function LiveWorkoutPage() {
           <div className="card" style={{ border: '1px solid var(--line)' }}>
             <b>Séance en cours sur un autre appareil</b>
             <p className="t2" style={{ fontSize: '.875rem', marginTop: 6, lineHeight: 1.5 }}>
-              Tu peux la reprendre ici. Les saisies pas encore synchronisées sur l'autre appareil seront perdues.
+              Tu peux la reprendre ici. Les saisies pas encore synchronisées sur l'autre appareil seront
+              perdues.
             </p>
-            <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} onClick={() => setDialog('takeover')}>
+            <button
+              className="btn btn-primary btn-block"
+              style={{ marginTop: 12 }}
+              onClick={() => setDialog('takeover')}
+            >
               Reprendre ici
             </button>
           </div>
@@ -327,10 +342,18 @@ export default function LiveWorkoutPage() {
 
       {!readOnly && (
         <div className="section" style={{ marginTop: 16 }}>
-          <button className="btn btn-soft btn-block" style={{ color: 'var(--accent)' }} onClick={() => setPicker({})}>
+          <button
+            className="btn btn-soft btn-block"
+            style={{ color: 'var(--accent)' }}
+            onClick={() => setPicker({})}
+          >
             + Ajouter un exercice
           </button>
-          <button className="btn btn-soft btn-danger btn-block" style={{ marginTop: 8 }} onClick={() => setDialog('discard')}>
+          <button
+            className="btn btn-soft btn-danger btn-block"
+            style={{ marginTop: 8 }}
+            onClick={() => setDialog('discard')}
+          >
             {live ? 'Abandonner' : 'Supprimer la séance'}
           </button>
         </div>
@@ -340,7 +363,15 @@ export default function LiveWorkoutPage() {
 
       {picker && (
         <div className="scrim show" style={{ alignItems: 'stretch' }}>
-          <div className="sheet" style={{ height: '100%', overflowY: 'auto', borderRadius: 0, paddingTop: 'env(safe-area-inset-top)' }}>
+          <div
+            className="sheet"
+            style={{
+              height: '100%',
+              overflowY: 'auto',
+              borderRadius: 0,
+              paddingTop: 'env(safe-area-inset-top)',
+            }}
+          >
             <div className="head" style={{ padding: '8px 0 12px' }}>
               <button className="btn-ghost" onClick={() => setPicker(null)}>
                 Annuler
@@ -360,7 +391,11 @@ export default function LiveWorkoutPage() {
         title="Ignorer les séries non validées ?"
         onClose={() => setDialog(null)}
         actions={[
-          { label: 'Ignorer et terminer', kind: 'primary', onClick: () => navigate(`/workout/${id}/summary`) },
+          {
+            label: 'Ignorer et terminer',
+            kind: 'primary',
+            onClick: () => navigate(`/workout/${id}/summary`),
+          },
           { label: 'Continuer la séance', onClick: () => setDialog(null) },
         ]}
       >

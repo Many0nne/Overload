@@ -9,14 +9,23 @@ export type Draft<T extends SyncTable> = Omit<RowOf<T>, keyof SyncMeta> & Partia
 
 // Cette méthode permet d'enregistrer un élément complet et sa trace dans l'outbox, dans une même transaction (§6.1).
 // L'horodatage est rendu strictement croissant par élément pour que la dernière modification gagne toujours.
-export async function saveRow<T extends SyncTable>(table: T, row: Draft<T>): Promise<RowOf<T> & { id: string }> {
+export async function saveRow<T extends SyncTable>(
+  table: T,
+  row: Draft<T>,
+): Promise<RowOf<T> & { id: string }> {
   const t = db[table] as unknown as Dexie.Table<SyncMeta & { id: string }, string>;
   let saved!: SyncMeta & { id: string };
   await db.transaction('rw', t, db.outbox, async () => {
     const id = (row as unknown as { id: string }).id;
     const prev = await t.get(id);
     const now = Math.max(Date.now(), (prev?.client_updated_at ?? 0) + 1);
-    saved = { ...(prev ?? {}), ...(row as object), id, client_updated_at: now, client_device_id: deviceIdSync() };
+    saved = {
+      ...(prev ?? {}),
+      ...(row as object),
+      id,
+      client_updated_at: now,
+      client_device_id: deviceIdSync(),
+    };
     await t.put(saved);
     const existing = await db.outbox.where('[table+row_id]').equals([table, id]).first();
     if (existing) await db.outbox.update(existing.seq!, { client_updated_at: now });

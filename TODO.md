@@ -8,31 +8,13 @@
 - PR #3 backend Supabase : migrations, RLS, RPC, pg_cron/pg_net, Edge Functions, 55 tests pgTAP verts, `DEPLOY.md`.
   Vérifié en local : seed, création admin + inscription par code, chaîne minuteur → send-push (VAPID).
 
-## En cours : branche `feat/data-shell` (poussée, NE COMPILE PAS encore)
-Contient : couche données (Dexie, outbox, sync push/pull, auth, push, export), shell (App, onglets, bandeau,
-thème, SW, UpdatePrompt), écrans auth/invitation/reset/installation, onboarding, accueil, onglet Séance
-(dossiers, routines), bibliothèque + création d'exercice, éditeur de routine (dnd-kit), séance en direct
-(SetRow, ExerciseBlock, minuteur, reprise multi-appareil), récapitulatif, séance passée, détail d'historique,
-paramètres (+ journal d'erreurs, suppression de compte), CI GitHub Actions (`.github/workflows`).
-
-### Reste à faire pour fermer la branche
-1. `app/src/features/profile/ProfilePage.tsx` (routes `/profile/*`) : profil (nom, nb séances, graphique hebdo
-   durée/volume/séances via `weeklyAggregates`), liens Statistiques, Exercices et records, Mesures, Inviter,
-   Paramètres (`features/settings/SettingsPage`), `settings/errors` (`ErrorLogPage`).
-2. `features/stats/StatsPage.tsx` : calendrier (`monthGrid`, `trainingDays`, `weekStreak`), séries par muscle
-   30 j (`muscleDistribution`), records récents (`recentRecords`).
-3. `features/measurements/MeasurementsPage.tsx` : saisie datée + courbe par mesure (`measurementSeries`, `saveMeasurement`).
-4. `features/exercise/ExercisePage.tsx` (`/exercise/:id`) : onglets Résumé/Historique/Consignes ; objectif de
-   la prochaine séance, graphique uPlot lazy (`exerciseSeries`, `chartMetricsFor`, périodes) + tendance
-   pointillée (`weeklyE1rmPoints`, `trainingOrigin`, `fitTrend`, `projectionPoints`, `currentRate`, `goalDate`),
-   records (`bestRecords`, `criterionLabel`), réglages de progression (`saveExercisePrefs` : incrément,
-   fourchette par défaut, objectif long terme), modifier/archiver un exercice perso (`ExerciseForm`, `removeExercise`),
-   édition catalogue si `profile.is_admin`.
-5. Routes dans `App.tsx` (SignedInRoutes) : `/workout/:id` (LiveWorkoutPage), `/workout/:id/summary`
-   (SummaryPage), `/history/:id` (HistoryDetailPage), `/exercise/:id`, `/profile/*`.
-6. `npm run typecheck && npm run lint -- --write && npm test && npm run build` dans `app/`, corriger.
-7. SW : cache CacheFirst des photos indexé par chemin (param `p=` ajouté à l'URL signée dans `PhotoView.tsx`).
-8. Squash-merge en PR (commits WIP sans Co-Authored-By à réécrire dans le message de squash).
+## Branche `feat/data-shell` : terminée (PR ouverte, à squash-merger)
+Couche données, shell, écrans auth/onboarding, accueil, onglet Séance, bibliothèque, éditeur de routine,
+séance en direct, récapitulatif, historique, paramètres, profil (histogramme hebdo), statistiques (calendrier,
+muscles, records récents), mesures corporelles, fiche exercice (objectif, courbe uPlot + tendance, records,
+réglages de progression, édition/archivage), cache SW des photos par chemin, CI.
+typecheck, lint, 72 tests et build verts ; parcours vérifiés sur Supabase local.
+Message de squash : réécrire les commits WIP en un seul message avec Co-Authored-By.
 
 ## Ensuite
 - Tests sync (Vitest + fake-indexeddb) et E2E Playwright (§17 spec technique).

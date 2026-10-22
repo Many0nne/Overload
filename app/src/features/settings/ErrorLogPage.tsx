@@ -28,7 +28,10 @@ export default function ErrorLogPage() {
         <p className="empty">Aucune erreur enregistrée.</p>
       ) : (
         <div className="section">
-          <div className="card" style={{ fontSize: '.8125rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          <div
+            className="card"
+            style={{ fontSize: '.8125rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          >
             {text}
           </div>
         </div>

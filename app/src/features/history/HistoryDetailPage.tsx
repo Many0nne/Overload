@@ -40,7 +40,10 @@ export default function HistoryDetailPage() {
 
   // Cette méthode permet de créer une routine à partir de cette séance (structure, séries validées, charges comme cibles).
   const saveAsRoutine = async () => {
-    const doc = workoutToRoutine(row.doc, { name: row.doc.title.replace(/ – .*$/, '') || 'Nouvelle routine', newId: uuidv7 });
+    const doc = workoutToRoutine(row.doc, {
+      name: row.doc.title.replace(/ – .*$/, '') || 'Nouvelle routine',
+      newId: uuidv7,
+    });
     await createRoutine(doc, null);
     setMenu(false);
     toast('Routine créée');
@@ -75,7 +78,9 @@ export default function HistoryDetailPage() {
           </div>
           <div className="stat">
             <div className="k">Records</div>
-            <div className="v">{summary.recordCount > 0 ? <span className="pr-pill">🏆 {summary.recordCount}</span> : '0'}</div>
+            <div className="v">
+              {summary.recordCount > 0 ? <span className="pr-pill">🏆 {summary.recordCount}</span> : '0'}
+            </div>
           </div>
         </div>
         {summary.targets.total > 0 && (
@@ -83,7 +88,11 @@ export default function HistoryDetailPage() {
             🎯 Objectifs atteints : {summary.targets.met} / {summary.targets.total} exercices
           </div>
         )}
-        {row.doc.note && <p className="t2" style={{ fontSize: '.9375rem', lineHeight: 1.5 }}>{row.doc.note}</p>}
+        {row.doc.note && (
+          <p className="t2" style={{ fontSize: '.9375rem', lineHeight: 1.5 }}>
+            {row.doc.note}
+          </p>
+        )}
         {row.doc.photoPath && <PhotoView path={row.doc.photoPath} height={220} />}
       </div>
       <div className="section">
@@ -101,7 +110,9 @@ export default function HistoryDetailPage() {
               </Link>
               {met !== undefined && (
                 <div className="date">
-                  <span className={met ? 'ok' : 'ko'}>{met ? '🎯 objectif atteint' : 'objectif non atteint'}</span>
+                  <span className={met ? 'ok' : 'ko'}>
+                    {met ? '🎯 objectif atteint' : 'objectif non atteint'}
+                  </span>
                 </div>
               )}
               {e.note && <p className="note">{e.note}</p>}
@@ -124,7 +135,12 @@ export default function HistoryDetailPage() {
                     </b>
                     {formatSetValues(s, e.measurementType, settings.units)}
                     {badges?.sets[s.id]?.length ? (
-                      <span className="pr-pill" title={badges.sets[s.id]!.map((c) => (ex ? criterionLabel(c, ex.measurement_type) : c)).join(', ')}>
+                      <span
+                        className="pr-pill"
+                        title={badges.sets[s.id]!.map((c) =>
+                          ex ? criterionLabel(c, ex.measurement_type) : c,
+                        ).join(', ')}
+                      >
                         🏆
                       </span>
                     ) : null}
@@ -144,7 +160,14 @@ export default function HistoryDetailPage() {
         actions={[
           { label: 'Modifier la séance', kind: 'primary', onClick: () => navigate(`/workout/${row.id}`) },
           { label: 'Enregistrer comme routine', onClick: saveAsRoutine },
-          { label: 'Supprimer la séance', kind: 'danger', onClick: () => (setMenu(false), setConfirm(true)) },
+          {
+            label: 'Supprimer la séance',
+            kind: 'danger',
+            onClick: () => {
+              setMenu(false);
+              setConfirm(true);
+            },
+          },
         ]}
       />
       <Sheet

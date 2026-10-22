@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useNow } from '@/ui/useNow';
 import { formatDuration } from '@/domain/format';
+import { useNow } from '@/ui/useNow';
 import { playRestEndSound, useRestTimer } from './restTimer';
 
 // Cette méthode permet d'afficher le minuteur de repos (−15 s, +15 s, Passer), recalculé sur l'heure réelle (§8.1).

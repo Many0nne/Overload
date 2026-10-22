@@ -6,7 +6,11 @@ import type { SetKind, WorkoutDoc, WorkoutExercise, WorkoutSet } from '@/domain/
 const KIND_CYCLE: SetKind[] = ['normal', 'warmup', 'drop', 'failure'];
 
 // Cette méthode permet de remplacer un exercice de la séance par sa version modifiée.
-export function mapExercise(doc: WorkoutDoc, entryId: string, fn: (e: WorkoutExercise) => WorkoutExercise): WorkoutDoc {
+export function mapExercise(
+  doc: WorkoutDoc,
+  entryId: string,
+  fn: (e: WorkoutExercise) => WorkoutExercise,
+): WorkoutDoc {
   return { ...doc, exercises: doc.exercises.map((e) => (e.id === entryId ? fn(e) : e)) };
 }
 

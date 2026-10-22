@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistoryWithBadges } from '@/data/derived';
 import { useExerciseMap, useProfile, useSettings } from '@/data/queries';
-import { formatDurationHuman, formatKg } from '@/domain/format';
 import { parseDayKey } from '@/domain/dates';
+import { formatDurationHuman, formatKg } from '@/domain/format';
 import { currentWeekDays, weeklyAggregates, weekStreak } from '@/domain/stats';
 import { HistoryCard } from '@/features/history/HistoryCard';
 import { SyncPill } from '@/ui/SyncPill';
@@ -21,6 +21,7 @@ export default function HomePage() {
   const sentinel = useRef<HTMLDivElement>(null);
   const now = Date.now();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul à la minute, pas à chaque rendu
   const { week, days, streak, list } = useMemo(() => {
     const all = workouts ?? [];
     return {
@@ -32,6 +33,7 @@ export default function HomePage() {
   }, [workouts, Math.floor(now / 60_000)]);
 
   // Chargement par pages au fil du défilement (§F7.5).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: réarme l'observateur quand la liste change de taille
   useEffect(() => {
     const el = sentinel.current;
     if (!el) return;

@@ -22,7 +22,8 @@ export class SyncAuthError extends Error {}
 function check<T>(res: { data: T; error: { message: string; code?: string } | null }): T {
   if (res.error) {
     const msg = res.error.message ?? '';
-    if (/jwt|token|not authenticated|401/i.test(msg) || res.error.code === 'PGRST301') throw new SyncAuthError(msg);
+    if (/jwt|token|not authenticated|401/i.test(msg) || res.error.code === 'PGRST301')
+      throw new SyncAuthError(msg);
     throw new Error(msg);
   }
   return res.data;
@@ -54,9 +55,9 @@ export async function push(): Promise<{ rejected: string[] }> {
     const sent: { entry: OutboxEntry; ts: number }[] = [];
     const changes: { table: SyncTable; row: unknown }[] = [];
     for (const entry of entries) {
-      const row = await (db[entry.table] as unknown as Dexie.Table<{ client_updated_at: number }, string>).get(
-        entry.row_id,
-      );
+      const row = await (
+        db[entry.table] as unknown as Dexie.Table<{ client_updated_at: number }, string>
+      ).get(entry.row_id);
       if (!row) {
         await db.outbox.delete(entry.seq!);
         continue;

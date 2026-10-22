@@ -53,7 +53,8 @@ async function applySession(userId: string | null, email: string | null): Promis
 // Cette méthode permet de se connecter par e-mail et mot de passe, puis de lancer une première synchronisation.
 export async function signIn(email: string, password: string): Promise<string | null> {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) return error.message.includes('Invalid login') ? 'E-mail ou mot de passe incorrect.' : error.message;
+  if (error)
+    return error.message.includes('Invalid login') ? 'E-mail ou mot de passe incorrect.' : error.message;
   await applySession(data.user.id, data.user.email ?? null);
   await syncNow();
   return null;

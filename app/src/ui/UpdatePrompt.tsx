@@ -1,8 +1,8 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useEffect } from 'react';
+import { deviceIdSync } from '@/data/device';
 import { ensureSubscription } from '@/data/push';
 import { useInProgressWorkouts } from '@/data/queries';
-import { deviceIdSync } from '@/data/device';
 
 // Cette méthode permet d'enregistrer le service worker et de proposer une nouvelle version, jamais pendant une séance (§9).
 export function UpdatePrompt() {

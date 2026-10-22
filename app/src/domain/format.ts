@@ -185,7 +185,7 @@ export function criterionLabel(c: RecordCriterion, type: MeasurementType): strin
     case 'best_pace':
       return 'Meilleure allure';
     default:
-      return `Meilleur poids à ${c.slice('weight_at_'.length)} reps`;
+      return `Meilleur poids à ${c.slice('weight_at_'.length)} rep${c === 'weight_at_1' ? '' : 's'}`;
   }
 }
 

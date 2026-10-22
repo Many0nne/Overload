@@ -28,7 +28,11 @@ export const HistoryCard = memo(function HistoryCard(props: {
   const first = firstExercises(w.doc, 3);
   const others = new Set(w.doc.exercises.map((e) => e.exerciseId)).size - first.length;
   return (
-    <button className="card hist" style={{ width: '100%', textAlign: 'left' }} onClick={() => navigate(`/history/${w.id}`)}>
+    <button
+      className="card hist"
+      style={{ width: '100%', textAlign: 'left' }}
+      onClick={() => navigate(`/history/${w.id}`)}
+    >
       <div className="top">
         <div className="avatar">{props.initial}</div>
         <div>
@@ -53,7 +57,11 @@ export const HistoryCard = memo(function HistoryCard(props: {
         <div className="stat">
           <div className="k">Records</div>
           <div className="v">
-            {s.recordCount > 0 ? <span className="pr-pill">🏆 {s.recordCount}</span> : <span className="muted">0</span>}
+            {s.recordCount > 0 ? (
+              <span className="pr-pill">🏆 {s.recordCount}</span>
+            ) : (
+              <span className="muted">0</span>
+            )}
           </div>
         </div>
       </div>

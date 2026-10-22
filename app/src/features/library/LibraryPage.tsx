@@ -22,7 +22,11 @@ function LibraryHome() {
       <SubHead
         title="Exercices"
         right={
-          <button className="btn-ghost" style={{ fontWeight: 650 }} onClick={() => navigate('/seance/library/new')}>
+          <button
+            className="btn-ghost"
+            style={{ fontWeight: 650 }}
+            onClick={() => navigate('/seance/library/new')}
+          >
             Créer
           </button>
         }

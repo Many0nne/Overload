@@ -1,22 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { TRAINING_AGE_LABELS } from '@/domain/labels';
-import type { Settings, TrainingAgeBucket } from '@/domain/types';
 import { signOut } from '@/data/auth';
+import { enablePush, sendTestNotification } from '@/data/push';
 import { useProfile, useSettings } from '@/data/queries';
 import { updateSettings } from '@/data/repositories';
 import { useSession } from '@/data/session';
 import { supabase } from '@/data/supabase';
 import { syncNow } from '@/data/sync/scheduler';
-import { enablePush, sendTestNotification } from '@/data/push';
+import { TRAINING_AGE_LABELS } from '@/domain/labels';
+import type { Settings, TrainingAgeBucket } from '@/domain/types';
 import { Seg, Sheet, SubHead, Switch, toast } from '@/ui/components';
 import { formatInviteCode } from '@/ui/platform';
 import { formatRest } from '@/ui/time';
-import { exportData } from './exportData';
 import { DeleteAccountSheet } from './DeleteAccountSheet';
+import { exportData } from './exportData';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
-
 
 // Cette méthode permet d'afficher et de modifier tous les paramètres de l'utilisateur (§F7.8).
 export default function SettingsPage() {
@@ -90,7 +89,8 @@ export default function SettingsPage() {
             label="Notification fin de repos"
             on={settings.restNotification}
             onChange={async (v) => {
-              if (v && (await enablePush()) === 'denied') toast('Autorise les notifications dans Réglages iOS');
+              if (v && (await enablePush()) === 'denied')
+                toast('Autorise les notifications dans Réglages iOS');
               set({ restNotification: v });
             }}
           />
@@ -101,7 +101,11 @@ export default function SettingsPage() {
         </div>
         <div className="set-row">
           Garder l'écran allumé
-          <Switch label="Garder l'écran allumé" on={settings.keepAwake} onChange={(v) => set({ keepAwake: v })} />
+          <Switch
+            label="Garder l'écran allumé"
+            on={settings.keepAwake}
+            onChange={(v) => set({ keepAwake: v })}
+          />
         </div>
       </div>
 
@@ -156,10 +160,16 @@ export default function SettingsPage() {
           Exporter mes données<span className="t2">JSON · CSV ›</span>
         </button>
         <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('logout')}>
-          Se déconnecter<span />
+          Se déconnecter
+          <span />
         </button>
-        <button className="set-row" style={{ width: '100%', color: 'var(--fail)' }} onClick={() => setSheet('delete')}>
-          Supprimer le compte<span />
+        <button
+          className="set-row"
+          style={{ width: '100%', color: 'var(--fail)' }}
+          onClick={() => setSheet('delete')}
+        >
+          Supprimer le compte
+          <span />
         </button>
       </div>
 
@@ -172,7 +182,11 @@ export default function SettingsPage() {
         >
           Tester une notification<span style={{ color: 'var(--accent)' }}>Dans 10 s ›</span>
         </button>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => navigate('/profile/settings/errors')}>
+        <button
+          className="set-row"
+          style={{ width: '100%' }}
+          onClick={() => navigate('/profile/settings/errors')}
+        >
           Journal d'erreurs<span className="t2">›</span>
         </button>
         <div className="set-row">
@@ -279,7 +293,10 @@ export default function SettingsPage() {
           { label: 'Annuler', onClick: () => setSheet(null) },
         ]}
       >
-        <p>Les données locales de cet appareil seront effacées. Elles restent sur ton compte une fois synchronisées.</p>
+        <p>
+          Les données locales de cet appareil seront effacées. Elles restent sur ton compte une fois
+          synchronisées.
+        </p>
       </Sheet>
 
       <DeleteAccountSheet open={sheet === 'delete'} onClose={() => setSheet(null)} />

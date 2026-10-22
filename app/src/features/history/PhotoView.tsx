@@ -35,8 +35,16 @@ export function PhotoView(props: { path: string; height?: number }) {
   return url ? (
     <img
       src={url}
-      alt="Photo de la séance"
-      style={{ width: '100%', height: props.height ?? 160, objectFit: 'cover', borderRadius: 12, marginTop: 10, display: 'block' }}
+      alt="Séance"
+      crossOrigin="anonymous"
+      style={{
+        width: '100%',
+        height: props.height ?? 160,
+        objectFit: 'cover',
+        borderRadius: 12,
+        marginTop: 10,
+        display: 'block',
+      }}
     />
   ) : (
     <div className="photo" style={{ height: props.height ?? 160 }}>

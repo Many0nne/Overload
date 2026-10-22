@@ -43,7 +43,8 @@ export function parseField(text: string, field: SetField, units: Units): SetPatc
 function isTargetValue(set: WorkoutSet, field: SetField): boolean {
   const t = set.target;
   if (!t) return false;
-  if (field === 'weight') return Boolean(t.weight && set.weight && t.weight.v === set.weight.v && t.weight.u === set.weight.u);
+  if (field === 'weight')
+    return Boolean(t.weight && set.weight && t.weight.v === set.weight.v && t.weight.u === set.weight.u);
   if (field === 'reps') return t.reps !== undefined && t.reps === set.reps;
   if (field === 'duration') return t.durationS !== undefined && t.durationS === set.durationS;
   return false;
@@ -130,7 +131,15 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
   return (
     <tr
       className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}
-      style={dx ? { transform: `translateX(${dx}px)`, background: dx < -SWIPE_DELETE_PX ? 'color-mix(in srgb, var(--fail) 25%, transparent)' : undefined } : undefined}
+      style={
+        dx
+          ? {
+              transform: `translateX(${dx}px)`,
+              background:
+                dx < -SWIPE_DELETE_PX ? 'color-mix(in srgb, var(--fail) 25%, transparent)' : undefined,
+            }
+          : undefined
+      }
       onPointerDown={(e) => {
         if (p.readOnly || (e.target as HTMLElement).closest('input,button')) return;
         start.current = { x: e.clientX, y: e.clientY, active: false };
@@ -163,7 +172,11 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
         </button>
       </td>
       <td>
-        <button className="prev" disabled={p.readOnly || !p.previous} onClick={() => p.onCopyPrevious(p.set.id)}>
+        <button
+          className="prev"
+          disabled={p.readOnly || !p.previous}
+          onClick={() => p.onCopyPrevious(p.set.id)}
+        >
           {p.previous ? formatSetValues(p.previous, p.type, p.units) : '—'}
         </button>
       </td>

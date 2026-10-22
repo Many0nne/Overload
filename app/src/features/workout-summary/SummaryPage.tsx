@@ -5,8 +5,14 @@ import { useCompletedWorkouts, useExerciseMap, useProfile, useSettings, useWorko
 import { createRoutine, deleteWorkout, updateRoutine, updateWorkout } from '@/data/repositories';
 import { useSession } from '@/data/session';
 import { syncNow } from '@/data/sync/scheduler';
-import { formatDuration, formatDurationHuman, formatKg, formatTargets, parseDuration } from '@/domain/format';
-import { criterionLabel } from '@/domain/format';
+import {
+  criterionLabel,
+  formatDuration,
+  formatDurationHuman,
+  formatKg,
+  formatTargets,
+  parseDuration,
+} from '@/domain/format';
 import { uuidv7 } from '@/domain/ids';
 import { targetsMet } from '@/domain/progression';
 import { workoutBadges } from '@/domain/records';
@@ -50,7 +56,11 @@ export default function SummaryPage() {
   const [time, setTime] = useState('');
   const [duration, setDuration] = useState('');
   const [photo, setPhoto] = useState<string | undefined>();
-  const [after, setAfter] = useState<{ kind: 'update' | 'saveAs'; summary: string[]; doc: WorkoutDoc } | null>(null);
+  const [after, setAfter] = useState<{
+    kind: 'update' | 'saveAs';
+    summary: string[];
+    doc: WorkoutDoc;
+  } | null>(null);
   const [routineName, setRoutineName] = useState('');
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const live = row?.status === 'in_progress';
@@ -72,14 +82,19 @@ export default function SummaryPage() {
 
   const pruned = useMemo(() => (row ? pruneUnvalidated(row.doc) : undefined), [row]);
   const badges = useMemo(
-    () => (row && pruned && history ? workoutBadges({ ...row, doc: pruned } as WorkoutRow, history) : undefined),
+    () =>
+      row && pruned && history ? workoutBadges({ ...row, doc: pruned } as WorkoutRow, history) : undefined,
     [row, pruned, history],
   );
 
   if (!row || !pruned || title === null) return <div className="page no-tab" />;
 
   const durationS = parseDuration(duration) ?? 0;
-  const summary = workoutSummary({ started_at: row.started_at, doc: { ...pruned, durationS } }, badges, Date.now());
+  const summary = workoutSummary(
+    { started_at: row.started_at, doc: { ...pruned, durationS } },
+    badges,
+    Date.now(),
+  );
   const forgotten = live && isForgotten(Math.floor((Date.now() - row.started_at) / 1000));
   const goalRows = pruned.exercises
     .map((e) => ({ e, met: targetsMet(e) }))
@@ -147,7 +162,10 @@ export default function SummaryPage() {
   // Cette méthode permet de créer une nouvelle routine à partir de la séance improvisée (P3).
   const saveAsRoutine = async () => {
     if (!after) return;
-    const doc = workoutToRoutine(after.doc, { name: routineName.trim() || 'Nouvelle routine', newId: uuidv7 });
+    const doc = workoutToRoutine(after.doc, {
+      name: routineName.trim() || 'Nouvelle routine',
+      newId: uuidv7,
+    });
     await createRoutine(doc, null);
     toast('Routine enregistrée');
     navigate('/', { replace: true });
@@ -215,7 +233,11 @@ export default function SummaryPage() {
                   <span>
                     {exercises.get(e.exerciseId)?.name ?? 'Exercice'}
                     <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
-                      {formatTargets(e.sets.map((s) => s.target), e.measurementType, settings.units)}
+                      {formatTargets(
+                        e.sets.map((s) => s.target),
+                        e.measurementType,
+                        settings.units,
+                      )}
                     </small>
                   </span>
                   <b className={met ? 'ok' : 'ko'}>{met ? '✓ atteint' : '✗'}</b>
@@ -250,19 +272,33 @@ export default function SummaryPage() {
         </label>
         <label className="field">
           <span>Note</span>
-          <textarea rows={2} placeholder="Comment s'est passée la séance ?" value={note} onChange={(e) => setNote(e.target.value)} />
+          <textarea
+            rows={2}
+            placeholder="Comment s'est passée la séance ?"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
         </label>
         {photo ? (
           <div style={{ position: 'relative' }}>
             <PhotoView path={photo} height={180} />
-            <button className="tag" style={{ position: 'absolute', top: 18, right: 8 }} onClick={() => setPhoto(undefined)}>
+            <button
+              className="tag"
+              style={{ position: 'absolute', top: 18, right: 8 }}
+              onClick={() => setPhoto(undefined)}
+            >
               Retirer
             </button>
           </div>
         ) : (
           <label className="photo-add" style={{ cursor: 'pointer' }}>
             + Ajouter une photo
-            <input type="file" accept="image/*" hidden onChange={(e) => void pickPhoto(e.target.files?.[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => void pickPhoto(e.target.files?.[0])}
+            />
           </label>
         )}
         <div className="field-row">
@@ -279,11 +315,19 @@ export default function SummaryPage() {
             <input value={duration} onChange={(e) => setDuration(e.target.value)} />
           </label>
         </div>
-        <button className="btn btn-primary btn-block" style={{ marginTop: 20, height: 52 }} onClick={() => void save()}>
+        <button
+          className="btn btn-primary btn-block"
+          style={{ marginTop: 20, height: 52 }}
+          onClick={() => void save()}
+        >
           Enregistrer
         </button>
         {live && (
-          <button className="btn btn-danger btn-block" style={{ marginTop: 6 }} onClick={() => setConfirmDiscard(true)}>
+          <button
+            className="btn btn-danger btn-block"
+            style={{ marginTop: 6 }}
+            onClick={() => setConfirmDiscard(true)}
+          >
             Abandonner la séance
           </button>
         )}

@@ -13,7 +13,13 @@ export default function WelcomePage() {
   const askPush = async () => {
     const r = await enablePush();
     setAsked(true);
-    toast(r === 'granted' ? 'Notifications activées' : r === 'denied' ? 'Notifications refusées' : 'Indisponible ici');
+    toast(
+      r === 'granted'
+        ? 'Notifications activées'
+        : r === 'denied'
+          ? 'Notifications refusées'
+          : 'Indisponible ici',
+    );
   };
 
   return (
@@ -35,12 +41,20 @@ export default function WelcomePage() {
             disabled={asked || !pushSupported()}
             onClick={() => void askPush()}
           >
-            {pushSupported() ? (asked ? 'Choix enregistré' : 'Activer les notifications') : 'Disponible dans l’app installée'}
+            {pushSupported()
+              ? asked
+                ? 'Choix enregistré'
+                : 'Activer les notifications'
+              : 'Disponible dans l’app installée'}
           </button>
         </div>
       </div>
       <div className="section">
-        <button className="btn btn-primary btn-block" style={{ height: 52 }} onClick={() => navigate('/seance/routine/new', { replace: true })}>
+        <button
+          className="btn btn-primary btn-block"
+          style={{ height: 52 }}
+          onClick={() => navigate('/seance/routine/new', { replace: true })}
+        >
           Créer ma première routine
         </button>
         <button

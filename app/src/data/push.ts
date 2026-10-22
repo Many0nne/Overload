@@ -83,7 +83,12 @@ export async function cancelRestNotification(): Promise<void> {
 // Cette méthode permet de tester toute la chaîne Web Push : notification dans 10 s (Paramètres › À propos, lot L0).
 export async function sendTestNotification(): Promise<string> {
   const state = await enablePush();
-  if (state !== 'granted') return state === 'unsupported' ? 'Notifications non disponibles ici.' : 'Permission refusée.';
-  await scheduleRestNotification(Date.now() + 10_000, 'Test Overload', 'La chaîne de notification fonctionne.');
+  if (state !== 'granted')
+    return state === 'unsupported' ? 'Notifications non disponibles ici.' : 'Permission refusée.';
+  await scheduleRestNotification(
+    Date.now() + 10_000,
+    'Test Overload',
+    'La chaîne de notification fonctionne.',
+  );
   return 'Notification programmée dans 10 s. Verrouille ton téléphone.';
 }

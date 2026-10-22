@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { EQUIPMENT_LABELS, EQUIPMENTS, MEASUREMENT_LABELS, MEASUREMENT_TYPES, MUSCLE_LABELS, MUSCLES } from '@/domain/labels';
-import type { Equipment, ExerciseRow, MeasurementType, Muscle } from '@/domain/types';
 import type { ExerciseInput } from '@/data/repositories';
+import {
+  EQUIPMENT_LABELS,
+  EQUIPMENTS,
+  MEASUREMENT_LABELS,
+  MEASUREMENT_TYPES,
+  MUSCLE_LABELS,
+  MUSCLES,
+} from '@/domain/labels';
+import type { Equipment, ExerciseRow, MeasurementType, Muscle } from '@/domain/types';
 
 // Cette méthode permet de saisir ou modifier un exercice (nom, équipement, muscles, type de mesure, consignes).
 // Le type de mesure est verrouillé quand `typeLocked` est vrai (exercice déjà utilisé ou du catalogue, §F7.2).
@@ -54,7 +61,11 @@ export function ExerciseForm(props: {
         <span>Muscles secondaires</span>
         <div className="chips wrap">
           {MUSCLES.filter((m) => m !== primary).map((m) => (
-            <button key={m} className={`chip${secondary.includes(m) ? ' on' : ''}`} onClick={() => toggleSecondary(m)}>
+            <button
+              key={m}
+              className={`chip${secondary.includes(m) ? ' on' : ''}`}
+              onClick={() => toggleSecondary(m)}
+            >
               {MUSCLE_LABELS[m]}
             </button>
           ))}

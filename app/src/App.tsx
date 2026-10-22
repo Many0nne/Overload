@@ -1,30 +1,37 @@
 import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { initAuth } from '@/data/auth';
+import { deviceIdSync } from '@/data/device';
 import { useInProgressWorkouts, useSettings } from '@/data/queries';
 import { useSession } from '@/data/session';
+import { formatClock } from '@/domain/format';
 import { InstallPage, InvitePage, LoginPage, ResetPage, SignupPage } from '@/features/auth/AuthScreens';
 import { ToastHost } from '@/ui/components';
-import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { DumbbellIcon, HomeIcon, UserIcon } from '@/ui/icons';
 import { isIos, isStandalone } from '@/ui/platform';
+import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { useNow } from '@/ui/useNow';
-import { formatClock } from '@/domain/format';
-import { deviceIdSync } from '@/data/device';
 
 const HomePage = lazy(() => import('@/features/home/HomePage'));
 const SeancePage = lazy(() => import('@/features/routines/SeancePage'));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage'));
 const WelcomePage = lazy(() => import('@/features/onboarding/WelcomePage'));
+const LiveWorkoutPage = lazy(() => import('@/features/workout-live/LiveWorkoutPage'));
+const SummaryPage = lazy(() => import('@/features/workout-summary/SummaryPage'));
+const HistoryDetailPage = lazy(() => import('@/features/history/HistoryDetailPage'));
+const ExercisePage = lazy(() => import('@/features/exercise/ExercisePage'));
 
 // Cette méthode permet d'appliquer le thème choisi (sombre par défaut, auto = selon le système) sur <html>.
 function useTheme() {
   const { theme } = useSettings();
   useEffect(() => {
     const apply = () => {
-      const dark = theme === 'dark' || (theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      const dark =
+        theme === 'dark' || (theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0d0e11' : '#ffffff');
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', dark ? '#0d0e11' : '#ffffff');
     };
     apply();
     if (theme !== 'auto') return;
@@ -89,9 +96,48 @@ function SignedInRoutes() {
   return (
     <Suspense fallback={<div className="page" />}>
       <Routes>
-        <Route path="/" element={<TabShell><HomePage /></TabShell>} />
-        <Route path="/seance/*" element={<TabShell><SeancePage /></TabShell>} />
-        <Route path="/profile/*" element={<TabShell><ProfilePage /></TabShell>} />
+        <Route
+          path="/"
+          element={
+            <TabShell>
+              <HomePage />
+            </TabShell>
+          }
+        />
+        <Route
+          path="/seance/*"
+          element={
+            <TabShell>
+              <SeancePage />
+            </TabShell>
+          }
+        />
+        <Route
+          path="/profile/*"
+          element={
+            <TabShell>
+              <ProfilePage />
+            </TabShell>
+          }
+        />
+        <Route
+          path="/history/:id"
+          element={
+            <TabShell>
+              <HistoryDetailPage />
+            </TabShell>
+          }
+        />
+        <Route
+          path="/exercise/:id"
+          element={
+            <TabShell>
+              <ExercisePage />
+            </TabShell>
+          }
+        />
+        <Route path="/workout/:id" element={<LiveWorkoutPage />} />
+        <Route path="/workout/:id/summary" element={<SummaryPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/reset" element={<ResetPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
@@ -152,7 +198,13 @@ function ReauthNotice() {
     <>
       <button
         className="tag"
-        style={{ position: 'fixed', top: 'calc(8px + env(safe-area-inset-top))', right: 12, zIndex: 30, color: 'var(--warm)' }}
+        style={{
+          position: 'fixed',
+          top: 'calc(8px + env(safe-area-inset-top))',
+          right: 12,
+          zIndex: 30,
+          color: 'var(--warm)',
+        }}
         onClick={() => setOpen(true)}
       >
         Reconnexion requise
