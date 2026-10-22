@@ -495,7 +495,8 @@ Thème et tokens : variables CSS reprises de la maquette (`--bg`, `--surface`, `
 2. filtre une liste blanche d'identifiants (≈ 200 exercices courants), maintenue dans `scripts/catalog-allowlist.json` ;
 3. applique les correspondances muscles et équipements vers les listes §F7.2, et déduit le type de mesure (règles, puis surcharge manuelle) ;
 4. fusionne avec `scripts/catalog-fr.json` : noms et consignes **réécrits en français**. Première passe assistée par LLM, puis relecture humaine. Le fichier versionné fait foi ;
-5. génère `supabase/seed.sql` avec des UUID v5 stables dérivés de `source_id` (ré-exécution idempotente).
+5. ajoute les exercices courants absents de la source, rédigés en entier dans `scripts/catalog-extra.json` (`source_id` préfixé `overload:`, ex. tractions et dips assistés à la machine) ;
+6. génère `supabase/seed.sql` avec des UUID v5 stables dérivés de `source_id` (ré-exécution idempotente).
 
 Les images de la source ne sont pas reprises. Les modifications ultérieures du catalogue se font par l'admin dans l'app. Le **type de mesure d'un exercice du catalogue est non modifiable** : l'admin ne voit pas les données des autres et ne peut donc pas savoir s'il est utilisé. Pour changer de type, il faut créer un nouvel exercice et archiver l'ancien. L'historique reste lisible grâce à la copie de `measurementType` dans chaque séance.
 

@@ -1,5 +1,5 @@
 -- Fichier généré par scripts/build-catalog.ts : ne pas modifier à la main.
--- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 (218 exercices).
+-- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 + scripts/catalog-extra.json (220 exercices).
 insert into public.exercises
   (id, user_id, name, name_search, equipment, primary_muscle, secondary_muscles, measurement_type, instructions, source_id, client_updated_at, client_device_id)
 values
@@ -524,7 +524,7 @@ Remonte en poussant les hanches vers l''avant.', 'Good_Morning', 1767225600000, 
   ('eb1d2a43-93cf-59f4-be50-bbd215dea06e', null, 'Soulevé de terre sumo (barre)', 'souleve de terre sumo (barre)', 'barbell', 'hamstrings', array['quads', 'forearms', 'glutes', 'lower_back']::text[], 'weight_reps', 'Pieds très écartés, mains saisissant la barre entre les jambes.
 Pousse dans le sol pour te relever, dos plat.
 Redescends en contrôlant.', 'Sumo_Deadlift', 1767225600000, '00000000-0000-0000-0000-000000000000'),
-  ('3850a8a1-8f36-5e70-9dc5-ac974654afd0', null, 'Glute-ham raise', 'glute-ham raise', 'machine', 'hamstrings', array['calves', 'glutes']::text[], 'weight_reps', 'Cale les pieds dans la machine, hanches au bord du support.
+  ('3850a8a1-8f36-5e70-9dc5-ac974654afd0', null, 'Glute-ham raise', 'glute-ham raise', 'machine', 'hamstrings', array['calves', 'glutes']::text[], 'weighted_bw', 'Cale les pieds dans la machine, hanches au bord du support.
 Descends le buste puis remonte en contractant les ischios.
 Garde le dos aligné.', 'Glute_Ham_Raise', 1767225600000, '00000000-0000-0000-0000-000000000000'),
   ('f762ba3e-1338-502d-8e93-2bcdd5a138e8', null, 'Leg curl sur ballon', 'leg curl sur ballon', 'other', 'hamstrings', array['calves', 'glutes']::text[], 'bodyweight', 'Allongé sur le dos, talons sur le ballon, bassin décollé.
@@ -658,7 +658,15 @@ Pédale à rythme régulier.
 Adapte la vitesse à l''effort voulu.', 'Bicycling', 1767225600000, '00000000-0000-0000-0000-000000000000'),
   ('ed7cc5c5-6a8a-5fc9-9a9c-7d7b6da8d38c', null, 'Cordes ondulatoires', 'cordes ondulatoires', 'other', 'shoulders', array['chest', 'forearms']::text[], 'duration', 'Tiens une corde dans chaque main, genoux fléchis.
 Fais des ondulations rapides avec les bras.
-Garde le buste gainé.', 'Battling_Ropes', 1767225600000, '00000000-0000-0000-0000-000000000000')
+Garde le buste gainé.', 'Battling_Ropes', 1767225600000, '00000000-0000-0000-0000-000000000000'),
+  ('669ae059-ae73-5a03-893d-7cf72549722f', null, 'Tractions assistées (machine)', 'tractions assistees (machine)', 'machine', 'back', array['biceps', 'shoulders']::text[], 'assisted_bw', 'Règle l''assistance et monte sur la plateforme, genoux ou pieds posés dessus.
+Saisis les poignées en pronation, mains plus larges que les épaules.
+Tire-toi jusqu''à passer le menton au-dessus des poignées.
+Redescends lentement jusqu''aux bras tendus.', 'overload:Machine_Assisted_Pull-Up', 1767225600000, '00000000-0000-0000-0000-000000000000'),
+  ('5e58bef7-69c9-59a2-8dc3-0d8733e688a6', null, 'Dips assistés (machine)', 'dips assistes (machine)', 'machine', 'triceps', array['chest', 'shoulders']::text[], 'assisted_bw', 'Règle l''assistance et pose les genoux ou les pieds sur la plateforme.
+Saisis les poignées, bras tendus, épaules basses.
+Descends en fléchissant les coudes jusqu''à ce que les bras soient parallèles au sol.
+Pousse jusqu''à l''extension des bras.', 'overload:Machine_Assisted_Dip', 1767225600000, '00000000-0000-0000-0000-000000000000')
 on conflict (id) do update set
   name = excluded.name,
   name_search = excluded.name_search,
