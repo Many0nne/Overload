@@ -7,6 +7,7 @@ import {
   formatCanonical,
   formatDurationHuman,
   formatKg,
+  formatRpe,
   formatSetValues,
   formatWeight,
 } from '../format.ts';
@@ -191,6 +192,7 @@ export type SetView = {
   durationS?: number;
   distance?: WorkoutSet['distance'];
   done: boolean;
+  rpe?: number;
   target?: WorkoutSet['target'];
   records?: string[];
 };
@@ -241,6 +243,7 @@ export function workoutDetail(
             ...(s.durationS !== undefined ? { durationS: s.durationS } : {}),
             ...(s.distance ? { distance: s.distance } : {}),
             done: s.done,
+            ...(s.rpe !== undefined ? { rpe: s.rpe } : {}),
             ...(s.target ? { target: s.target } : {}),
             ...(rec ? { records: rec } : {}),
           };
@@ -261,8 +264,9 @@ export function workoutDetail(
       const kind = s.kind === 'normal' ? '' : ` (${SET_KIND_LABELS[s.kind].toLowerCase()})`;
       const target = s.target ? ` — objectif ${formatSetValues(s.target, e.measurementType, ctx.units)}` : '';
       const rec = sv.records ? ` 🏆 ${sv.records.join(', ')}` : '';
+      const rpe = s.rpe !== undefined ? ` @ RPE ${formatRpe(s.rpe)}` : '';
       lines.push(
-        `  ${j + 1}. ${formatSetValues(s, e.measurementType, ctx.units)}${kind}${s.done ? '' : ' (non validée)'}${target}${rec}`,
+        `  ${j + 1}. ${formatSetValues(s, e.measurementType, ctx.units)}${rpe}${kind}${s.done ? '' : ' (non validée)'}${target}${rec}`,
       );
     }
     if (ex.records) lines.push(`  🏆 ${ex.records.join(', ')}`);
@@ -322,6 +326,7 @@ export function exerciseHistory(
         ...(s.durationS !== undefined ? { durationS: s.durationS } : {}),
         ...(s.distance ? { distance: s.distance } : {}),
         done: true,
+        ...(s.rpe !== undefined ? { rpe: s.rpe } : {}),
       })),
       ...(best !== undefined ? { bestE1rm: kgOut(best, ctx.units.weight) } : {}),
       volume: kgOut(volKg, ctx.units.weight),
@@ -330,7 +335,9 @@ export function exerciseHistory(
     const setsText = sets
       .map(
         (s) =>
-          formatSetValues(s, type, ctx.units) + (s.kind === 'normal' ? '' : ` (${SET_KIND_LABELS[s.kind]})`),
+          formatSetValues(s, type, ctx.units) +
+          (s.rpe !== undefined ? ` @ RPE ${formatRpe(s.rpe)}` : '') +
+          (s.kind === 'normal' ? '' : ` (${SET_KIND_LABELS[s.kind]})`),
       )
       .join(' ; ');
     lines.push(

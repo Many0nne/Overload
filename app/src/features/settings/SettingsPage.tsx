@@ -157,6 +157,19 @@ export default function SettingsPage() {
             onChange={(v) => set({ progressionEnabled: v })}
           />
         </div>
+        <div className="set-row">
+          <span>
+            Saisir l'effort ressenti (RPE)
+            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+              proposé après chaque série validée, affine les objectifs
+            </small>
+          </span>
+          <Switch
+            label="Saisir l'effort ressenti (RPE)"
+            on={settings.rpeEnabled}
+            onChange={(v) => set({ rpeEnabled: v })}
+          />
+        </div>
         <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('age')}>
           Ancienneté en musculation
           <span className="t2">

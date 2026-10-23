@@ -22,7 +22,7 @@ const HEADER =
 const WORKOUTS = [
   HEADER,
   '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Échauffement",,"",0,"normal",,,,90,',
-  '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Butterfly Poulie Un Bras",,"Lent, ""contrôlé""",0,"warmup",10,20,,,',
+  '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Butterfly Poulie Un Bras",,"Lent, ""contrôlé""",0,"warmup",10,20,,,5',
   '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Butterfly Poulie Un Bras",,"Lent, ""contrôlé""",1,"dropset",7.5,20,,,8',
   '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Tractions",,"",0,"failure",,12,,,',
   '"Push","22 oct. 2026, 16:50","22 oct. 2026, 17:38","Bonne séance","Butterfly Poulie Un Bras",,"",0,"normal",12.5,16,,,',
@@ -84,8 +84,8 @@ describe('séances HEVY', () => {
       title: 'Butterfly Poulie Un Bras',
       note: 'Lent, "contrôlé"',
       sets: [
-        { kind: 'warmup', weightKg: 10, reps: 20 },
-        { kind: 'drop', weightKg: 7.5, reps: 20 },
+        { kind: 'warmup', weightKg: 10, reps: 20 }, // RPE 5 hors échelle : ignoré
+        { kind: 'drop', weightKg: 7.5, reps: 20, rpe: 8 },
       ],
     });
     expect(push.exercises[2]!.sets[0]).toEqual({ kind: 'failure', reps: 12 });
@@ -137,6 +137,7 @@ describe('séances HEVY', () => {
       weight: { v: 7.5, u: 'kg' },
       reps: 20,
       done: true,
+      rpe: 8,
     });
     const tapis = buildWorkoutDoc(
       workouts[0]!,

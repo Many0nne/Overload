@@ -1,7 +1,7 @@
 // Entrées des outils d'écriture du connecteur Claude (docs/spec-mcp.md §6.3) : conversion dans les unités de l'utilisateur
 // et validation selon le type de mesure, avant de construire les documents synchronisés.
 import { MEASUREMENT_LABELS } from '../labels';
-import { FIELDS, hasReps, type SetField } from '../measurement';
+import { FIELDS, hasReps, normalizeRpe, type SetField } from '../measurement';
 import type {
   BodyMeasurementKey,
   BodyMeasurementValues,
@@ -35,6 +35,7 @@ export type SetIn = {
   reps?: number;
   durationS?: number;
   distance?: DistanceIn;
+  rpe?: number;
 };
 
 export type Result<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -142,11 +143,13 @@ export function buildWorkoutExercise(
           `(type « ${MEASUREMENT_LABELS[type]} » : ${FIELDS[type].map((f) => FIELD_LABELS[f]).join(', ')}).`,
       );
     const prevSet = ctx.previous?.sets[i];
+    const rpe = normalizeRpe(s.rpe);
     sets.push({
       id: prevSet?.id ?? ctx.newId(),
       kind: s.kind ?? 'normal',
       ...v.value,
       done: true,
+      ...(rpe !== undefined ? { rpe } : {}),
       ...(prevSet?.doneAt !== undefined ? { doneAt: prevSet.doneAt } : {}),
       ...(prevSet?.target ? { target: prevSet.target } : {}),
     });
@@ -166,7 +169,7 @@ export function buildWorkoutExercise(
   });
 }
 
-export type RoutineSetIn = Omit<SetIn, 'reps'>;
+export type RoutineSetIn = Omit<SetIn, 'reps' | 'rpe'>;
 
 // Cette méthode permet de construire un exercice de routine (séries prévues, fourchette, repos) à partir de la saisie.
 // `sets` est une liste de séries ou un nombre de séries normales ; un repos absent prend le repos par défaut.

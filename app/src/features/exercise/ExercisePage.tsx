@@ -18,6 +18,7 @@ import {
   formatCanonical,
   formatKg,
   formatReason,
+  formatRpe,
   formatSetValues,
   formatTargets,
   formatWeight,
@@ -726,6 +727,7 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
                               {labels[i]}
                             </b>
                             {formatSetValues(s, e.measurementType, settings.units)}
+                            {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
                             {wb?.sets[s.id]?.length ? <span className="pr-pill">🏆</span> : null}
                             {s.id === goalSet ? <span className="pr-pill">🎯</span> : null}
                           </li>

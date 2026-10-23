@@ -154,19 +154,36 @@ export function formatReason(reason: TargetReason, type: MeasurementType, units:
           ? "Plateau : un peu plus d'assistance"
           : 'Plateau : on repart un peu plus léger',
       );
-    case 'load_up':
+    case 'load_up': {
+      const easy = reason.rpe !== undefined ? `, effort facile (RPE ${formatRpe(reason.rpe)})` : '';
       if (type === 'assisted_bw' && reason.assistanceDrop)
-        return make('up', `Assistance −${formatWeight(reason.assistanceDrop, units.weight)}`);
-      return make('up', `${reason.reachedReps} reps atteintes sur toutes les séries`);
+        return make('up', `Assistance −${formatWeight(reason.assistanceDrop, units.weight)}${easy}`);
+      return make('up', `${reason.reachedReps} reps atteintes sur toutes les séries${easy}`);
+    }
     case 'consolidate':
-      return make('eq', 'On consolide');
-    case 'reps_up':
-      return make('up', '+1 rep par série');
-    case 'mixed':
-      return make('up', 'Objectif ajusté série par série');
+      return make(
+        'eq',
+        reason.rpe !== undefined
+          ? `Maximum atteint à RPE ${formatRpe(reason.rpe)} : on le confirme`
+          : 'On consolide',
+      );
+    case 'reps_up': {
+      const step = reason.step ?? 1;
+      const easy = reason.rpe !== undefined ? `, effort facile (RPE ${formatRpe(reason.rpe)})` : '';
+      return make('up', `+${step} rep${step > 1 ? 's' : ''} par série${easy}`);
+    }
+    case 'mixed': {
+      const rpe = reason.rpe !== undefined ? ` (RPE ${formatRpe(reason.rpe)})` : '';
+      return make('up', `Objectif ajusté série par série${rpe}`);
+    }
     case 'duration_up':
       return make('up', '+5 % de durée');
   }
+}
+
+// Cette méthode permet d'afficher un RPE à la française (« 7,5 »).
+export function formatRpe(rpe: number): string {
+  return String(rpe).replace('.', ',');
 }
 
 // Cette méthode permet d'obtenir le libellé d'un critère de record selon le type de mesure.

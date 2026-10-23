@@ -144,7 +144,7 @@ Les scopes standard de Supabase (`openid`, `email`, `profile`, `phone`) ne perme
 | `get_profile` | — | Nom, unités, ancienneté, objectifs activés, nombre de séances, série de semaines en cours. |
 | `search_exercises` | `query`, `muscle?`, `equipment?`, `limit?` | Exercices (catalogue + perso) : id, nom, équipement, muscles, type de mesure. |
 | `list_workouts` | `from?`, `to?`, `exercise?`, `routine?`, `limit?`, `cursor?` | Séances terminées, récentes d'abord : date, titre, durée, volume, nombre de records, objectifs atteints n/m. |
-| `get_workout` | `id` | Séance complète : exercices, séries (type, charge, reps, durée, distance, validée, objectif), notes, badges de record. |
+| `get_workout` | `id` | Séance complète : exercices, séries (type, charge, reps, durée, distance, validée, RPE, objectif), notes, badges de record. |
 | `get_exercise_history` | `exercise`, `from?`, `to?` | Par séance : séries de travail, meilleur 1RM estimé (Epley), volume. Plus la « dernière fois ». |
 | `get_records` | `exercise?` | Records par critère (§F7.6) avec date et séance ; sans `exercise` : records récents (`recentRecords`). |
 | `get_progression` | `exercise` | Tendance (`fitTrend`), rythme actuel, projection à 4 et 12 semaines, objectif à long terme et date d'atteinte estimée ; « pas assez de données » si les conditions du §F7.10 ne sont pas réunies. |
@@ -163,7 +163,7 @@ Toutes passent par `sync_push` (§7.2) et exigent `can_write`.
 |---|---|---|
 | `create_routine` | `name`, `folder?`, `note?`, `exercises[]` : `{ exercise, sets: [{ kind, weight? }], repRange?, restS? }` | Crée une `RoutineDoc` (schemaVersion 1). `restS` absent = repos par défaut de l'utilisateur. `repRange` refusé pour les types sans reps. Placée en fin de dossier. |
 | `update_routine` | `id`, champs à changer (mêmes formes) | Remplace le document entier après fusion des champs fournis. Les ids des exercices conservés sont gardés. |
-| `log_workout` | `startedAt`, `title?`, `durationS?` (défaut 1 h), `note?`, `routine?`, `exercises[]` : `{ exercise, sets: [{ kind, weight?, reps?, durationS?, distance? }] }` | Saisie a posteriori (§F7.5) : séance `completed`, séries `done = true`, sans objectif (comme la saisie a posteriori de l'app). Champs requis selon le type de mesure (`measurement.ts`). Unité absente = unité de l'utilisateur. |
+| `log_workout` | `startedAt`, `title?`, `durationS?` (défaut 1 h), `note?`, `routine?`, `exercises[]` : `{ exercise, sets: [{ kind, weight?, reps?, durationS?, distance?, rpe? }] }` | Saisie a posteriori (§F7.5) : séance `completed`, séries `done = true`, sans objectif (comme la saisie a posteriori de l'app). Champs requis selon le type de mesure (`measurement.ts`). Unité absente = unité de l'utilisateur. |
 | `update_workout` | `id`, champs à changer | Séance **terminée** uniquement ; `in_progress` → erreur « séance en cours sur un appareil ». Les records et objectifs atteints se recalculent seuls dans l'app (§10.3). |
 | `delete_workout` | `id` | Suppression logique (`deleted_at`). Séance terminée uniquement. |
 | `add_body_measurement` | `date`, `values` (clés de `BodyMeasurementKey`) | Une mesure par jour : complète la mesure existante du jour sans écraser les champs déjà remplis, sauf `overwrite: true`. |

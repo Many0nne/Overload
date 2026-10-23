@@ -67,7 +67,6 @@ L'app est un site web que l'on **ajoute à l'écran d'accueil** de l'iPhone (Saf
 ### Versions suivantes (hors V1)
 - Supersets et circuits.
 - Séries d'échauffement calculées automatiquement.
-- RPE / RIR (effort ressenti).
 - Calculateur de disques.
 - Import CSV générique, et import depuis Strong (l'import HEVY est disponible, voir §7.1).
 - Intégration Apple Santé / Health Connect.
@@ -215,6 +214,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
   - Si un champ obligatoire est vide au moment de cocher : la coche le remplit avec la valeur « Précédent » si elle existe, sinon elle est refusée et le champ vide est mis en évidence.
   - Le numéro de série peut être remplacé par un type : **É** (échauffement), **D** (dégressive), **X** (échec).
   - Ajouter une série recopie les valeurs de la série précédente. Une série se supprime par glissement.
+  - **Effort ressenti (RPE)**, facultatif et activable dans les paramètres (désactivé par défaut) : à la validation d'une série, une rangée de puces 6 · 6,5 · 7 … 10 apparaît sous la ligne, avec l'équivalent en reps en réserve (RPE 8 = 2 reps en réserve). Un appui choisit la valeur, l'ignorer ne bloque rien. La série affiche ensuite « RPE 8 » sous la coche ; le toucher rouvre le choix, la puce active efface la valeur. Décocher une série efface son RPE.
 - Actions par exercice : remplacer, réordonner, supprimer, modifier le temps de repos.
 - Un **record battu** pendant la séance est signalé immédiatement (badge 🏆 sur la série).
 
@@ -310,6 +310,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Thème clair, sombre ou automatique (sombre par défaut, usage en salle).
 - Notification de fin de repos : activée ou non.
 - Objectifs de progression : activés ou non (activés par défaut). Désactivés, les champs se pré-remplissent comme sans objectif et la tendance projetée est masquée.
+- Saisir l'effort ressenti (RPE) : désactivé par défaut (§7.4). Un RPE déjà enregistré (saisi ou importé de HEVY) reste affiché et pris en compte par les objectifs même si la saisie est désactivée.
 - Ancienneté en musculation, modifiable à tout moment : « Je débute », « Moins de 6 mois », « 6 mois à 1 an », « 1 à 2 ans », « 2 à 5 ans », « Plus de 5 ans », ou « Non renseignée ».
 - Compte : e-mail, mot de passe, lien d'invitation (copier, régénérer), export des données, import HEVY, suppression du compte, déconnexion.
 
@@ -333,7 +334,8 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - **Référence** : l'objectif se calcule à partir de la séance de référence, qui est « la dernière fois » au sens du §7.4. On considère les séries de travail de l'exercice (normales et à l'échec) et on les fait correspondre par rang, comme pour « Précédent ». Si la séance prévoit plus de séries que la référence, les séries en plus reprennent l'objectif de la dernière série de référence.
 - **Premier essai** : sans séance antérieure sur l'exercice, il n'y a pas d'objectif (même règle que pour les records). Les champs se pré-remplissent avec la routine.
 - Les **échauffements** et les **séries dégressives** n'ont pas d'objectif de progression : ils se pré-remplissent avec la valeur précédente.
-- Une **série à l'échec** (X) compte comme une série de travail. Les reps réalisées sont considérées comme la limite réelle, sans hypothèse de reps en réserve (le RPE et le RIR restent hors V1).
+- Une **série à l'échec** (X) compte comme une série de travail. Les reps réalisées sont considérées comme la limite réelle, sans hypothèse de reps en réserve.
+- **Effort ressenti** : quand la dernière série de travail de la référence porte un RPE, il module la double progression (voir « Effort ressenti » ci-dessous). Sans RPE, les règles s'appliquent telles quelles.
 
 **Réglages par exercice** (fiche exercice › Résumé, propres à chaque utilisateur)
 - **Incrément**. Valeurs par défaut selon l'équipement, modifiables :
@@ -376,6 +378,18 @@ Exemples :
 - Même fourchette, référence 80 kg × 12 / 11 / 9. Objectif : **80 kg × 12 / 12 / 10**.
 - Fourchette 4–6, référence 100 kg × 6 / 6 / 6. On a r′ = 5,2, d'où l'objectif **102,5 kg × 5**.
 - Fourchette 8–12, élévations latérales à 10 kg × 12 / 12 / 12, incrément 2 kg. On a r′ = 8,6, d'où l'objectif **12 kg × 8**. Epley aurait donné 5 reps, ce qui est irréaliste pour +2 kg.
+
+**Effort ressenti (RPE)**
+
+Seul compte le RPE de la **dernière série de travail** de la référence (la plus fatiguée) ; il module le cas de chaque série. Reprise et plateau restent prioritaires et ignorent le RPE ; une série sous *min* reste consolidée.
+
+| Cas | Effet | Raison affichée |
+|---|---|---|
+| Série en montée de charge, RPE ≤ 7 | Charge W + 2i (assisté : assistance −2i), reps r′ calculées pour cette charge. | « ↑ 12 reps atteintes sur toutes les séries, effort facile (RPE 7) » |
+| Série en montée de charge, RPE 10 | Mêmes charge et reps, une seule fois : si la série de même rang avait déjà atteint *max* à la séance précédente à la même charge, elle monte normalement. | « = Maximum atteint à RPE 10 : on le confirme » |
+| Série en progression de reps, RPE ≤ 7 | Reps = min(*max*, r + 2). Même règle en poids du corps. | « ↑ +2 reps par série, effort facile (RPE 6,5) » |
+
+Ces seuils (constantes `RPE_*` de `progressionConfig.ts`) sont des heuristiques, comme ceux de la Q8 : l'estimation des reps restantes se trompe d'environ 1 rep (Halperin et al. 2021), d'où des effets limités aux extrêmes de l'échelle.
 
 Pourquoi la double progression : faire progresser les reps à charge fixe donne des gains comparables à faire progresser la charge (Plotkin et al. 2022). Elle évite aussi les sauts de charge trop grands sur les petits poids. Le déclencheur est la fourchette atteinte sur toutes les séries, comme dans la règle du « 2-for-2 » de la NSCA. Il faut deux échecs avant de baisser, parce qu'une performance varie naturellement de 2 à 4 % d'une séance à l'autre.
 
@@ -497,7 +511,7 @@ Quand une séance est en cours, elle est accessible depuis tous les onglets par 
 | Q7 | Fonctions sociales (abonnements, fil, likes, partage) ? | **Tranché** (v0.4) : non. App personnelle, comptes isolés. |
 | Q8 | Les seuils heuristiques du §7.10 sont-ils bons ? Il s'agit de la baisse de 10 % en cas de plateau, du barème de reprise, des +5 % sur la durée et du plafond de la projection. | Ce sont des valeurs de départ, prudentes et compatibles avec la littérature, mais aucune étude ne les fixe précisément. À réévaluer après 4 semaines d'usage réel (§10, critère 6). |
 | Q9 | Faut-il demander l'ancienneté d'entraînement à l'inscription ? | **Tranché** (v0.6) : oui, en question facultative et modifiable dans les paramètres. Elle fixe l'origine du temps de la projection (§7.10). Sans elle, la projection part de la première séance enregistrée, et le garde-fou de 4 %/mois limite le biais. |
-| Q10 | Ajouter un ressenti de difficulté (RPE ou RIR) pour affiner les objectifs ? | **Tranché** (v0.6) : non en V1. On utilise les reps réalisées et les séries à l'échec. L'estimation des reps restantes est imprécise d'environ 1 rep (Halperin et al. 2021) et ajouterait une saisie à chaque série. |
+| Q10 | Ajouter un ressenti de difficulté (RPE ou RIR) pour affiner les objectifs ? | **Tranché** (v0.6) : non en V1. **Revu** (issue #19) : RPE 6–10 par demi-point, saisie facultative désactivée par défaut, effet limité aux extrêmes de l'échelle (§7.10). L'estimation des reps restantes reste imprécise d'environ 1 rep (Halperin et al. 2021). |
 | Q11 | Quand une série est-elle un échec, et qu'enregistre-t-on (reps réalisées ou objectif) ? | **Tranché** (#20) : on enregistre les reps réalisées et on garde l'objectif à part. L'objectif manqué s'en déduit, et l'historique l'affiche. Pour l'algorithme, un échec reste une série sous le min de la fourchette. La nature X (menée à l'échec) est une information sans effet sur le calcul (voir §7.10, Objectifs atteints). |
 
 ---

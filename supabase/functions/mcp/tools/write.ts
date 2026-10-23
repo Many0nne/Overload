@@ -87,6 +87,7 @@ const workoutSetSchema = z.object({
   reps: z.number().int().optional(),
   durationS: z.number().int().optional().describe('Durée en secondes.'),
   distance: distanceSchema.optional(),
+  rpe: z.number().min(6).max(10).multipleOf(0.5).optional().describe('Effort ressenti (RPE 6 à 10 par demi-point), facultatif.'),
 });
 
 const workoutExerciseSchema = z.object({

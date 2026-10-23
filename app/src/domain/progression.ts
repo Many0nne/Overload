@@ -14,6 +14,10 @@ import {
   PLATEAU_DROP,
   PLATEAU_FAIL_SESSIONS,
   PLATEAU_STALL_SESSIONS,
+  RPE_EASY_LOAD_STEPS,
+  RPE_EASY_MAX,
+  RPE_EASY_REPS_STEP,
+  RPE_MAX,
 } from './progressionConfig';
 import type {
   ExercisePrefsDoc,
@@ -153,6 +157,11 @@ function isPlateau(run: WorkoutSet[][], range: RepRange | undefined): boolean {
   return false;
 }
 
+// Cette méthode permet d'obtenir le RPE de la dernière série de travail validée lorsqu'il a été saisi.
+export function lastRpe(sets: WorkoutSet[]): number | undefined {
+  return sets.at(-1)?.rpe;
+}
+
 // Cette méthode permet d'obtenir la baisse de charge de reprise selon le nombre de semaines d'arrêt (dernière tranche franchie).
 export function comebackDrop(weeksOff: number): number {
   let drop = 0;
@@ -206,6 +215,10 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
   const comeback = weeksOff > COMEBACK_MIN_WEEKS;
   const run = sessionsAtSameLoad(input, refWork);
   const plateau = isPlateau(run, range);
+  // Effort ressenti de la dernière série de travail : il module chaque série (§F7.10, issue #19).
+  const rpe = lastRpe(refWork);
+  const easy = rpe !== undefined && rpe <= RPE_EASY_MAX;
+  const repsStep = easy ? RPE_EASY_REPS_STEP : 1;
 
   if (type === 'bodyweight') {
     if (comeback) {
@@ -216,8 +229,8 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
     }
     if (plateau) return { sets: map((s) => ({ reps: reps(s) })), reason: { kind: 'consolidate' } };
     return {
-      sets: map((s) => ({ reps: range ? Math.min(range.max, reps(s) + 1) : reps(s) + 1 })),
-      reason: { kind: 'reps_up' },
+      sets: map((s) => ({ reps: range ? Math.min(range.max, reps(s) + repsStep) : reps(s) + repsStep })),
+      reason: easy ? { kind: 'reps_up', step: repsStep, rpe: rpe! } : { kind: 'reps_up' },
     };
   }
 
@@ -249,23 +262,38 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
     };
   }
   // Hors reprise et plateau, le cas se choisit série par série, d'après la série de même rang (issue #18).
-  type SetCase = 'load_up' | 'consolidate' | 'reps_up';
-  // Cette méthode permet de choisir le cas d'une série : max atteint → montée, sous min → consolidation, sinon +1 rep.
-  const caseOf = (s: WorkoutSet): SetCase =>
-    reps(s) >= rr.max ? 'load_up' : reps(s) < rr.min ? 'consolidate' : 'reps_up';
+  // « confirm » : max atteint à RPE 10, mêmes charge et reps une séance, sauf si la série de même rang
+  // de la séance précédente à cette charge l'avait déjà atteint.
+  type SetCase = 'load_up' | 'confirm' | 'consolidate' | 'reps_up';
+  const before = run.length >= 2 ? run.at(-2)! : [];
+  // Cette méthode permet de savoir si la série de même rang de la séance précédente avait déjà atteint max.
+  const maxedBefore = (s: WorkoutSet): boolean => {
+    const prev = before[Math.min(refWork.indexOf(s), before.length - 1)];
+    return prev !== undefined && reps(prev) >= rr.max;
+  };
+  // Cette méthode permet de choisir le cas d'une série : max atteint → montée (ou confirmation à RPE 10),
+  // sous min → consolidation, sinon progression en reps.
+  const caseOf = (s: WorkoutSet): SetCase => {
+    if (reps(s) >= rr.max)
+      return rpe !== undefined && rpe >= RPE_MAX && !maxedBefore(s) ? 'confirm' : 'load_up';
+    return reps(s) < rr.min ? 'consolidate' : 'reps_up';
+  };
+  const loadStep = easy ? inc * RPE_EASY_LOAD_STEPS : inc;
   // Cette méthode permet de calculer l'objectif d'une série selon son propre cas.
   const targetFor = (s: WorkoutSet): SetTarget => {
     switch (caseOf(s)) {
       case 'load_up': {
         const w = toUser(s.weight);
-        if (assisted) return { weight: asWeight(w - inc), reps: rr.min };
-        const next = asWeight(w + inc);
+        if (assisted) return { weight: asWeight(w - loadStep), reps: rr.min };
+        const next = asWeight(w + loadStep);
         let r = rr.min;
         if (type === 'weight_reps' && rr.max <= MARZAGAO_MAX_REPS && w > 0) {
           r = Math.min(rr.max, Math.max(rr.min, equivalentReps({ v: w, u: unit }, rr.max, next)));
         }
         return { weight: next, reps: r };
       }
+      case 'confirm':
+        return { weight: asWeight(toUser(s.weight)), reps: reps(s) };
       case 'consolidate': {
         const t = s.target;
         if (t && (t.weight || t.reps !== undefined))
@@ -273,17 +301,26 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
         return { weight: asWeight(toUser(s.weight)), reps: reps(s) };
       }
       case 'reps_up':
-        return { weight: asWeight(toUser(s.weight)), reps: Math.max(rr.min, Math.min(rr.max, reps(s) + 1)) };
+        return {
+          weight: asWeight(toUser(s.weight)),
+          reps: Math.max(rr.min, Math.min(rr.max, reps(s) + repsStep)),
+        };
     }
   };
   const cases = new Set(refFor.filter((s): s is WorkoutSet => s !== undefined).map(caseOf));
   const only = cases.size === 1 ? [...cases][0] : undefined;
+  // Le RPE n'apparaît dans la raison que s'il a changé l'objectif (effort facile, ou confirmation à RPE 10).
+  const easyInfo = easy ? { rpe: rpe! } : {};
   let reason: TargetReason;
   if (only === 'load_up')
     reason = assisted
-      ? { kind: 'load_up', reachedReps: rr.max, assistanceDrop: { v: inc, u: unit } }
-      : { kind: 'load_up', reachedReps: rr.max };
+      ? { kind: 'load_up', reachedReps: rr.max, assistanceDrop: { v: loadStep, u: unit }, ...easyInfo }
+      : { kind: 'load_up', reachedReps: rr.max, ...easyInfo };
+  else if (only === 'confirm') reason = { kind: 'consolidate', rpe: rpe! };
+  else if (only === 'reps_up')
+    reason = easy ? { kind: 'reps_up', step: repsStep, rpe: rpe! } : { kind: 'reps_up' };
   else if (only) reason = { kind: only };
+  else if (easy || cases.has('confirm')) reason = { kind: 'mixed', rpe: rpe! };
   else reason = { kind: 'mixed' };
   return { sets: map(targetFor), reason };
 }
