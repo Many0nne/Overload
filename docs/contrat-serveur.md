@@ -40,12 +40,19 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - `cancel_rest_timer(p_device_id uuid) returns void`.
 - `health() returns text` : `'ok'`, accessible à `anon`.
 - `server_now_ms() returns bigint` : pour l'avertissement d'horloge (l'en-tête `Date` n'est pas lisible en CORS ; le client place l'heure serveur au milieu de l'aller-retour, alerte au-delà de 5 min).
+- Connecteur Claude (docs/spec-mcp.md §7.3, tables `mcp_connections` et `mcp_audit`, non synchronisées) :
+  - `upsert_mcp_connection(p_client_id text, p_client_name text, p_can_write boolean) returns void` : page de consentement ; une nouvelle approbation remet `revoked_at` à null.
+  - `revoke_mcp_connection(p_client_id text) returns void` : « Déconnecter » (le client révoque aussi le grant avec `auth.oauth.revokeGrant`).
+  - `mcp_touch(p_client_name text default null) returns jsonb` : `{ can_write, revoked }`, crée la connexion absente, note `last_used_at` (1 fois / min). Exige le claim `client_id` (jeton OAuth), sinon `42501 not_an_oauth_token`.
+  - `mcp_log(p_tool text, p_table text, p_row_id uuid, p_before jsonb, p_after jsonb) returns void` : journal des écritures, même exigence. Purge à 90 jours (pg_cron `purge-mcp-audit`).
+  - Le propriétaire lit les deux tables et modifie `can_write` / `revoked_at` de ses connexions directement (RLS).
 - `admin_storage_usage() returns jsonb` : `{ used_bytes, quota_bytes }`, occupation totale de Storage (tous buckets). Admin seulement, sinon `42501 forbidden`. Le client alerte à 80 %.
 
 ## Edge Functions
 - `signup-with-invite` (POST, sans JWT) : `{ code, email, password, display_name, settings }`. Le code est normalisé (majuscules, sans tirets ni espaces). Réponses : `200 { ok: true }`, `400 { error: 'invalid_code' | 'email_taken' | 'weak_password' | 'invalid_input' }`, `429 { error: 'rate_limited' }` (5 / IP / heure, table `signup_attempts`). Le client ouvre ensuite la session avec `signInWithPassword`.
 - `send-push` (POST, en-tête `x-push-secret`) : `{ device_id, title, body }`. Appelée par `dispatch_due_timers()` via `pg_net`.
 - `delete-account` (POST, JWT) : supprime `photos/<uid>/*`, puis `auth.admin.deleteUser(uid)`.
+- `mcp` (sans vérification JWT par la passerelle) : serveur MCP Streamable HTTP sans session (POST uniquement), voir docs/spec-mcp.md. `GET /mcp/.well-known/oauth-protected-resource` (public) ; sans jeton OAuth valide → `401` + `WWW-Authenticate: Bearer resource_metadata=…`. Écrit par `sync_push` avec l'appareil virtuel `UUIDv5(mcp:<user_id>:<client_id>)`. 120 appels d'outil / min / compte (`429`). Code du domaine copié par `npm run edge:domain` dans `supabase/functions/_shared/domain/`.
 
 ## Notifications (pg_cron)
 - `dispatch_due_timers()` chaque seconde. URL et secret lus dans `private.config` (clés `send_push_url`, `push_secret`), alimentée par une migration locale et par une commande manuelle en prod (voir `DEPLOY.md`).

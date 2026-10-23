@@ -15,6 +15,7 @@ import { SyncPill } from '@/ui/SyncPill';
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
 const ErrorLogPage = lazy(() => import('@/features/settings/ErrorLogPage'));
 const ImportHevyPage = lazy(() => import('@/features/settings/ImportHevyPage'));
+const ClaudePage = lazy(() => import('@/features/settings/ClaudePage'));
 const StatsPage = lazy(() => import('@/features/stats/StatsPage'));
 const MeasurementsPage = lazy(() => import('@/features/measurements/MeasurementsPage'));
 
@@ -31,6 +32,7 @@ export default function ProfilePage() {
       <Route path="settings" element={<SettingsPage />} />
       <Route path="settings/errors" element={<ErrorLogPage />} />
       <Route path="settings/import-hevy" element={<ImportHevyPage />} />
+      <Route path="settings/claude" element={<ClaudePage />} />
     </Routes>
   );
 }

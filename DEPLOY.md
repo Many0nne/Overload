@@ -53,6 +53,7 @@ npx supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJEC
 npx supabase functions deploy signup-with-invite --no-verify-jwt
 npx supabase functions deploy send-push --no-verify-jwt
 npx supabase functions deploy delete-account
+npx supabase functions deploy mcp --no-verify-jwt   # connecteur Claude (docs/spec-mcp.md)
 ```
 
 `PUSH_SECRET` doit être identique à `private.config.push_secret`. Sans CLI : Edge Functions › Secrets accepte un collage au format `.env`.
@@ -65,6 +66,7 @@ Tableau de bord › Authentication :
 - URL Configuration : Site URL = URL Cloudflare Pages ; Redirect URLs = `<URL>/reset`.
 - SMTP (Brevo) : hôte `smtp-relay.brevo.com`, port 587, identifiant et clé SMTP Brevo, expéditeur vérifié dans Brevo. Sans SMTP personnalisé, Supabase n'envoie qu'aux membres de l'équipe du projet.
 - Emails › Reset password : le lien `{{ .ConfirmationURL }}` redirige vers `/reset`.
+- Connecteur Claude (docs/spec-mcp.md §5.1, lot M3) : OAuth Server › activer, chemin d'autorisation `/oauth/consent`, « Allow dynamic client registration » activé. JWT Keys : migrer vers des clés asymétriques (ES256) pour que l'Edge Function `mcp` vérifie les jetons sans appel réseau. URL à coller dans Claude : `https://<ref>.supabase.co/functions/v1/mcp` (affichée dans Paramètres › Claude).
 
 ## 5. Premier compte
 

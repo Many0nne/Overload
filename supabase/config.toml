@@ -362,14 +362,14 @@ enabled = false
 # Obtain from https://clerk.com/setup/supabase
 # domain = "example.clerk.accounts.dev"
 
-# OAuth server configuration
+# Serveur OAuth 2.1 (bêta) : connecteur Claude (docs/spec-mcp.md §5.1). Consentement servi par l'app (site_url + chemin).
 [auth.oauth_server]
 # Enable OAuth server functionality
-enabled = false
+enabled = true
 # Path for OAuth consent flow UI
 authorization_url_path = "/oauth/consent"
-# Allow dynamic client registration
-allow_dynamic_registration = false
+# Allow dynamic client registration (nécessaire aux connecteurs personnalisés de Claude)
+allow_dynamic_registration = true
 
 [edge_runtime]
 enabled = true
@@ -422,3 +422,7 @@ verify_jwt = false
 
 [functions.delete-account]
 verify_jwt = true
+
+# Connecteur Claude (MCP) : le jeton OAuth est vérifié dans le code pour répondre le 401 + WWW-Authenticate attendu.
+[functions.mcp]
+verify_jwt = false

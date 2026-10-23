@@ -15,7 +15,8 @@
     "test:sync": "vitest run --config vitest.sync.config.ts",
     "e2e": "playwright test",
     "budget": "node scripts/check-bundle.mjs",
-    "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun"
+    "lighthouse": "npx --yes @lhci/cli@0.15.1 autorun",
+    "edge:domain": "node scripts/build-edge-domain.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

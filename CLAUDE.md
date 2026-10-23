@@ -1,14 +1,17 @@
 # Overload
 
 PWA de suivi de musculation. Specs : `SPEC.md` (fonctionnelle, §F), `SPEC-TECHNIQUE.md` (technique), maquette `design/maquette.html`.
-Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. Connecteur Claude (MCP, brouillon) : `docs/spec-mcp.md`.
+Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. Connecteur Claude (MCP) : `docs/spec-mcp.md`.
 
 - Front : `app/` (React 19, Vite, Dexie, Zustand). `npm run typecheck | lint | test | build` depuis `app/`.
   Tests de synchro contre Supabase local (démarré) : `npm run test:sync` (`app/tests/sync/`).
   E2E Playwright (WebKit + Chromium, viewport iPhone) contre Supabase local : `npm run e2e` (`app/tests/e2e/`,
   build de prod servi par `vite preview` sur :4173 ; navigateurs : `npx playwright install chromium webkit`).
   Budgets (§15) : `npm run budget` après `vite build` (JS initial < 180 Ko gzip), `npm run lighthouse` (indicatif).
-- Domaine pur et testé : `app/src/domain/` (types partagés dans `types.ts`).
+- Domaine pur et testé : `app/src/domain/` (types partagés dans `types.ts`). L'Edge Function `mcp` en embarque une copie
+  (`supabase/functions/_shared/domain/`, générée) : après toute modification du domaine, `npm run edge:domain` (un test unitaire échoue sinon).
+  Tests du connecteur (Edge Function) : `npm run test:sync` (`app/tests/mcp/`). Le runtime edge local ne recharge pas le code sous Windows :
+  `docker restart supabase_edge_runtime_<projet>` après une modification de `supabase/functions/`.
 - Backend : `supabase/` (migrations, Edge Functions, pgTAP). Local : `npx supabase start`, tests `npx supabase test db`.
 - Catalogue : `scripts/build-catalog.ts` génère `supabase/seed.sql`.
 - Langue de l'UI et des commentaires : français. Chaque nouvelle méthode a un commentaire « Cette méthode permet de… ».

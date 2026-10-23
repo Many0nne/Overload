@@ -1,7 +1,7 @@
 # Spécification : connecteur Claude (serveur MCP distant)
 
 > Complète [SPEC.md](../SPEC.md) (§F), [SPEC-TECHNIQUE.md](../SPEC-TECHNIQUE.md) et [contrat-serveur.md](contrat-serveur.md).
-> Version 0.1, 23/10/2026. Brouillon à valider : les décisions encore ouvertes sont listées au §12.
+> Version 0.2, 23/10/2026. Lots M0 à M2 implémentés (branche `feature/connecteur-claude`) ; M3 (production) reste à faire. Décisions du §12 tranchées selon les recommandations ; constats du spike M0 au §11.
 
 ---
 
@@ -42,7 +42,7 @@ L'utilisateur parle à Claude. Claude appelle les outils (§6). Avant chaque éc
 
 ### C3. Gérer les connexions
 
-**Paramètres › Claude** liste les connexions actives (client, date de connexion, dernière utilisation, droit d'écriture). Pour chacune : interrupteur « Modifications autorisées » et bouton **« Déconnecter »**. Une connexion déconnectée est refusée dès l'appel suivant ; Claude redemande alors l'autorisation.
+**Paramètres › Claude** liste les connexions actives (client, date de connexion, dernière utilisation, droit d'écriture). Pour chacune : interrupteur « Modifications autorisées » et bouton **« Déconnecter »**. Une connexion déconnectée est refusée dès l'appel suivant ; Claude redemande alors l'autorisation. « Déconnecter » révoque aussi l'autorisation côté Supabase Auth (`auth.oauth.revokeGrant`) : sans cela, Supabase réapprouverait en silence un client déjà autorisé et la page de consentement ne serait jamais réaffichée.
 
 ## 4. Architecture
 
@@ -101,7 +101,7 @@ L'Edge Function ne peut pas servir `/.well-known/*` à la racine du domaine ; el
 }
 ```
 
-- `resource` doit être **exactement** l'URL saisie par l'utilisateur (c'est celle affichée dans Paramètres › Claude). Construite à partir de `SUPABASE_URL`, pas de l'en-tête `Host`.
+- `resource` doit être **exactement** l'URL saisie par l'utilisateur (c'est celle affichée dans Paramètres › Claude). Construite à partir de `SUPABASE_URL`, pas de l'en-tête `Host`. Exceptions : `MCP_PUBLIC_URL` (secret de la fonction, pour un tunnel de test) et la pile locale, où `SUPABASE_URL` vaut l'adresse interne de Kong (`http://kong:8000`) et où l'hôte publié est repris des en-têtes `x-forwarded-*` de Kong.
 - `verify_jwt = false` pour cette fonction dans `config.toml` : la vérification est faite dans le code, pour pouvoir répondre le `401` attendu.
 
 ### 5.3 Contrôle à chaque requête
@@ -121,7 +121,7 @@ Les scopes standard de Supabase (`openid`, `email`, `profile`, `phone`) ne perme
 - Route publique de l'app, ajoutée à la liste `publicPath` d'`App.tsx` (comme `/reset`) : sur iOS hors mode standalone, elle ne doit **pas** afficher la page d'installation.
 - Chargée à la demande (lazy), sans démarrer Dexie ni la synchronisation : se connecter dans Safari pour approuver ne doit pas télécharger toutes les données dans le navigateur.
 - Session Supabase **non persistée** (`persistSession: false`) : la page ouvre une session le temps du consentement, puis la ferme.
-- Étapes : lire `authorization_id` ; connexion si nécessaire ; `supabase.auth.oauth.getAuthorizationDetails(authorization_id)` ; afficher client, domaine de retour, droits ; puis `approveAuthorization` ou `denyAuthorization` et suivre la redirection renvoyée.
+- Étapes : lire `authorization_id` ; connexion si nécessaire (la session de l'app ouverte dans le même navigateur est reprise si son jeton est encore valide, sans la rafraîchir) ; `supabase.auth.oauth.getAuthorizationDetails(authorization_id)` ; afficher client, domaine de retour, droits ; si la demande est déjà approuvée (client autorisé auparavant), `getAuthorizationDetails` renvoie directement `redirect_url` et la page y renvoie aussitôt ; sinon `approveAuthorization` ou `denyAuthorization` et suivre la redirection renvoyée.
 - Avant `approveAuthorization`, la page enregistre le choix « modifications autorisées » par la RPC `upsert_mcp_connection(p_client_id, p_client_name, p_can_write)`.
 - Si le domaine de retour est une boucle locale (`localhost`, `127.0.0.1`), afficher l'avertissement exigé par la spec MCP : « Ne continuez que si vous venez de lancer Claude Code sur cet ordinateur. »
 - Textes en français, thème de l'app.
@@ -163,7 +163,7 @@ Toutes passent par `sync_push` (§7.2) et exigent `can_write`.
 |---|---|---|
 | `create_routine` | `name`, `folder?`, `note?`, `exercises[]` : `{ exercise, sets: [{ kind, weight? }], repRange?, restS? }` | Crée une `RoutineDoc` (schemaVersion 1). `restS` absent = repos par défaut de l'utilisateur. `repRange` refusé pour les types sans reps. Placée en fin de dossier. |
 | `update_routine` | `id`, champs à changer (mêmes formes) | Remplace le document entier après fusion des champs fournis. Les ids des exercices conservés sont gardés. |
-| `log_workout` | `startedAt`, `title?`, `durationS?`, `note?`, `routine?`, `exercises[]` : `{ exercise, sets: [{ kind, weight?, reps?, durationS?, distance? }] }` | Saisie a posteriori (§F7.5) : séance `completed`, séries `done = true`, sans objectif (comme la saisie a posteriori de l'app). Champs requis selon le type de mesure (`measurement.ts`). Unité absente = unité de l'utilisateur. |
+| `log_workout` | `startedAt`, `title?`, `durationS?` (défaut 1 h), `note?`, `routine?`, `exercises[]` : `{ exercise, sets: [{ kind, weight?, reps?, durationS?, distance? }] }` | Saisie a posteriori (§F7.5) : séance `completed`, séries `done = true`, sans objectif (comme la saisie a posteriori de l'app). Champs requis selon le type de mesure (`measurement.ts`). Unité absente = unité de l'utilisateur. |
 | `update_workout` | `id`, champs à changer | Séance **terminée** uniquement ; `in_progress` → erreur « séance en cours sur un appareil ». Les records et objectifs atteints se recalculent seuls dans l'app (§10.3). |
 | `delete_workout` | `id` | Suppression logique (`deleted_at`). Séance terminée uniquement. |
 | `add_body_measurement` | `date`, `values` (clés de `BodyMeasurementKey`) | Une mesure par jour : complète la mesure existante du jour sans écraser les champs déjà remplis, sauf `overwrite: true`. |
@@ -174,7 +174,7 @@ Hors V1 en écriture : exercices personnalisés (création, modification, archiv
 
 ### 6.4 Annotations
 
-Chaque outil porte les annotations MCP : `readOnlyHint: true` pour la lecture ; `readOnlyHint: false` et `destructiveHint` (`true` pour `update_*`, `delete_workout`, `add_body_measurement` avec `overwrite`) pour l'écriture. Les clients Claude s'en servent pour demander confirmation.
+Chaque outil porte les annotations MCP : `readOnlyHint: true` pour la lecture ; `readOnlyHint: false` et `destructiveHint` (`true` pour `update_*` et `delete_workout`) pour l'écriture. Les annotations sont fixes par outil : `add_body_measurement` reste `destructiveHint: false` (son comportement par défaut ne fait que compléter ; `overwrite` est explicite dans la description). Les clients Claude s'en servent pour demander confirmation.
 
 ### 6.5 Instructions du serveur
 
@@ -191,11 +191,12 @@ supabase/functions/
     auth.ts             vérification du jeton, mcp_connections
     tools/              un fichier par groupe (read.ts, write.ts), schémas zod
     format.ts           résumés texte en français (réutilise domain/format.ts)
+    store.ts            lectures PostgREST, écriture sync_push + mcp_log
   _shared/
-    domain.ts           ré-exporte app/src/domain/* pour Deno
+    domain/             copie générée de app/src/domain (npm run edge:domain)
 ```
 
-- **Réutilisation du domaine** : `app/src/domain/` n'a que des imports relatifs (plus `uuid`), donc importable depuis Deno. Deux points à régler en L0 : les imports sans extension (`'./units'`) exigent l'option Deno `sloppy-imports` (ou une étape de copie), et le déploiement doit embarquer des fichiers hors de `supabase/functions/` (vérifier le bundle `supabase functions deploy`).
+- **Réutilisation du domaine** : le runtime edge (local comme déployé) ne voit que `supabase/functions/`. Le cœur pur des outils vit dans `app/src/domain/mcp/` (testé par Vitest avec le reste du domaine) ; `app/scripts/build-edge-domain.mjs` copie ce dossier et les modules du domaine qu'il importe dans `supabase/functions/_shared/domain/`, en ajoutant les extensions `.ts` et en épinglant `uuid` (`npm:`). Un test unitaire échoue si la copie n'est plus à jour.
 - **Lecture** : client supabase-js créé avec le jeton de l'utilisateur (`global.headers.Authorization`), requêtes PostgREST filtrées (`deleted_at is null`, plages de `started_at`). Les records et la tendance d'un exercice chargent les séances qui le contiennent (index GIN `exercise_ids`).
 
 ### 7.2 Écriture et synchronisation
@@ -284,9 +285,9 @@ mcp_audit(
 
 | Lot | Contenu | Livrable vérifiable |
 |---|---|---|
-| M0 Spike | OAuth server + DCR activés sur Supabase local ; Edge Function `mcp` avec un seul outil `get_profile` ; page de consentement minimale ; import du domaine depuis Deno ; tunnel (`jwt_issuer` réglé sur l'URL du tunnel) pour tester depuis claude.ai. | claude.ai et Claude Code se connectent et appellent `get_profile`. Les 4 points « à vérifier » ci-dessous sont tranchés. |
-| M1 Lecture | Tous les outils du §6.2, `mcp_connections`, page de consentement complète, Paramètres › Claude (sans journal). | Les questions types obtiennent des chiffres identiques à ceux de l'app. |
-| M2 Écriture | Outils du §6.3, `mcp_audit`, journal dans Paramètres, droit d'écriture. | Une routine créée par Claude apparaît sur l'iPhone en moins d'une minute. |
+| M0 Spike (fait) | OAuth server + DCR activés sur Supabase local ; Edge Function `mcp` avec un seul outil `get_profile` ; page de consentement minimale ; import du domaine depuis Deno ; tunnel (`jwt_issuer` réglé sur l'URL du tunnel) pour tester depuis claude.ai. | claude.ai et Claude Code se connectent et appellent `get_profile`. Les 4 points « à vérifier » ci-dessous sont tranchés. |
+| M1 Lecture (fait) | Tous les outils du §6.2, `mcp_connections`, page de consentement complète, Paramètres › Claude (sans journal). | Les questions types obtiennent des chiffres identiques à ceux de l'app. |
+| M2 Écriture (fait) | Outils du §6.3, `mcp_audit`, journal dans Paramètres, droit d'écriture. | Une routine créée par Claude apparaît sur l'iPhone en moins d'une minute. |
 | M3 Prod | Clés asymétriques, activation en prod, `site_url` de prod, `DEPLOY.md`, contrat serveur mis à jour. | Connexion depuis l'iPhone réel. |
 
 | Risque / point à vérifier en M0 | Parade |
@@ -297,9 +298,19 @@ mcp_audit(
 | API de révocation des grants côté Supabase Auth | Sinon, révocation portée seule par `mcp_connections` (déjà suffisante). |
 | DCR ouvert : n'importe quel client peut s'enregistrer | Le consentement explicite de l'utilisateur reste obligatoire ; le domaine de retour est affiché ; pas d'approbation automatique. |
 | Démarrage à froid de l'Edge Function avec le SDK MCP | Mesurer en M0 ; basculer sur `mcp-lite` si besoin. |
+
+**Constats du spike M0** (Supabase local, CLI 2.121, GoTrue 2.197) :
+
+- OAuth 2.1 + DCR fonctionnent en local (`[auth.oauth_server]` de `config.toml`). Découverte servie à `/.well-known/oauth-authorization-server` et `/auth/v1/.well-known/openid-configuration` ; la variante à insertion de chemin (`/.well-known/oauth-authorization-server/auth/v1`) répond 404 en local (à revérifier en prod, Claude essaie les trois).
+- Le jeton d'accès OAuth porte bien `client_id` (et `scope`), absent des jetons de session de l'app : le contrôle du §5.3 est fiable. La RLS s'applique au jeton OAuth sans changement.
+- URI de retour en boucle locale : correspondance exacte du port. Claude Code enregistre son propre port à chaque DCR, donc pas de blocage.
+- Révocation : `auth.oauth.listGrants()` / `revokeGrant({ clientId })` existent côté utilisateur ; un client déjà autorisé est réapprouvé sans consentement tant que le grant existe (d'où la révocation du grant au §C3).
+- Démarrage à froid de `mcp` avec `@modelcontextprotocol/sdk` 1.32 : ~2 s en local, puis ~100 ms par appel d'outil. SDK officiel conservé.
+- Le jeton n'est pas lié à la ressource (RFC 8707 : `aud` = `authenticated`) : tout jeton OAuth du projet est accepté par `mcp`. Sans conséquence tant que `mcp` est la seule ressource OAuth du projet.
+- Reste à faire en M3 : essai réel depuis claude.ai et Claude Code (tunnel ou prod), clés asymétriques en prod.
 | Projet Supabase Free mis en pause | Inchangé (ping tous les 3 jours) ; Claude reçoit une erreur de connexion pendant la pause. |
 
-## 12. Décisions ouvertes
+## 12. Décisions (tranchées le 23/10/2026 : recommandations retenues)
 
 | # | Question | Recommandation |
 |---|---|---|

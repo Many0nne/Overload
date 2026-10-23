@@ -31,6 +31,9 @@ const LiveWorkoutPage = lazy(() => import('@/features/workout-live/LiveWorkoutPa
 const SummaryPage = lazy(() => import('@/features/workout-summary/SummaryPage'));
 const HistoryDetailPage = lazy(() => import('@/features/history/HistoryDetailPage'));
 const ExercisePage = lazy(() => import('@/features/exercise/ExercisePage'));
+// Consentement du connecteur Claude : page publique hors Dexie et hors synchronisation (docs/spec-mcp.md §5.4).
+const ConsentPage = lazy(() => import('@/features/oauth/ConsentPage'));
+const CONSENT_PATH = '/oauth/consent';
 
 // Cette méthode permet d'appliquer le thème choisi (sombre par défaut, auto = selon le système) sur <html>.
 function useTheme() {
@@ -274,7 +277,21 @@ function ClockNotice(props: { skewMs: number }) {
   );
 }
 
+// Cette méthode permet de démarrer l'app, ou seulement la page de consentement OAuth sans base locale ni synchro.
 export function App() {
+  if (location.pathname === CONSENT_PATH)
+    return (
+      <div className="app">
+        <Suspense fallback={<div className="page" />}>
+          <ConsentPage />
+        </Suspense>
+      </div>
+    );
+  return <MainApp />;
+}
+
+// Cette méthode permet de préparer la session (base locale, synchro) puis d'afficher l'app.
+function MainApp() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     void initAuth().finally(() => setReady(true));
