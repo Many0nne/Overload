@@ -1,6 +1,7 @@
 // Généré par app/scripts/build-edge-domain.mjs depuis app/src/domain : ne pas modifier.
 // Import des exports CSV de HEVY (workout_data.csv, measurement_data.csv) : lecture, regroupement et correspondance
 // avec les exercices d'Overload. Module pur : les écritures en base sont dans features/settings/importHevy.ts.
+import { normalizeRpe } from './measurement.ts';
 import { normalizeSearch } from './search.ts';
 import type {
   BodyMeasurementKey,
@@ -19,6 +20,7 @@ export type HevySet = {
   reps?: number;
   distanceKm?: number;
   durationS?: number;
+  rpe?: number;
 };
 
 export type HevyExercise = { title: string; note?: string; sets: HevySet[] };
@@ -230,6 +232,8 @@ export function parseHevyWorkouts(text: string): HevyWorkout[] {
     if (reps !== undefined) set.reps = Math.round(reps);
     if (distanceKm !== undefined) set.distanceKm = distanceKm;
     if (durationS !== undefined) set.durationS = Math.round(durationS);
+    const rpe = normalizeRpe(num(r.rpe));
+    if (rpe !== undefined) set.rpe = rpe;
     ex.sets.push(set);
   }
   return [...byKey.values()].sort((a, b) => a.startedAt - b.startedAt);
@@ -283,6 +287,7 @@ export function buildWorkoutDoc(
         if (s.reps !== undefined) set.reps = s.reps;
         if (s.durationS !== undefined) set.durationS = s.durationS;
         if (s.distanceKm !== undefined) set.distance = { v: s.distanceKm, u: 'km' };
+        if (s.rpe !== undefined) set.rpe = s.rpe;
         return set;
       }),
     });

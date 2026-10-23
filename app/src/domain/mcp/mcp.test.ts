@@ -142,6 +142,23 @@ describe('entrées des outils', () => {
     expect(r.value.restS).toBe(90);
   });
 
+  it('garde un RPE valide (arrondi au demi-point) et ignore un RPE hors échelle', () => {
+    const r = buildWorkoutExercise(
+      SQUAT,
+      {
+        sets: [
+          { weight: 100, reps: 5, rpe: 8.4 },
+          { weight: 100, reps: 5, rpe: 4 },
+        ],
+      },
+      { units: UNITS, defaultRestS: 90, newId },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.sets[0]!.rpe).toBe(8.5);
+    expect(r.value.sets[1]).not.toHaveProperty('rpe');
+  });
+
   it('refuse une série incomplète pour le type de mesure et ignore les champs hors sujet', () => {
     const missing = buildWorkoutExercise(
       SQUAT,

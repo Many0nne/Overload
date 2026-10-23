@@ -54,10 +54,11 @@ export type SetTarget = { weight?: Weight; reps?: number; durationS?: number };
 export type TargetReason =
   | { kind: 'comeback'; weeksOff: number }
   | { kind: 'plateau' }
-  | { kind: 'load_up'; reachedReps: number; assistanceDrop?: Weight } // assistanceDrop : type assisté uniquement
-  | { kind: 'consolidate' }
-  | { kind: 'reps_up' }
-  | { kind: 'mixed' } // cas différents selon les séries (montée, +1 rep, consolidation)
+  // assistanceDrop : type assisté uniquement ; rpe : effort facile (≤ 7) ayant doublé l'incrément
+  | { kind: 'load_up'; reachedReps: number; assistanceDrop?: Weight; rpe?: number }
+  | { kind: 'consolidate'; rpe?: number } // rpe : maximum atteint à l'effort maximal (10)
+  | { kind: 'reps_up'; step?: number; rpe?: number } // step : reps ajoutées (1 par défaut, 2 si effort facile)
+  | { kind: 'mixed'; rpe?: number } // cas différents selon les séries (montée, +1 rep, consolidation)
   | { kind: 'duration_up' };
 
 export type WorkoutSet = {
@@ -70,6 +71,7 @@ export type WorkoutSet = {
   done: boolean;
   doneAt?: number;
   target?: SetTarget;
+  rpe?: number; // effort ressenti, 6 à 10 par demi-point (facultatif)
 };
 
 export type WorkoutExercise = {
@@ -93,7 +95,7 @@ export type WorkoutDoc = {
   exercises: WorkoutExercise[];
 };
 
-export type RoutineSet = Omit<WorkoutSet, 'done' | 'doneAt' | 'target' | 'reps'>;
+export type RoutineSet = Omit<WorkoutSet, 'done' | 'doneAt' | 'target' | 'reps' | 'rpe'>;
 
 export type RoutineExercise = {
   id: string;
@@ -129,6 +131,7 @@ export type Settings = {
   restNotification: boolean;
   profileChart: 'duration' | 'volume' | 'count';
   progressionEnabled: boolean;
+  rpeEnabled: boolean;
   trainingAge?: { bucket: TrainingAgeBucket; declaredAt: number };
 };
 
@@ -141,6 +144,7 @@ export const DEFAULT_SETTINGS: Settings = {
   restNotification: true,
   profileChart: 'count',
   progressionEnabled: true,
+  rpeEnabled: false,
 };
 
 // ---------- Lignes synchronisées ----------

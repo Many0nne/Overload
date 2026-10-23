@@ -42,6 +42,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   errors: Record<string, SetField[]>;
   readOnly: boolean;
   showRest: boolean;
+  rpeEnabled: boolean;
   isFirst: boolean;
   isLast: boolean;
   actions: ExerciseActions;
@@ -49,6 +50,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const { entry, actions: a } = props;
   const [menu, setMenu] = useState(false);
   const [restSheet, setRestSheet] = useState(false);
+  // Série dont la rangée de RPE est ouverte (après validation, ou en touchant son badge).
+  const [rpeFor, setRpeFor] = useState<string | null>(null);
   const name = props.exercise?.name ?? 'Exercice supprimé';
   const kinds = entry.sets.map((s) => s.kind);
   const labels = setLabels(kinds);
@@ -133,7 +136,16 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               errors={props.errors[s.id] ?? []}
               readOnly={props.readOnly}
               onPatch={(id, patch) => a.onPatchSet(entry.id, id, patch)}
-              onCheck={(id) => a.onCheck(entry.id, id)}
+              rpeOpen={rpeFor === s.id}
+              onCheck={(id) => {
+                setRpeFor(props.rpeEnabled && !s.done ? id : null);
+                a.onCheck(entry.id, id);
+              }}
+              onOpenRpe={(id) => setRpeFor(rpeFor === id ? null : id)}
+              onPickRpe={(id, rpe) => {
+                a.onPatchSet(entry.id, id, { rpe });
+                setRpeFor(null);
+              }}
               onCycleKind={(id) => a.onCycleKind(entry.id, id)}
               onCopyPrevious={(id) => a.onCopyPrevious(entry.id, id)}
               onDelete={(id) => a.onDeleteSet(entry.id, id)}

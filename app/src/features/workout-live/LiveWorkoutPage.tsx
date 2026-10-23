@@ -141,7 +141,9 @@ export default function LiveWorkoutPage() {
         const set = entry?.sets.find((s) => s.id === setId);
         if (!d || !entry || !set) return;
         if (set.done) {
-          commit((x) => mapSet(x, entryId, setId, (s) => ({ ...s, done: false, doneAt: undefined })));
+          commit((x) =>
+            mapSet(x, entryId, setId, (s) => ({ ...s, done: false, doneAt: undefined, rpe: undefined })),
+          );
           return;
         }
         const idx = entry.sets.findIndex((s) => s.id === setId);
@@ -328,6 +330,7 @@ export default function LiveWorkoutPage() {
           errors={errors}
           readOnly={readOnly}
           showRest={live}
+          rpeEnabled={settings.rpeEnabled}
           isFirst={i === 0}
           isLast={i === doc.exercises.length - 1}
           actions={actions}

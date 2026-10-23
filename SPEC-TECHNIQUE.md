@@ -187,10 +187,10 @@ type SetTarget = { weight?: Weight; reps?: number; durationS?: number };
 type TargetReason =
   | { kind: 'comeback'; weeksOff: number }
   | { kind: 'plateau' }
-  | { kind: 'load_up'; reachedReps: number }
-  | { kind: 'consolidate' }
-  | { kind: 'reps_up' }
-  | { kind: 'mixed' }                 // cas différents selon les séries
+  | { kind: 'load_up'; reachedReps: number; rpe?: number }   // rpe : effort facile (≤ 7), double incrément
+  | { kind: 'consolidate'; rpe?: number }                   // rpe : maximum atteint à RPE 10, confirmé une fois
+  | { kind: 'reps_up'; step?: number; rpe?: number }        // step : 2 si effort facile
+  | { kind: 'mixed'; rpe?: number }                         // cas différents selon les séries
   | { kind: 'duration_up' };          // type durée (+5 %)
 
 type WorkoutSet = {
@@ -203,6 +203,7 @@ type WorkoutSet = {
   done: boolean;
   doneAt?: number;        // ms, ordre de validation
   target?: SetTarget;     // séries de travail uniquement
+  rpe?: number;           // effort ressenti, 6 à 10 par demi-point (facultatif)
 };
 
 type WorkoutExercise = {
@@ -229,7 +230,7 @@ type RoutineDoc = {
   note?: string;
   exercises: { id: string; exerciseId: string; restS: number | null; note?: string;
                repRange?: RepRange;                       // types avec reps uniquement (§F7.3)
-               sets: Omit<WorkoutSet, 'done' | 'doneAt' | 'target' | 'reps'>[] }[];   // les reps cibles sont la fourchette
+               sets: Omit<WorkoutSet, 'done' | 'doneAt' | 'target' | 'reps' | 'rpe'>[] }[];   // les reps cibles sont la fourchette
 };
 
 type ExercisePrefsDoc = {
@@ -246,6 +247,7 @@ type Settings = {
   restNotification: boolean;
   profileChart: 'duration' | 'volume' | 'count';
   progressionEnabled: boolean;        // true par défaut
+  rpeEnabled: boolean;                // saisie du RPE, false par défaut
   trainingAge?: { bucket: 'none' | 'lt6m' | '6to12m' | '1to2y' | '2to5y' | 'gt5y'; declaredAt: number };   // absent = non renseignée
 };
 ```
@@ -511,7 +513,7 @@ Les images de la source ne sont pas reprises : chaque exercice est illustré par
   - `overload-seances-AAAA-MM-JJ.csv` : une ligne par série (date, titre, exercice, type de série, poids, unité, reps, durée, distance, poids visé, reps visées, durée visée, note), séparateur `;`, encodage UTF-8 avec BOM (ouverture correcte dans Excel FR).
   - Partage via `navigator.share({ files })` sur iOS, téléchargement ailleurs.
 - **Import HEVY** (Paramètres › Compte, `features/settings/importHevy.ts`, domaine pur `domain/hevy.ts`) : lecture côté client de `workout_data.csv` et `measurement_data.csv`, reconnus par leur en-tête ; dates FR/EN lues en heure locale.
-  - Séances : id UUID v5 de (`user_id`, début local `AAAA-MM-JJTHH:mm`, titre), donc réimport idempotent ; une séance déjà présente (même supprimée) est ignorée. Types de série `dropset` → `drop` ; RPE et supersets ignorés ; repos `null` ; durée = fin − début.
+  - Séances : id UUID v5 de (`user_id`, début local `AAAA-MM-JJTHH:mm`, titre), donc réimport idempotent ; une séance déjà présente (même supprimée) est ignorée. Types de série `dropset` → `drop` ; RPE importé s'il est entre 6 et 10 (arrondi au demi-point) ; supersets ignorés ; repos `null` ; durée = fin − début.
   - Exercices : suggestion par nom (exact sans accents, sinon Dice pondéré sur les mots, pénalisé si matériel ou type de mesure diffère), présélectionnée au-delà de `MATCH_THRESHOLD` ; sinon exercice perso au type de mesure déduit des colonnes remplies, matériel et muscle devinés.
   - Mesures : une par jour ; une mesure existante n'est complétée que sur ses champs vides. Colonnes avant-bras et abdomen ignorées.
   - Écriture en une transaction Dexie (outbox comprise), poussée ensuite par la synchro normale.

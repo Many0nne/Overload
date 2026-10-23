@@ -22,6 +22,13 @@ export const PLATEAU_DROP = 0.1;
 export const PLATEAU_FAIL_SESSIONS = 2;
 export const PLATEAU_STALL_SESSIONS = 3;
 
+// Effort ressenti (RPE 6–10 de la dernière série de travail) : à 7 ou moins, l'effort est facile
+// (double incrément en montée de charge, +2 reps sinon) ; à 10, le maximum atteint est consolidé une fois avant de monter.
+export const RPE_EASY_MAX = 7;
+export const RPE_MAX = 10;
+export const RPE_EASY_LOAD_STEPS = 2;
+export const RPE_EASY_REPS_STEP = 2;
+
 // Durée : hausse relative, pas d'arrondi et hausse minimale (secondes).
 export const DURATION_STEP = 0.05;
 export const DURATION_ROUND_S = 5;

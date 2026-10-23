@@ -306,6 +306,77 @@ describe('autres types de mesure', () => {
   });
 });
 
+// Cette méthode permet de noter un RPE sur la dernière série d'une liste (série de référence de l'effort).
+function rpeLast(list: WorkoutSet[], rpe: number): WorkoutSet[] {
+  return list.map((s, i) => (i === list.length - 1 ? { ...s, rpe } : s));
+}
+
+describe('effort ressenti (RPE)', () => {
+  it('max atteint à RPE ≤ 7 → double incrément', () => {
+    const r = targetsFrom([rpeLast(sets(80, [12, 12, 12]), 7)]);
+    expect(summary(r)).toEqual(['85x9', '85x9', '85x9']);
+    expect(r?.reason).toEqual({ kind: 'load_up', reachedReps: 12, rpe: 7 });
+  });
+  it('max atteint à RPE 8 → montée normale', () => {
+    const r = targetsFrom([rpeLast(sets(80, [12, 12, 12]), 8)]);
+    expect(summary(r)).toEqual(['82.5x10', '82.5x10', '82.5x10']);
+    expect(r?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
+  });
+  it('seul le RPE de la dernière série de travail compte', () => {
+    const ref = sets(80, [12, 12, 12]).map((s, i) => (i === 0 ? { ...s, rpe: 6 } : s));
+    expect(targetsFrom([ref])?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
+  });
+  it('max atteint à RPE 10 → on le confirme une séance, puis on monte', () => {
+    const r = targetsFrom([sets(80, [10, 10, 10]), rpeLast(sets(80, [12, 12, 12]), 10)]);
+    expect(summary(r)).toEqual(['80x12', '80x12', '80x12']);
+    expect(r?.reason).toEqual({ kind: 'consolidate', rpe: 10 });
+    const again = targetsFrom([
+      sets(80, [10, 10, 10]),
+      sets(80, [12, 12, 12]),
+      rpeLast(sets(80, [12, 12, 12]), 10),
+    ]);
+    expect(again?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
+  });
+  it('dans la fourchette à RPE ≤ 7 → +2 reps, plafonnées à max', () => {
+    const r = targetsFrom([rpeLast(sets(80, [11, 10, 9]), 6.5)]);
+    expect(summary(r)).toEqual(['80x12', '80x12', '80x11']);
+    expect(r?.reason).toEqual({ kind: 'reps_up', step: 2, rpe: 6.5 });
+  });
+  it('série sous le minimum : consolidée malgré un RPE facile, les autres prennent +2 reps', () => {
+    const r = targetsFrom([rpeLast(sets(80, [10, 9, 7]), 6)]);
+    expect(summary(r)).toEqual(['80x12', '80x11', '80x7']);
+    expect(r?.reason).toEqual({ kind: 'mixed', rpe: 6 });
+  });
+  it('RPE 10 : seules les séries déjà au max la séance précédente montent', () => {
+    const r = targetsFrom([sets(80, [12, 10, 10]), rpeLast(sets(80, [12, 12, 12]), 10)]);
+    expect(summary(r)).toEqual(['82.5x10', '80x12', '80x12']);
+    expect(r?.reason).toEqual({ kind: 'mixed', rpe: 10 });
+  });
+  it('assisté : assistance −2 incréments à RPE ≤ 7', () => {
+    const r = targetsFrom([rpeLast(sets(30, [12, 12]), 7)], { type: 'assisted_bw', equipment: 'machine' });
+    expect(summary(r)).toEqual(['20x8', '20x8']);
+    expect(r?.reason).toEqual({
+      kind: 'load_up',
+      reachedReps: 12,
+      assistanceDrop: { v: 10, u: 'kg' },
+      rpe: 7,
+    });
+  });
+  it('poids du corps : +2 reps à RPE ≤ 7', () => {
+    const r = targetsFrom([rpeLast([set({ reps: 10 }), set({ reps: 10 })], 7)], {
+      type: 'bodyweight',
+      equipment: 'bodyweight',
+    });
+    expect(summary(r)).toEqual(['x12', 'x12']);
+  });
+  it('reprise et plateau ne tiennent pas compte du RPE', () => {
+    const c = targetsFrom([rpeLast(sets(100, [12, 12]), 6)], { gapAfterLast: 5 * WEEK });
+    expect(c?.reason?.kind).toBe('comeback');
+    const p = targetsFrom([sets(80, [10, 9, 7]), rpeLast(sets(80, [10, 9, 7]), 6)]);
+    expect(p?.reason?.kind).toBe('plateau');
+  });
+});
+
 describe('objectifs figés et objectifs atteints', () => {
   it('objectif figé : non recalculé après modification d’une séance antérieure', () => {
     const r = targetsFrom([sets(80, [12, 12, 12])]);
@@ -360,8 +431,10 @@ describe('série en échec et objectif manqué (#20)', () => {
 
   it('un objectif manqué dans la fourchette ne compte pas comme un échec pour le plateau', () => {
     // 80 × 12/12 visé, 80 × 12/9 fait deux fois : 9 ≥ min (8), donc pas de plateau.
+    // Série par série (#18) : la 1re monte, la 2e prend +1 rep.
     const r = targetsFrom([sets(80, [12, 9]), sets(80, [12, 9])]);
-    expect(r?.reason?.kind).toBe('reps_up');
+    expect(r?.reason?.kind).toBe('mixed');
+    expect(summary(r)).toEqual(['82.5x10', '80x10']);
   });
 
   it('la nature X ne change pas le calcul : mêmes objectifs qu’une série normale', () => {

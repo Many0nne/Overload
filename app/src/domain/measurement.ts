@@ -87,3 +87,13 @@ export function pickValues(
   }
   return out;
 }
+
+// Valeurs de RPE proposées à la saisie (effort ressenti, 6 à 10 par demi-point).
+export const RPE_VALUES: readonly number[] = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+
+// Cette méthode permet de valider un RPE saisi ou importé : arrondi au demi-point, undefined hors de 6–10.
+export function normalizeRpe(v: number | undefined): number | undefined {
+  if (v === undefined || !Number.isFinite(v)) return undefined;
+  const r = Math.round(v * 2) / 2;
+  return r >= 6 && r <= 10 ? r : undefined;
+}

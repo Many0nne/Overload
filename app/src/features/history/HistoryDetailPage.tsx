@@ -7,6 +7,7 @@ import {
   criterionLabel,
   formatDurationHuman,
   formatKg,
+  formatRpe,
   formatSetValues,
   formatTarget,
 } from '@/domain/format';
@@ -141,6 +142,7 @@ export default function HistoryDetailPage() {
                       {labels[i]}
                     </b>
                     {formatSetValues(s, e.measurementType, settings.units)}
+                    {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
                     {badges?.sets[s.id]?.length ? (
                       <span
                         className="pr-pill"
