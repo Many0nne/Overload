@@ -1,4 +1,6 @@
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { loadEnv } from 'vite';
 import { readSupabaseConfig } from './tests/supabaseEnv';
 
 // E2E (§17) : build de production servi par `vite preview` (service worker actif), contre Supabase local.
@@ -8,7 +10,9 @@ process.env.SUPABASE_URL = supabase.url;
 process.env.SUPABASE_ANON_KEY = supabase.anonKey;
 process.env.SUPABASE_SERVICE_ROLE_KEY = supabase.serviceKey;
 
-const PORT = 4173;
+// Port de la preview : 4173, ou E2E_PORT de app/.env.local (fixé par scripts/overload-worktree.ps1 dans un worktree).
+const { E2E_PORT } = loadEnv('production', fileURLToPath(new URL('.', import.meta.url)), 'E2E_');
+const PORT = Number(process.env.E2E_PORT ?? E2E_PORT ?? 4173);
 const CI = Boolean(process.env.CI);
 
 export default defineConfig({
