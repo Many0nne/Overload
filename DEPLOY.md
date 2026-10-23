@@ -1,6 +1,7 @@
 # Déploiement d'Overload
 
 Production : projet Supabase `saiqhwqoibyqgdsdakuy` (offre Free) + Cloudflare Pages `overload` (https://overload-m8z.pages.dev). Toutes les commandes se lancent à la racine du dépôt, après `npm install` (outils racine).
+État au 23/10/2026 : §2 à §7 faits.
 
 ## 1. Développement local
 

@@ -64,11 +64,16 @@ Bloqué sur l'utilisateur : accès et secrets (passer par `request_secret`, jama
       local par empreintes), pg_cron/pg_net actifs, job `dispatch-due-timers`, catalogue seedé (220, sans attendre la
       relecture du point 0 : un nouveau seed met à jour noms et consignes), `private.config` renseigné.
 - [x] Edge Functions (3) + secrets VAPID / PUSH_SECRET (valeurs dans `.tmp/prod-functions.env`, hors dépôt).
-- [ ] Auth : inscriptions désactivées, Site URL `https://overload-m8z.pages.dev`, Redirect `…/reset`, SMTP Brevo.
-- [ ] Création du compte admin et premier code d'invitation.
+- [x] Auth : inscriptions désactivées, Site URL `https://overload-m8z.pages.dev`, Redirect `…/reset`, SMTP Brevo.
+- [x] Compte admin créé (ptitesailes@gmail.com) ; lien d'invitation `https://overload-m8z.pages.dev/i/<CODE>`.
 - [x] Cloudflare Pages `overload` → https://overload-m8z.pages.dev (Git, `main` en prod, préversion par branche).
 - [x] Secrets GitHub `SUPABASE_URL` / `SUPABASE_ANON_KEY` pour `health.yml` (ping tous les 3 jours, testé).
-- [ ] Test de bout en bout en prod : inscription par invitation, séance synchronisée, notification de repos.
+- [x] Test de fumée en prod (compte jetable, supprimé ensuite) : inscription par invitation, connexion, pull du
+      catalogue (220), push/pull d'un dossier, `server_now_ms`, minuteur → pg_cron → `send-push` (200, secret OK),
+      `delete-account`. Reste l'envoi réel vers un appareil abonné (lot 5).
+- [ ] Sécurité : la clé service_role legacy est passée dans un chat ; passer aux clés `sb_secret_…` /
+      `sb_publishable_…`, désactiver les clés legacy, mettre à jour `VITE_SUPABASE_ANON_KEY` (Pages) et
+      `SUPABASE_ANON_KEY` (GitHub). Révoquer le token Cloudflare de `.tmp/cloudflare.env`.
 
 ## 5. Vérifications sur iPhone réel (iOS 27) — par l'utilisateur
 - [ ] Rédiger le protocole écrit (`docs/protocole-iphone.md`) : URL, étapes, ce qu'il faut observer.
