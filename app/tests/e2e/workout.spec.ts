@@ -1,3 +1,4 @@
+import type { Locator, Page } from '@playwright/test';
 import {
   BENCH,
   checkAllSets,
@@ -63,35 +64,45 @@ test('modifier un poids puis valider : 2 touchers et la saisie (§F9, 3 au plus)
   await expect(row.getByRole('textbox', { name: 'Répétitions' })).toHaveAttribute('inputmode', 'numeric');
 });
 
-// Cette méthode permet de glisser horizontalement une ligne de série depuis son champ « Poids » (geste de suppression).
-async function swipeRow(page: import('@playwright/test').Page, row: ReturnType<typeof setRow>, dx: number) {
+// Cette méthode permet de glisser une ligne de série au doigt (vrais événements tactiles, donc touch-action respecté)
+// depuis son champ « Poids », comme sur iPhone.
+async function swipeRow(page: Page, row: Locator, dx: number) {
   const box = (await row.getByRole('textbox', { name: 'Poids' }).boundingBox())!;
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  await page.mouse.move(x + dx, y + 2, { steps: 12 });
-  await page.mouse.up();
+  const x = Math.round(box.x + box.width / 2);
+  const y = Math.round(box.y + box.height / 2);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', px: number, py: number) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: type === 'touchEnd' ? [] : [{ x: px, y: py }],
+    });
+  await touch('touchStart', x, y);
+  for (let i = 1; i <= 12; i++) await touch('touchMove', x + (dx * i) / 12, y + 2);
+  await touch('touchEnd', x + dx, y + 2);
+  await cdp.detach();
 }
 
 test('glisser une série vers la gauche la supprime, même dans le 2e exercice et depuis un champ (#22)', async ({
   page,
   seeded,
+  browserName,
 }) => {
+  // Seul Chromium sait simuler un vrai glissement tactile (CDP) ; WebKit n'expose pas de geste tactile.
+  test.skip(browserName !== 'chromium', 'glissement tactile simulé via CDP');
   await login(page, seeded.account);
   await startRoutine(page, seeded.routineName);
   const rows = page.locator('.ex', { hasText: DB_BENCH.name }).locator('tr.set');
-  const before = await rows.count();
+  await expect(rows).toHaveCount(3);
 
   // Un glissement court sous le seuil ne supprime rien et la ligne revient en place.
   await swipeRow(page, rows.first(), -50);
-  await expect(rows).toHaveCount(before);
-  await expect(rows.first()).not.toHaveClass(/\bswipe-armed\b/);
+  await expect(rows).toHaveCount(3);
+  await expect(rows.first()).not.toHaveClass(/\bswipe/);
 
   await swipeRow(page, rows.first(), -140);
-  await expect(rows).toHaveCount(before - 1);
+  await expect(rows).toHaveCount(2);
   await swipeRow(page, rows.first(), -140);
-  await expect(rows).toHaveCount(before - 2);
+  await expect(rows).toHaveCount(1);
   // Le geste ne doit pas avoir ouvert le champ touché (pas de clavier).
   await expect(page.locator('input.val:focus')).toHaveCount(0);
 });

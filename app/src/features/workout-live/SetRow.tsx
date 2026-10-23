@@ -189,7 +189,11 @@ function useSwipeToDelete(disabled: boolean, onDelete: () => void) {
         s.active = true;
         s.x = e.clientX; // Repart du point de décision pour éviter un saut de 10 px.
         clearTimeout(settle);
-        row.setPointerCapture(s.id);
+        try {
+          row.setPointerCapture(s.id);
+        } catch {
+          // Pointeur déjà relâché : le geste se termine normalement à pointerup.
+        }
         row.classList.add('swipe', 'swiping');
         if (row.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
       }
