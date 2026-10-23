@@ -162,7 +162,7 @@ export function comebackDrop(weeksOff: number): number {
 }
 
 // Cette méthode permet de calculer l'objectif d'un exercice lorsqu'une séance démarre ou qu'un exercice y est ajouté.
-// Elle choisit le cas du §F7.10 (reprise, plateau, montée, consolidation, +1 rep) à partir des séances antérieures triées.
+// Reprise et plateau s'évaluent sur l'exercice ; montée, consolidation et +1 rep se choisissent série par série (§F7.10).
 export function computeTargets(input: TargetsInput): TargetsResult | undefined {
   const type = input.exercise.measurement_type;
   if (!input.settings.progressionEnabled || !hasTargets(type) || !input.reference) return undefined;
@@ -225,8 +225,6 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
   // Types avec charge et fourchette : poids et reps, lesté, assisté.
   const rr = range ?? DEFAULT_REP_RANGE;
   const assisted = type === 'assisted_bw';
-  const allMax = refWork.every((s) => reps(s) >= rr.max);
-  const anyBelow = refWork.some((s) => reps(s) < rr.min);
 
   if (comeback) {
     const drop = comebackDrop(weeksOff);
@@ -251,44 +249,44 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
       reason: { kind: 'plateau' },
     };
   }
-  if (allMax) {
-    if (assisted) {
-      return {
-        sets: map((s) => ({ weight: asWeight(toUser(s.weight) - inc), reps: rr.min })),
-        reason: { kind: 'load_up', reachedReps: rr.max, assistanceDrop: { v: inc, u: unit } },
-      };
-    }
-    return {
-      sets: map((s) => {
+  // Hors reprise et plateau, le cas se choisit série par série, d'après la série de même rang (issue #18).
+  type SetCase = 'load_up' | 'consolidate' | 'reps_up';
+  // Cette méthode permet de choisir le cas d'une série : max atteint → montée, sous min → consolidation, sinon +1 rep.
+  const caseOf = (s: WorkoutSet): SetCase =>
+    reps(s) >= rr.max ? 'load_up' : reps(s) < rr.min ? 'consolidate' : 'reps_up';
+  // Cette méthode permet de calculer l'objectif d'une série selon son propre cas.
+  const targetFor = (s: WorkoutSet): SetTarget => {
+    switch (caseOf(s)) {
+      case 'load_up': {
         const w = toUser(s.weight);
+        if (assisted) return { weight: asWeight(w - inc), reps: rr.min };
         const next = asWeight(w + inc);
         let r = rr.min;
         if (type === 'weight_reps' && rr.max <= MARZAGAO_MAX_REPS && w > 0) {
           r = Math.min(rr.max, Math.max(rr.min, equivalentReps({ v: w, u: unit }, rr.max, next)));
         }
         return { weight: next, reps: r };
-      }),
-      reason: { kind: 'load_up', reachedReps: rr.max },
-    };
-  }
-  if (anyBelow) {
-    return {
-      sets: map((s) => {
+      }
+      case 'consolidate': {
         const t = s.target;
         if (t && (t.weight || t.reps !== undefined))
           return { weight: asWeight(toUser(t.weight ?? s.weight)), reps: t.reps ?? reps(s) };
         return { weight: asWeight(toUser(s.weight)), reps: reps(s) };
-      }),
-      reason: { kind: 'consolidate' },
-    };
-  }
-  return {
-    sets: map((s) => ({
-      weight: asWeight(toUser(s.weight)),
-      reps: Math.max(rr.min, Math.min(rr.max, reps(s) + 1)),
-    })),
-    reason: { kind: 'reps_up' },
+      }
+      case 'reps_up':
+        return { weight: asWeight(toUser(s.weight)), reps: Math.max(rr.min, Math.min(rr.max, reps(s) + 1)) };
+    }
   };
+  const cases = new Set(refFor.filter((s): s is WorkoutSet => s !== undefined).map(caseOf));
+  const only = cases.size === 1 ? [...cases][0] : undefined;
+  let reason: TargetReason;
+  if (only === 'load_up')
+    reason = assisted
+      ? { kind: 'load_up', reachedReps: rr.max, assistanceDrop: { v: inc, u: unit } }
+      : { kind: 'load_up', reachedReps: rr.max };
+  else if (only) reason = { kind: only };
+  else reason = { kind: 'mixed' };
+  return { sets: map(targetFor), reason };
 }
 
 // Cette méthode permet d'écrire le résultat de computeTargets dans un exercice de séance (objectifs figés et pré-remplissage).

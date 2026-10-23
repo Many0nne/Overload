@@ -190,6 +190,7 @@ type TargetReason =
   | { kind: 'load_up'; reachedReps: number }
   | { kind: 'consolidate' }
   | { kind: 'reps_up' }
+  | { kind: 'mixed' }                 // cas différents selon les séries
   | { kind: 'duration_up' };          // type durée (+5 %)
 
 type WorkoutSet = {
@@ -420,9 +421,11 @@ computeTargets(input: {
 **Arbre de décision** (weight_reps ; les autres types appliquent les variantes du §F7.10) :
 1. `weeksOff = (now − reference.startedAt) / 7 j`. Si `weeksOff > 4` : cas `comeback`. On réduit la charge selon `COMEBACK_STEPS = [[4, .05], [8, .10], [12, .15], [16, .20]]` (la dernière tranche franchie s'applique), on arrondit avec `floorTo(increment)` et on garde les reps de référence.
 2. Les « séances à cette charge » sont les dernières séances consécutives de `history` dont les charges de travail sont identiques à celles de la référence, comparées sur les valeurs exactes en kg. On est en `plateau` si les 2 dernières ont chacune au moins une série sous `min`, ou si parmi les 3 dernières le total de reps des 2 plus récentes ne dépasse pas celui de la plus ancienne. On applique alors une charge × `(1 − PLATEAU_DROP)`, avec `PLATEAU_DROP = 0.10`, arrondie avec `floorTo(increment)`, et reps = `min`.
-3. Si toutes les séries de travail de la référence ont reps ≥ `max` : cas `load_up`. La charge vaut W + i et les reps valent `equivalentReps(W, max, W + i)`, bornées à `[min, max]`.
-4. Si au moins une série est sous `min` : cas `consolidate`. On reprend les `target` de la référence, sinon ses valeurs réalisées.
-5. Sinon : cas `reps_up`. Même charge, et reps = `clamp(r + 1, min, max)`.
+3. Sinon, chaque série prévue choisit son cas d'après sa série de référence (même rang) :
+   - reps ≥ `max` : `load_up`. La charge vaut W + i et les reps valent `equivalentReps(W, max, W + i)`, bornées à `[min, max]` (assisté : assistance − i, reps = `min`) ;
+   - reps < `min` : `consolidate`. On reprend le `target` de cette série de référence, sinon ses valeurs réalisées ;
+   - sinon : `reps_up`. Même charge, et reps = `clamp(r + 1, min, max)`.
+4. Raison : le cas commun s'il est unique (`load_up`, `consolidate` ou `reps_up`), sinon `mixed`.
 
 **Équivalence charge ↔ reps (Marzagao 2026).** Ces fonctions servent uniquement aux objectifs. `e1rm()` (Epley, §10.3) reste la seule formule du 1RM affiché.
 ```ts

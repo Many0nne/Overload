@@ -70,9 +70,14 @@ describe('double progression (poids et reps)', () => {
     expect(summary(r)).toEqual(['82.5x10', '82.5x10', '82.5x10']);
     expect(r?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
   });
-  it('80 × 12/11/9 → 80 × 12/12/10', () => {
+  it('80 × 12/11/9 → 82,5 × 10 puis 80 × 12/10 (la série au max monte seule)', () => {
     const r = targetsFrom([sets(80, [12, 11, 9])]);
-    expect(summary(r)).toEqual(['80x12', '80x12', '80x10']);
+    expect(summary(r)).toEqual(['82.5x10', '80x12', '80x10']);
+    expect(r?.reason?.kind).toBe('mixed');
+  });
+  it('80 × 11/10/9 → 80 × 12/11/10', () => {
+    const r = targetsFrom([sets(80, [11, 10, 9])]);
+    expect(summary(r)).toEqual(['80x12', '80x11', '80x10']);
     expect(r?.reason?.kind).toBe('reps_up');
   });
   it('100 × 6/6/6 en 4–6 → 102,5 × 5', () => {
@@ -92,14 +97,14 @@ describe('double progression (poids et reps)', () => {
   it('une référence à 81 kg donne 83,5 kg (pas d’arrondi à la hausse)', () => {
     expect(targetsFrom([sets(81, [12, 12])])?.sets[0]?.weight?.v).toBe(83.5);
   });
-  it('échec isolé → consolidation (mêmes cibles que la dernière fois)', () => {
-    const ref = sets(80, [10, 7, 6]).map((s) => ({
+  it('échec isolé → consolidation des séries sous min (mêmes cibles que la dernière fois)', () => {
+    const ref = sets(80, [7, 6]).map((s) => ({
       ...s,
       target: { weight: { v: 80, u: 'kg' as const }, reps: 10 },
     }));
     const r = targetsFrom([ref]);
     expect(r?.reason).toEqual({ kind: 'consolidate' });
-    expect(summary(r)).toEqual(['80x10', '80x10', '80x10']);
+    expect(summary(r)).toEqual(['80x10', '80x10']);
   });
   it('deux échecs consécutifs à la même charge → −10 % arrondi à l’incrément inférieur', () => {
     const r = targetsFrom([sets(82.5, [10, 7, 6]), sets(82.5, [9, 7, 7])]);
@@ -133,7 +138,7 @@ describe('double progression (poids et reps)', () => {
   });
   it('séries prévues en plus : reprennent la dernière série de référence', () => {
     expect(summary(targetsFrom([sets(80, [12, 11])], { plannedCount: 3 }))).toEqual([
-      '80x12',
+      '82.5x10',
       '80x12',
       '80x12',
     ]);
@@ -158,6 +163,76 @@ describe('double progression (poids et reps)', () => {
       settings: settings({ units: { weight: 'lb', length: 'cm', distance: 'km' } }),
     });
     expect(r?.sets[0]?.weight).toEqual({ v: 220.5, u: 'lb' });
+  });
+});
+
+describe('objectif série par série (issue #18)', () => {
+  // Cette méthode permet de fabriquer une séance de référence dont chaque série a sa propre charge.
+  const mixed = (spec: [number, number][]) => spec.map(([kg, reps]) => set({ kg, reps }));
+
+  it('chaque série progresse depuis la série de même rang : 50 × 10 puis 60 × 8 → 50 × 11 puis 60 × 9', () => {
+    const r = targetsFrom([
+      mixed([
+        [50, 10],
+        [60, 8],
+      ]),
+    ]);
+    expect(summary(r)).toEqual(['50x11', '60x9']);
+    expect(r?.reason).toEqual({ kind: 'reps_up' });
+  });
+  it('une série au max monte en charge même si une autre est en échec', () => {
+    const r = targetsFrom(
+      [
+        mixed([
+          [50, 10],
+          [60, 6],
+        ]),
+      ],
+      { range: { min: 8, max: 10 } },
+    );
+    expect(summary(r)).toEqual(['52.5x8', '60x6']);
+    expect(r?.reason).toEqual({ kind: 'mixed' });
+  });
+  it('montée, +1 rep et consolidation dans la même séance', () => {
+    const r = targetsFrom([sets(80, [12, 10, 7])]);
+    expect(summary(r)).toEqual(['82.5x10', '80x11', '80x7']);
+    expect(r?.reason).toEqual({ kind: 'mixed' });
+  });
+  it('assisté : seule la série au max baisse l’assistance', () => {
+    const r = targetsFrom([sets(30, [12, 10])], { type: 'assisted_bw', equipment: 'machine' });
+    expect(summary(r)).toEqual(['25x8', '30x11']);
+    expect(r?.reason).toEqual({ kind: 'mixed' });
+  });
+  it('séries prévues en plus : reprennent le cas de la dernière série de référence', () => {
+    const r = targetsFrom(
+      [
+        mixed([
+          [50, 12],
+          [60, 9],
+        ]),
+      ],
+      { plannedCount: 4 },
+    );
+    expect(summary(r)).toEqual(['52.5x10', '60x10', '60x10', '60x10']);
+  });
+  it('séries prévues en moins : seules les premières séries de référence servent', () => {
+    const r = targetsFrom(
+      [
+        mixed([
+          [50, 9],
+          [60, 12],
+          [70, 5],
+        ]),
+      ],
+      { plannedCount: 2 },
+    );
+    expect(summary(r)).toEqual(['50x10', '62.5x10']);
+    expect(r?.reason).toEqual({ kind: 'mixed' });
+  });
+  it('le plateau reste évalué sur l’exercice entier', () => {
+    const r = targetsFrom([sets(80, [12, 7]), sets(80, [12, 7])]);
+    expect(r?.reason).toEqual({ kind: 'plateau' });
+    expect(summary(r)).toEqual(['70x8', '70x8']); // 80 × 0,9 = 72 → 70 (incrément 2,5)
   });
 });
 
