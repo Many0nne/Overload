@@ -42,7 +42,7 @@ function useTheme() {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', dark ? '#0d0e11' : '#ffffff');
+        ?.setAttribute('content', dark ? '#000000' : '#ffffff');
     };
     apply();
     if (theme !== 'auto') return;
