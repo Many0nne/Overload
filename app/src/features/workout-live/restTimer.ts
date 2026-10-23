@@ -29,7 +29,10 @@ export const useRestTimer = create<Store>((set, get) => ({
   load: async () => {
     if (get().loaded) return;
     const t = (await getMeta<RestTimerState | null>(KEY)) ?? null;
-    set({ timer: t && t.endsAt > Date.now() - 60_000 ? t : null, loaded: true });
+    // Un repos déjà écoulé (app fermée ou rechargée entre-temps) est terminé : il ne se réaffiche pas.
+    const live = t && t.endsAt > Date.now() ? t : null;
+    set({ timer: live, loaded: true });
+    if (t && !live) await setMeta(KEY, null);
   },
   start: async (t, notify) => {
     set({ timer: t });
