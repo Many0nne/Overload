@@ -162,6 +162,8 @@ export function formatReason(reason: TargetReason, type: MeasurementType, units:
       return make('eq', 'On consolide');
     case 'reps_up':
       return make('up', '+1 rep par série');
+    case 'mixed':
+      return make('up', 'Objectif ajusté série par série');
     case 'duration_up':
       return make('up', '+5 % de durée');
   }

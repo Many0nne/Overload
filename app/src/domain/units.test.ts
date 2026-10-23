@@ -80,6 +80,9 @@ describe('formatage', () => {
       '↓ Reprise après 6 semaines',
     );
     expect(formatReason({ kind: 'consolidate' }, 'weight_reps', units).full).toBe('= On consolide');
+    expect(formatReason({ kind: 'mixed' }, 'weight_reps', units).full).toBe(
+      '↑ Objectif ajusté série par série',
+    );
     expect(
       formatReason(
         { kind: 'load_up', reachedReps: 12, assistanceDrop: { v: 2.5, u: 'kg' } },

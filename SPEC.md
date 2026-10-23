@@ -350,15 +350,17 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 
 **Poids et répétitions : double progression**
 
-On note W la charge de chaque série de travail de la séance de référence, r les reps réalisées, [min, max] la fourchette et i l'incrément. La règle s'évalue **par exercice** et s'applique à chaque série de travail :
+On note W la charge de chaque série de travail de la séance de référence, r les reps réalisées, [min, max] la fourchette et i l'incrément. La reprise et le plateau s'évaluent **par exercice** et s'appliquent à toutes les séries de travail. Sinon, le cas se choisit **série par série**, d'après la série de même rang de la référence : une série nettement plus lourde que la précédente progresse depuis sa propre performance, et non depuis la série plus légère (ex. 50 kg × 10 puis 60 kg × 8 donne 50 kg × 11 puis 60 kg × 9).
 
 | Cas (évalués dans cet ordre) | Objectif de chaque série | Raison affichée |
 |---|---|---|
 | **Reprise** : plus de 4 semaines sans faire l'exercice | Charge de référence réduite de 5 % entre 4 et 8 semaines d'arrêt, 10 % entre 8 et 12, 15 % entre 12 et 16, 20 % au-delà, puis arrondie à l'incrément inférieur. Reps de référence. | « ↓ Reprise après 6 semaines » |
 | **Plateau** : 2 séances consécutives avec au moins une série sous *min* à la même charge, ou 3 séances consécutives à la même charge où le total de reps des 2 dernières n'a pas dépassé celui de la première | Charge −10 %, arrondie à l'incrément inférieur. Reps = *min*. | « ↓ Plateau : on repart un peu plus léger » |
-| **Montée de charge** : toutes les séries de travail ont atteint *max* | Charge W + i. Reps r′ = le nombre de reps à W + i **équivalent** à W × *max* selon la formule de Marzagao (voir ci-dessous), arrondi à l'inférieur et borné entre *min* et *max*. Si *max* > 30, hors du domaine de la formule, r′ = *min*. | « ↑ 12 reps atteintes sur toutes les séries » |
-| **Échec isolé** : au moins une série sous *min* (première fois à cette charge) | Mêmes charge et reps visées que la dernière fois. | « = On consolide » |
+| **Montée de charge** : la série a atteint *max* | Charge W + i. Reps r′ = le nombre de reps à W + i **équivalent** à W × *max* selon la formule de Marzagao (voir ci-dessous), arrondi à l'inférieur et borné entre *min* et *max*. Si *max* > 30, hors du domaine de la formule, r′ = *min*. | « ↑ 12 reps atteintes sur toutes les séries » |
+| **Échec isolé** : la série est sous *min* (première fois à cette charge) | Mêmes charge et reps visées que la dernière fois. | « = On consolide » |
 | **Progression en reps** : tous les autres cas | Même charge. Reps = min(*max*, r + 1), et au moins *min*. | « ↑ +1 rep par série » |
+
+Si toutes les séries tombent dans le même cas, sa raison s'affiche. Sinon, la raison est « ↑ Objectif ajusté série par série ». Les séries prévues en plus reprennent le cas et l'objectif de la dernière série de référence. Les séries de référence en trop sont ignorées.
 
 **Équivalence charge ↔ reps (formule de Marzagao 2026)**
 - La formule donne la charge maximale équivalente : M(w, r) = w × (1 + (r − 1)^0,85 / k(w)), avec k(w) = max(0,5 ; −2,55 + 4,58 × ln w) et w **en kg**. Les charges en lb sont converties avant le calcul.
@@ -382,7 +384,7 @@ Pourquoi la double progression : faire progresser les reps à charge fixe donne 
 | Type | Règle |
 |---|---|
 | Poids du corps lesté | Double progression comme ci-dessus, sur les kg ajoutés. Après une montée de charge, reps = *min* (le poids de corps n'est pas connu, donc la formule d'équivalence ne s'applique pas). Raisons identiques au tableau ci-dessus. |
-| Poids du corps assisté | Double progression inversée : quand *max* est atteint sur toutes les séries, l'assistance baisse d'un incrément et les reps reviennent à *min* (« ↑ Assistance −2,5 kg »). Un plateau remonte l'assistance d'un incrément (« ↓ Plateau : un peu plus d'assistance »). |
+| Poids du corps assisté | Double progression inversée : quand une série atteint *max*, son assistance baisse d'un incrément et les reps reviennent à *min* (« ↑ Assistance −2,5 kg »). Un plateau remonte l'assistance d'un incrément (« ↓ Plateau : un peu plus d'assistance »). |
 | Poids du corps | Reps de chaque série + 1, plafonnées à *max* si une fourchette est définie (« ↑ +1 rep par série »). Les mêmes cas de reprise (reps −10 % au-delà de 4 semaines) et de plateau (on garde les mêmes reps, « = On consolide ») s'appliquent. |
 | Durée | Durée de chaque série + 5 %, arrondie à 5 s près, avec au moins 5 s de plus (« ↑ +5 % de durée »). C'est une heuristique, la littérature étant faible sur ce point. |
 | Poids et durée, distance et durée | Pas d'objectif en V1 (voir §4). Les champs se pré-remplissent avec la valeur précédente. |

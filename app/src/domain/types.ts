@@ -57,6 +57,7 @@ export type TargetReason =
   | { kind: 'load_up'; reachedReps: number; assistanceDrop?: Weight } // assistanceDrop : type assisté uniquement
   | { kind: 'consolidate' }
   | { kind: 'reps_up' }
+  | { kind: 'mixed' } // cas différents selon les séries (montée, +1 rep, consolidation)
   | { kind: 'duration_up' };
 
 export type WorkoutSet = {
