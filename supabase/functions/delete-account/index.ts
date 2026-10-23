@@ -1,6 +1,6 @@
 // Suppression complète du compte appelant (spec technique §14) : photos puis utilisateur (le reste part en cascade).
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders, json, serviceClient } from '../_shared/http.ts';
+import { corsHeaders, json, publishableKey, serviceClient } from '../_shared/http.ts';
 
 const BUCKET = 'photos';
 
@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   const authHeader = req.headers.get('Authorization') ?? '';
-  const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+  const userClient = createClient(Deno.env.get('SUPABASE_URL')!, publishableKey(), {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
