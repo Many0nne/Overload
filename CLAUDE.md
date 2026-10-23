@@ -1,7 +1,7 @@
 # Overload
 
 PWA de suivi de musculation. Specs : `SPEC.md` (fonctionnelle, §F), `SPEC-TECHNIQUE.md` (technique), maquette `design/maquette.html`.
-Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`.
+Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. Connecteur Claude (MCP, brouillon) : `docs/spec-mcp.md`.
 
 - Front : `app/` (React 19, Vite, Dexie, Zustand). `npm run typecheck | lint | test | build` depuis `app/`.
   Tests de synchro contre Supabase local (démarré) : `npm run test:sync` (`app/tests/sync/`).
