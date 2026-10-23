@@ -356,10 +356,12 @@ export default function RoutineEditor() {
               height: '100%',
               overflowY: 'auto',
               borderRadius: 0,
-              paddingTop: 'env(safe-area-inset-top)',
             }}
           >
-            <div className="head" style={{ padding: '8px 0 12px' }}>
+            <div
+              className="head"
+              style={{ padding: '8px 0 12px', paddingTop: 'calc(var(--safe-top) + 8px)', top: 0 }}
+            >
               <button className="btn-ghost" onClick={() => setPicker(null)}>
                 Annuler
               </button>
