@@ -34,3 +34,6 @@ Thumbs.db
 # Fichiers temporaires locaux
 .tmp/
 .tmp-local-env
+
+# Worktrees paralleles (scripts/overload-worktree.ps1)
+worktrees/
