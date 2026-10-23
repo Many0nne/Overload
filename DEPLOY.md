@@ -69,7 +69,7 @@ Tableau de bord › Authentication :
 ## 5. Premier compte
 
 ```bash
-SUPABASE_URL=https://saiqhwqoibyqgdsdakuy.supabase.co SUPABASE_SERVICE_ROLE_KEY=<clé service> \
+SUPABASE_URL=https://saiqhwqoibyqgdsdakuy.supabase.co SUPABASE_SERVICE_ROLE_KEY=<clé secrète sb_secret_…> \
   npx tsx scripts/create-admin.ts <email> <mdp> <Nom>
 ```
 
@@ -77,7 +77,7 @@ Sous PowerShell (la syntaxe `VAR=… commande` n'existe pas) :
 
 ```powershell
 $env:SUPABASE_URL = "https://saiqhwqoibyqgdsdakuy.supabase.co"
-$env:SUPABASE_SERVICE_ROLE_KEY = "<clé service>"
+$env:SUPABASE_SERVICE_ROLE_KEY = "<clé secrète sb_secret_…>"
 npx tsx scripts/create-admin.ts <email> '<mdp>' "<Nom>"
 Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
 ```
@@ -89,13 +89,13 @@ Le script affiche le code d'invitation de l'admin. Lien à partager : `<URL>/i/<
 - Projet **Pages** relié au dépôt GitHub, branche de production `main`, prévisualisation sur chaque branche.
   Attention : le bouton « Create » du tableau de bord propose d'abord un Worker, ce n'est pas ce qu'on veut.
 - Build : répertoire racine `app`, commande `npm run build`, sortie `dist`.
-- Variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (clé publishable/anon), `VITE_VAPID_PUBLIC_KEY`, et `NODE_VERSION=24`.
+- Variables : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (clé `sb_publishable_…` en prod), `VITE_VAPID_PUBLIC_KEY`, et `NODE_VERSION=24`.
 - Routage côté client : sans `404.html`, Pages sert `index.html` pour toute route inconnue. Pas de `_redirects` :
   la règle `/* /index.html 200` y est rejetée comme boucle infinie.
 
 ## 7. GitHub Actions
 
-Secrets du dépôt : `SUPABASE_URL`, `SUPABASE_ANON_KEY` (ping `health()` tous les 3 jours, évite la pause du projet Free).
+Secrets du dépôt : `SUPABASE_URL`, `SUPABASE_ANON_KEY` (clé publishable ; ping `health()` tous les 3 jours, évite la pause du projet Free).
 
 ## 8. Vérifications après déploiement (iPhone, iOS 27)
 
