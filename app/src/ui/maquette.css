@@ -661,10 +661,22 @@ textarea {
   height: 48px;
 }
 .sets tr.set {
-  transition:
-    background 0.2s,
-    transform 0.15s;
+  transition: background 0.2s;
+}
+/* Glissement pour supprimer : touch-action est ignoré sur un <tr>, on le pose sur les cellules, qu'on translate aussi
+   (variable --swipe-x écrite par SetRow, sans re-rendu React). */
+.sets tr.set > td {
   touch-action: pan-y;
+}
+.sets tr.set.swipe > td {
+  transform: translateX(var(--swipe-x, 0px));
+  transition: transform 0.18s ease-out;
+}
+.sets tr.set.swiping > td {
+  transition: none;
+}
+.sets tr.set.swipe-armed {
+  background: color-mix(in srgb, var(--fail) 25%, transparent);
 }
 .sets tr.set:nth-child(even) {
   background: color-mix(in srgb, var(--surface) 55%, transparent);
