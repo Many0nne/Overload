@@ -67,7 +67,9 @@ test('modifier un poids puis valider : 2 touchers et la saisie (§F9, 3 au plus)
 // Cette méthode permet de glisser une ligne de série au doigt (vrais événements tactiles, donc touch-action respecté)
 // depuis son champ « Poids », comme sur iPhone.
 async function swipeRow(page: Page, row: Locator, dx: number) {
-  const box = (await row.getByRole('textbox', { name: 'Poids' }).boundingBox())!;
+  const field = row.getByRole('textbox', { name: 'Poids' });
+  await field.scrollIntoViewIfNeeded(); // Le 2e exercice est sous la ligne de flottaison ; CDP ne fait pas défiler.
+  const box = (await field.boundingBox())!;
   const x = Math.round(box.x + box.width / 2);
   const y = Math.round(box.y + box.height / 2);
   const cdp = await page.context().newCDPSession(page);
