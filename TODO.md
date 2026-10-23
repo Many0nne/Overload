@@ -71,9 +71,10 @@ Bloqué sur l'utilisateur : accès et secrets (passer par `request_secret`, jama
 - [x] Test de fumée en prod (compte jetable, supprimé ensuite) : inscription par invitation, connexion, pull du
       catalogue (220), push/pull d'un dossier, `server_now_ms`, minuteur → pg_cron → `send-push` (200, secret OK),
       `delete-account`. Reste l'envoi réel vers un appareil abonné (lot 5).
-- [ ] Sécurité : la clé service_role legacy est passée dans un chat ; passer aux clés `sb_secret_…` /
-      `sb_publishable_…`, désactiver les clés legacy, mettre à jour `VITE_SUPABASE_ANON_KEY` (Pages) et
-      `SUPABASE_ANON_KEY` (GitHub). Révoquer le token Cloudflare de `.tmp/cloudflare.env`.
+- [x] Nouvelles clés API : Edge Functions sur `SUPABASE_SECRET_KEYS` / `SUPABASE_PUBLISHABLE_KEYS` (repli legacy
+      pour la pile locale), front Pages et secret GitHub sur `sb_publishable_…`, test de fumée et ping verts.
+- [ ] Désactiver les clés legacy (Settings › API Keys) : la clé service_role est passée dans un chat. Relancer
+      ensuite `node .tmp/prod-smoke.mjs <CODE>`. Révoquer le token Cloudflare de `.tmp/cloudflare.env`.
 
 ## 5. Vérifications sur iPhone réel (iOS 27) — par l'utilisateur
 - [ ] Rédiger le protocole écrit (`docs/protocole-iphone.md`) : URL, étapes, ce qu'il faut observer.
