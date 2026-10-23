@@ -73,16 +73,16 @@ Bloqué sur l'utilisateur : accès et secrets (passer par `request_secret`, jama
       `delete-account`. Reste l'envoi réel vers un appareil abonné (lot 5).
 - [x] Nouvelles clés API : Edge Functions sur `SUPABASE_SECRET_KEYS` / `SUPABASE_PUBLISHABLE_KEYS` (repli legacy
       pour la pile locale), front Pages et secret GitHub sur `sb_publishable_…`, test de fumée et ping verts.
-- [ ] Désactiver les clés legacy (Settings › API Keys) : la clé service_role est passée dans un chat. Relancer
+- [x] Désactiver les clés legacy (Settings › API Keys) : la clé service_role est passée dans un chat. Relancer
       ensuite `node .tmp/prod-smoke.mjs <CODE>`. Révoquer le token Cloudflare de `.tmp/cloudflare.env`.
 
 ## 5. Vérifications sur iPhone réel (iOS 27) — par l'utilisateur
 - [ ] Rédiger le protocole écrit (`docs/protocole-iphone.md`) : URL, étapes, ce qu'il faut observer.
-- [ ] Installation PWA et ouverture hors ligne.
-- [ ] Notification de test (Paramètres › À propos, « Dans 10 s ») sur iPhone verrouillé.
+- [x] Installation PWA et ouverture hors ligne.
+- [x] Notification de test (Paramètres › À propos, « Dans 10 s ») sur iPhone verrouillé.
 - [ ] Minuteur de repos notifié écran verrouillé (critère n° 2).
 - [ ] Séance de 6 exercices / 20 séries en mode avion (critère n° 1).
-- [ ] Séance visible sur un 2e appareil en moins d'une minute (critère n° 3).
+- [x] Séance visible sur un 2e appareil en moins d'une minute (critère n° 3).
 - [ ] Écran allumé (wake lock), taille de texte agrandie.
 
 ## 6. Après la V1
