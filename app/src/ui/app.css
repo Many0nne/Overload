@@ -35,20 +35,37 @@ select {
   flex-direction: column;
   padding-top: var(--safe-top);
 }
-/* Cache opaque sous la barre d'état : le contenu qui défile ne passe plus derrière l'heure ni la batterie. */
-.app::before {
-  content: "";
-  position: fixed;
+/* En-têtes collants façon iOS : ils remontent sous la barre d'état et floutent le contenu qui défile
+   derrière eux (pas de bande opaque), avec un bord inférieur fondu. */
+.page > .head:first-child,
+.live-head {
   top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  background: var(--bg);
-  z-index: 25;
+  margin-top: calc(-1 * var(--safe-top));
+  background: transparent;
+  isolation: isolate;
+}
+.page > .head:first-child {
+  padding-top: calc(var(--safe-top) + 8px);
+}
+.live-head {
+  padding-top: var(--safe-top);
+  border-bottom: none;
+}
+.page > .head:first-child::before,
+.live-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -14px;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
   pointer-events: none;
 }
-.head {
-  top: env(safe-area-inset-top);
+.live-head .head {
+  background: transparent;
 }
 .page {
   flex: 1;
