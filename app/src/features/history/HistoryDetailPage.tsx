@@ -144,7 +144,7 @@ export default function HistoryDetailPage() {
                         🏆
                       </span>
                     ) : null}
-                    {s.target && setMeetsTarget(s, e.measurementType) ? <span className="ok">✓</span> : null}
+                    {setMeetsTarget(s, e.measurementType) ? <span className="ok">✓</span> : null}
                   </li>
                 ))}
               </ul>

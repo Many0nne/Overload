@@ -311,9 +311,15 @@ export function applyTargets(we: WorkoutExercise, result: TargetsResult | undefi
 
 const EPS = 1e-9;
 
+// Cette méthode permet d'obtenir l'objectif d'une série lorsqu'elle est une série de travail (undefined pour un échauffement ou une dégressive).
+// Une série passée en échauffement après le calcul garde son objectif figé, mais il est ignoré tant qu'elle n'est pas de travail.
+export function activeTarget(set: Pick<WorkoutSet, 'kind' | 'target'>): SetTarget | undefined {
+  return isWorkingKind(set.kind) ? set.target : undefined;
+}
+
 // Cette méthode permet de savoir si une série validée atteint son objectif (charge ≥, assistance ≤, reps et durée ≥).
 export function setMeetsTarget(set: WorkoutSet, type: MeasurementType): boolean {
-  const t = set.target;
+  const t = activeTarget(set);
   if (!t || !set.done) return false;
   if (t.weight) {
     if (!set.weight) return false;
@@ -329,7 +335,7 @@ export function setMeetsTarget(set: WorkoutSet, type: MeasurementType): boolean 
 // Cette méthode permet de savoir si un exercice a atteint son objectif ; undefined s'il n'en avait pas.
 // Une série avec objectif supprimée (targetCount) ou non validée compte comme non atteinte.
 export function targetsMet(we: WorkoutExercise): boolean | undefined {
-  const withTarget = we.sets.filter((s) => s.target && isWorkingKind(s.kind));
+  const withTarget = we.sets.filter((s) => activeTarget(s));
   const expected = we.targetCount ?? withTarget.length;
   if (expected === 0) return undefined;
   if (withTarget.length < expected) return false;

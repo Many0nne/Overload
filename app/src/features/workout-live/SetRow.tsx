@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { formatDuration, formatSetValues, parseDuration } from '@/domain/format';
 import { fieldsFor, type SetField } from '@/domain/measurement';
+import { activeTarget } from '@/domain/progression';
 import type { MeasurementType, Settings, WorkoutSet } from '@/domain/types';
 import { displayDistanceNumber, displayWeightNumber, parseDecimal, parseInteger } from '@/domain/units';
 import { CheckIcon } from '@/ui/icons';
@@ -41,7 +42,7 @@ export function parseField(text: string, field: SetField, units: Units): SetPatc
 
 // Cette méthode permet de savoir si un champ affiche encore la valeur de l'objectif (style bleu « pré-rempli »).
 function isTargetValue(set: WorkoutSet, field: SetField): boolean {
-  const t = set.target;
+  const t = activeTarget(set);
   if (!t) return false;
   if (field === 'weight')
     return Boolean(t.weight && set.weight && t.weight.v === set.weight.v && t.weight.u === set.weight.u);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activeTarget,
   applyTargets,
   comebackDrop,
   computeTargets,
@@ -7,11 +8,12 @@ import {
   equivalentReps,
   parseRepRange,
   resolveRepRange,
+  setMeetsTarget,
   targetsMet,
   workoutTargetsMet,
 } from './progression';
 import { DAY, entry, set, sets, settings, T0, workout } from './testFixtures';
-import type { MeasurementType, RepRange, Settings, WorkoutRow, WorkoutSet } from './types';
+import type { MeasurementType, RepRange, SetKind, Settings, WorkoutRow, WorkoutSet } from './types';
 
 const WEEK = 7 * DAY;
 
@@ -264,6 +266,85 @@ describe('objectifs figés et objectifs atteints', () => {
       met: 1,
       total: 2,
     });
+  });
+});
+
+describe('séries d’échauffement', () => {
+  const warm = (kg: number, reps: number[]) => sets(kg, reps, 'warmup');
+  // Série sans objectif notée « — ».
+  const goals = (r: ReturnType<typeof computeTargets>) =>
+    r?.sets.map((t) => (t ? `${t.weight?.v}x${t.reps}` : '—'));
+
+  // Cette méthode permet de calculer les objectifs d'une séance prévue (types de séries donnés) à partir d'un historique.
+  function plan(history: WorkoutSet[][], kinds: SetKind[]) {
+    const workouts = history.map((s, i) => workout(T0 + i * 3 * DAY, [entry('ex', s)]));
+    const last = workouts[workouts.length - 1]!;
+    return computeTargets({
+      exercise: { id: 'ex', equipment: 'barbell', measurement_type: 'weight_reps' },
+      settings: settings(),
+      repRange: { min: 8, max: 12 },
+      plannedSets: kinds.map((kind) => ({ kind })),
+      history: workouts,
+      reference: { exercise: last.doc.exercises[0]!, startedAt: last.started_at },
+      now: last.started_at + 3 * DAY,
+    });
+  }
+
+  it('pas d’objectif sur les échauffements, et ils ne servent pas de référence aux séries de travail', () => {
+    const r = plan(
+      [[...warm(40, [12, 12]), ...sets(80, [12, 12])]],
+      ['warmup', 'warmup', 'normal', 'normal'],
+    );
+    expect(r?.reason?.kind).toBe('load_up');
+    expect(goals(r)).toEqual(['—', '—', '82.5x10', '82.5x10']);
+  });
+  it('un échauffement sous le minimum de reps ne déclenche pas de consolidation', () => {
+    const r = plan([[...warm(40, [3]), ...sets(80, [10, 10])]], ['warmup', 'normal', 'normal']);
+    expect(r?.reason?.kind).toBe('reps_up');
+    expect(goals(r)).toEqual(['—', '80x11', '80x11']);
+  });
+  it('un échauffement sous le minimum n’empêche pas la montée de charge', () => {
+    const r = plan([[...sets(80, [12, 12]), ...warm(40, [2])]], ['normal', 'normal']);
+    expect(r?.reason?.kind).toBe('load_up');
+  });
+  it('plateau : les échauffements (charges et reps) sont ignorés dans l’historique', () => {
+    const r = plan(
+      [
+        [...warm(40, [5]), ...sets(80, [10, 10])],
+        [...warm(50, [8]), ...sets(80, [10, 10])],
+        [...warm(60, [12]), ...sets(80, [10, 10])],
+      ],
+      ['warmup', 'normal', 'normal'],
+    );
+    expect(r?.reason?.kind).toBe('plateau');
+    expect(goals(r)).toEqual(['—', '70x8', '70x8']);
+  });
+  it('référence faite uniquement d’échauffements : aucun objectif', () => {
+    expect(plan([warm(40, [10, 10])], ['warmup', 'normal'])).toBeUndefined();
+  });
+  it('applyTargets laisse les valeurs pré-remplies des échauffements telles quelles', () => {
+    const r = plan([[...warm(40, [10]), ...sets(80, [10])]], ['warmup', 'normal']);
+    const live = applyTargets(
+      entry('ex', [
+        set({ kind: 'warmup', kg: 40, reps: 10, done: false }),
+        set({ kg: 80, reps: 10, done: false }),
+      ]),
+      r,
+    );
+    expect(live.sets[0]).toMatchObject({ kind: 'warmup', weight: { v: 40, u: 'kg' }, reps: 10 });
+    expect(live.sets[0]?.target).toBeUndefined();
+    expect(live.sets[1]?.target).toEqual({ weight: { v: 80, u: 'kg' }, reps: 11 });
+    expect(live.targetCount).toBe(1);
+  });
+  it('série passée en échauffement après le calcul : objectif ignoré (affichage, atteinte)', () => {
+    const r = plan([sets(80, [12, 12])], ['normal', 'normal']);
+    const live = applyTargets(entry('ex', sets(0, [0, 0])), r);
+    const done = { ...live, sets: live.sets.map((s) => ({ ...s, done: true })) };
+    const warmed: WorkoutSet = { ...done.sets[0]!, kind: 'warmup' };
+    expect(warmed.target).toBeDefined();
+    expect(activeTarget(warmed)).toBeUndefined();
+    expect(activeTarget(done.sets[1]!)).toEqual(done.sets[1]!.target);
+    expect(setMeetsTarget(warmed, 'weight_reps')).toBe(false);
   });
 });
 

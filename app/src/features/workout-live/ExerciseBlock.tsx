@@ -4,6 +4,7 @@ import { formatReason, formatTargets } from '@/domain/format';
 import { setLabels } from '@/domain/labels';
 import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
+import { activeTarget } from '@/domain/progression';
 import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
 import { initials } from '@/features/library/ExerciseList';
 import { MuscleThumb } from '@/ui/BodyMap';
@@ -57,7 +58,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const reason = entry.targetReason
     ? formatReason(entry.targetReason, entry.measurementType, props.units)
     : undefined;
-  const targets = entry.sets.map((s) => s.target);
+  const targets = entry.sets.map(activeTarget);
   const hasTargets = targets.some(Boolean);
 
   return (
