@@ -231,7 +231,7 @@ function MeasurementSheet(props: { row?: BodyMeasurementRow; units: Units; onClo
           : []),
       ]}
     >
-      <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+      <div style={{ maxHeight: '55vh', overflowY: 'auto', overflowX: 'hidden' }}>
         <label className="field" style={{ marginTop: 0 }}>
           <span>Date</span>
           <input
