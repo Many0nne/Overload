@@ -10,6 +10,15 @@ body,
 #root {
   height: 100%;
 }
+html {
+  /* Pas de zoom au double-tap (taps rapides sur +/−) ; le pincement reste possible. */
+  touch-action: manipulation;
+}
+html,
+body {
+  /* Filet de sécurité : jamais de défilement horizontal de la page, même après un zoom. */
+  overflow-x: clip;
+}
 body {
   background: var(--bg);
   font-family: var(--font);
