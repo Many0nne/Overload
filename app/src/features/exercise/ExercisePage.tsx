@@ -48,6 +48,7 @@ import { formatNumber, kgTo, parseDecimal, parseInteger, toKg } from '@/domain/u
 import { formatWorkoutDate } from '@/features/history/HistoryCard';
 import { ExerciseForm } from '@/features/library/ExerciseForm';
 import { buildWorkoutExercise, loadBuildContext } from '@/features/workout-live/start';
+import { BodyMap } from '@/ui/BodyMap';
 import { Chips, Seg, Sheet, SubHead, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { LineChart } from '@/ui/LineChart';
@@ -140,6 +141,7 @@ export default function ExercisePage() {
         <span className="tag">{EQUIPMENT_LABELS[exercise.equipment]}</span>
         {exercise.archived_at != null && <span className="tag">Archivé</span>}
       </div>
+      <BodyMap primary={exercise.primary_muscle} secondary={exercise.secondary_muscles} />
       <div className="subtabs">
         {(
           [

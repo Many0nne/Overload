@@ -6,6 +6,7 @@ import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
 import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
 import { initials } from '@/features/library/ExerciseList';
+import { MuscleThumb } from '@/ui/BodyMap';
 import { Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { formatRest } from '@/ui/time';
@@ -61,7 +62,11 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   return (
     <div className="ex">
       <div className="ex-top">
-        <div className="ex-av">{initials(name)}</div>
+        {props.exercise ? (
+          <MuscleThumb primary={props.exercise.primary_muscle} secondary={props.exercise.secondary_muscles} />
+        ) : (
+          <div className="ex-av">{initials(name)}</div>
+        )}
         <Link className="name" to={`/exercise/${entry.exerciseId}`} style={{ textDecoration: 'none' }}>
           {name}
           {props.entryRecord && <span style={{ marginLeft: 6 }}>🏆</span>}

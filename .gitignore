@@ -37,3 +37,4 @@ Thumbs.db
 
 # Worktrees paralleles (scripts/overload-worktree.ps1)
 worktrees/
+.dev.pid

@@ -150,7 +150,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Le catalogue est fourni au départ : environ 150 à 250 exercices courants, en français.
   - **Source** : la base libre [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (800+ exercices, domaine public), dont on retient les exercices courants.
   - Les noms et consignes, en anglais dans la source, sont **traduits et réécrits en français**. Les muscles et équipements sont ramenés aux listes ci-dessous.
-  - Les photos fournies par cette base ne sont **pas reprises**.
+  - Les photos fournies par cette base ne sont **pas reprises**. Chaque exercice est illustré par une **carte musculaire** (silhouette de face et de dos, muscle principal en couleur pleine, secondaires en couleur atténuée) : en miniature dans les listes (vue recadrée sur le muscle principal) et en entier sur la fiche de l'exercice.
 - Chaque exercice a :
   - un **nom** ;
   - un **équipement** : barre, haltères, machine, poulie, poids du corps, kettlebell, bande élastique, autre ;
@@ -466,6 +466,7 @@ Quand une séance est en cours, elle est accessible depuis tous les onglets par 
 **Propriété intellectuelle**
 - Ne pas reprendre le nom, le logo, les illustrations ni les textes de HEVY. Le catalogue d'exercices et ses descriptions sont rédigés pour l'app.
 - Le catalogue part de free-exercise-db (Unlicense, domaine public) : réutilisation et modification libres, sans attribution obligatoire.
+- Les tracés de la carte musculaire viennent de [MuscleMap](https://github.com/melihcolpan/MuscleMap) (licence MIT) : la notice de licence est conservée dans le fichier généré et dans le JS livré.
 
 ---
 
