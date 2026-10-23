@@ -50,7 +50,8 @@ jobs:
           path: app/lhci/
           retention-days: 14
 
-  # Tests de synchro (§17) : moteur réel + fake-indexeddb contre Supabase local (Auth + PostgREST).
+  # Tests de synchro (§17) et du connecteur Claude : moteur réel + fake-indexeddb contre Supabase local
+  # (Auth + PostgREST + runtime edge pour la fonction mcp).
   sync:
     runs-on: ubuntu-latest
     steps:
@@ -63,7 +64,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - run: supabase start -x studio,imgproxy,mailpit,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+      - run: supabase start -x studio,imgproxy,mailpit,realtime,logflare,vector,supavisor,postgres-meta
       - run: npm ci
         working-directory: app
       - run: npm run test:sync
