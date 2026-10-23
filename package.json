@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "catalog": "tsx scripts/build-catalog.ts",
+    "body-map": "tsx scripts/build-body-map.ts",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",

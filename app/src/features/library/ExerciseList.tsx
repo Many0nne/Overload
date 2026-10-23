@@ -5,10 +5,11 @@ import { useAllExercises } from '@/data/queries';
 import { EQUIPMENT_LABELS, EQUIPMENTS, MUSCLE_LABELS, MUSCLES } from '@/domain/labels';
 import { matchesSearch, normalizeSearch } from '@/domain/search';
 import type { Equipment, ExerciseRow, Muscle } from '@/domain/types';
+import { MuscleThumb } from '@/ui/BodyMap';
 import { Chips } from '@/ui/components';
 import { SearchIcon } from '@/ui/icons';
 
-// Cette méthode permet d'afficher les initiales d'un exercice dans sa vignette (pas d'illustration en V1).
+// Cette méthode permet d'afficher les initiales d'un exercice dans sa vignette quand l'exercice est introuvable.
 export function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -74,7 +75,7 @@ export function ExerciseList(props: { onPick: (e: ExerciseRow) => void; exclude?
 
   const item = (e: ExerciseRow) => (
     <button key={e.id} className="lib-item" onClick={() => props.onPick(e)}>
-      <span className="ex-av">{initials(e.name)}</span>
+      <MuscleThumb primary={e.primary_muscle} secondary={e.secondary_muscles} />
       <span>
         <div className="n">{e.name}</div>
         <div className="m">
