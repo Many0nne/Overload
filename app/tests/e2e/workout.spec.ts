@@ -74,7 +74,11 @@ test("note d'exercice : la zone s'étend sans défiler, bornée à 280 caractèr
 
   await note.fill('Coudes serrés, descente lente, pause marquée sur la poitrine. '.repeat(6));
   await note.dispatchEvent('input');
-  const box = await note.evaluate((el) => ({ h: el.clientHeight, sh: el.scrollHeight, len: el.value.length }));
+  const box = await note.evaluate((el) => ({
+    h: el.clientHeight,
+    sh: el.scrollHeight,
+    len: el.value.length,
+  }));
   expect(box.h).toBeGreaterThan(before);
   expect(box.sh).toBeLessThanOrEqual(box.h + 1); // tout le texte visible, pas de défilement interne
   expect(box.len).toBe(280);
