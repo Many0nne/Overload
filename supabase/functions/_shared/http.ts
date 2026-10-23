@@ -15,9 +15,29 @@ export function json(body: unknown, status = 200): Response {
   });
 }
 
-// Cette méthode permet de créer un client Supabase avec la clé service lorsqu'une fonction doit contourner la RLS.
+// Cette méthode permet de lire une clé API nommée « default » lorsque le projet a les nouvelles clés (sb_…).
+// Elle se rabat sur la clé legacy (JWT) si la variable JSON est absente, comme avec la pile locale.
+function apiKey(newVar: 'SUPABASE_SECRET_KEYS' | 'SUPABASE_PUBLISHABLE_KEYS', legacyVar: string): string {
+  const raw = Deno.env.get(newVar);
+  if (raw) {
+    try {
+      const key = (JSON.parse(raw) as Record<string, string>).default;
+      if (key) return key;
+    } catch {
+      // Variable mal formée : on garde la clé legacy.
+    }
+  }
+  return Deno.env.get(legacyVar)!;
+}
+
+// Cette méthode permet de lire la clé publique (publishable, sinon anon) lorsqu'une fonction agit au nom de l'appelant.
+export function publishableKey(): string {
+  return apiKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_ANON_KEY');
+}
+
+// Cette méthode permet de créer un client Supabase avec la clé secrète lorsqu'une fonction doit contourner la RLS.
 export function serviceClient(): SupabaseClient {
-  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+  return createClient(Deno.env.get('SUPABASE_URL')!, apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY'), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
