@@ -7,8 +7,9 @@ import { previousSets } from '@/domain/previous';
 import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
 import { initials } from '@/features/library/ExerciseList';
 import { MuscleThumb } from '@/ui/BodyMap';
-import { Sheet } from '@/ui/components';
+import { NoteField, Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
+import { EXERCISE_NOTE_MAX } from '@/ui/note';
 import { formatRest } from '@/ui/time';
 import { type SetPatch, SetRow } from './SetRow';
 
@@ -92,9 +93,10 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
           )}
         </div>
       )}
-      <textarea
+      <NoteField
         className="ex-note"
         rows={1}
+        maxLength={EXERCISE_NOTE_MAX}
         placeholder="Ajouter une note…"
         defaultValue={entry.note ?? ''}
         disabled={props.readOnly}

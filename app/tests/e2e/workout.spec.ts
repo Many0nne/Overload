@@ -64,6 +64,28 @@ test('modifier un poids puis valider : 2 touchers et la saisie (§F9, 3 au plus)
   await expect(row.getByRole('textbox', { name: 'Répétitions' })).toHaveAttribute('inputmode', 'numeric');
 });
 
+test("note d'exercice : la zone s'étend sans défiler, bornée à 280 caractères (issue #30)", async ({
+  page,
+  seeded,
+}) => {
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+  const note = page.locator('.ex', { hasText: BENCH.name }).locator('.ex-note textarea');
+  const before = await note.evaluate((el) => el.clientHeight);
+
+  await note.fill('Coudes serrés, descente lente, pause marquée sur la poitrine. '.repeat(6));
+  await note.dispatchEvent('input');
+  const box = await note.evaluate((el: HTMLTextAreaElement) => ({
+    h: el.clientHeight,
+    sh: el.scrollHeight,
+    len: el.value.length,
+  }));
+  expect(box.h).toBeGreaterThan(before);
+  expect(box.sh).toBeLessThanOrEqual(box.h + 1); // tout le texte visible, pas de défilement interne
+  expect(box.len).toBe(280);
+  await expect(page.locator('.ex', { hasText: BENCH.name }).locator('.note-count')).toHaveText('280/280');
+});
+
 // Cette méthode permet de glisser une ligne de série au doigt (vrais événements tactiles, donc touch-action respecté)
 // depuis son champ « Poids », comme sur iPhone.
 async function swipeRow(page: Page, row: Locator, dx: number) {
