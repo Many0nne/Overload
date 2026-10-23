@@ -74,7 +74,7 @@ test("note d'exercice : la zone s'étend sans défiler, bornée à 280 caractèr
 
   await note.fill('Coudes serrés, descente lente, pause marquée sur la poitrine. '.repeat(6));
   await note.dispatchEvent('input');
-  const box = await note.evaluate((el) => ({
+  const box = await note.evaluate((el: HTMLTextAreaElement) => ({
     h: el.clientHeight,
     sh: el.scrollHeight,
     len: el.value.length,
