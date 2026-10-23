@@ -14,6 +14,12 @@ export function prefsId(userId: string, exerciseId: string): string {
   return v5(`exercise_prefs:${userId}:${exerciseId}`, OVERLOAD_NAMESPACE);
 }
 
+// Cette méthode permet d'obtenir l'appareil virtuel d'une connexion Claude (UUID v5 de compte + client OAuth) :
+// stable par connexion et distinct de tout téléphone, il départage le « dernier gagne » comme un appareil réel.
+export function mcpDeviceId(userId: string, clientId: string): string {
+  return v5(`mcp:${userId}:${clientId}`, OVERLOAD_NAMESPACE);
+}
+
 // Cette méthode permet d'obtenir l'id stable d'une séance importée de HEVY pour un compte (UUID v5) : réimporter
 // le même export retrouve la séance au lieu de la dupliquer.
 export function hevyWorkoutId(userId: string, hevyKey: string): string {

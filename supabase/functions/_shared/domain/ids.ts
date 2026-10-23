@@ -1,0 +1,28 @@
+// Généré par app/scripts/build-edge-domain.mjs depuis app/src/domain : ne pas modifier.
+// Identifiants générés côté client (§2, §5.2).
+import { v5, v7 } from 'npm:uuid@14.0.3';
+
+// Espace de noms des UUID v5 d'Overload (réglages de progression, catalogue).
+export const OVERLOAD_NAMESPACE = '6f1c2a9e-4b7d-4e33-9d0a-2f5b8c7e1a40';
+
+// Cette méthode permet de générer un UUID v7 (création hors ligne sans collision, tri chronologique).
+export function uuidv7(): string {
+  return v7();
+}
+
+// Cette méthode permet d'obtenir l'id stable des réglages de progression d'un exercice pour un compte (UUID v5).
+export function prefsId(userId: string, exerciseId: string): string {
+  return v5(`exercise_prefs:${userId}:${exerciseId}`, OVERLOAD_NAMESPACE);
+}
+
+// Cette méthode permet d'obtenir l'appareil virtuel d'une connexion Claude (UUID v5 de compte + client OAuth) :
+// stable par connexion et distinct de tout téléphone, il départage le « dernier gagne » comme un appareil réel.
+export function mcpDeviceId(userId: string, clientId: string): string {
+  return v5(`mcp:${userId}:${clientId}`, OVERLOAD_NAMESPACE);
+}
+
+// Cette méthode permet d'obtenir l'id stable d'une séance importée de HEVY pour un compte (UUID v5) : réimporter
+// le même export retrouve la séance au lieu de la dupliquer.
+export function hevyWorkoutId(userId: string, hevyKey: string): string {
+  return v5(`hevy:${userId}:${hevyKey}`, OVERLOAD_NAMESPACE);
+}

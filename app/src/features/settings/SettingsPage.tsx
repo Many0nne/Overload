@@ -194,6 +194,13 @@ export default function SettingsPage() {
         >
           Importer depuis HEVY<span className="t2">CSV ›</span>
         </button>
+        <button
+          className="set-row"
+          style={{ width: '100%' }}
+          onClick={() => navigate('/profile/settings/claude')}
+        >
+          Claude<span className="t2">Connecteur ›</span>
+        </button>
         <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('logout')}>
           Se déconnecter
           <span />
