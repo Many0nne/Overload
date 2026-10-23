@@ -38,3 +38,48 @@ test('minuteur de repos juste après un saut d’horloge (veille, appareil en po
   await page.clock.runFor(3500);
   await expect(page.locator('.rest-panel')).toHaveCount(0);
 });
+
+// Cette méthode permet de simuler le passage de l'app en arrière-plan ou au premier plan (visibilitychange).
+async function setVisibility(page: Page, state: 'hidden' | 'visible'): Promise<void> {
+  await page.evaluate((s) => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => s });
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => s === 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, state);
+}
+
+test('minuteur écoulé pendant l’absence : ne réapparaît pas au retour dans l’app', async ({
+  page,
+  seeded,
+}) => {
+  await page.clock.install();
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+
+  await checkSet(page, BENCH.name, 0);
+  await expect(page.locator('.rest-panel .time')).toHaveText(/^1:(30|29|28)$/);
+
+  // L'app passe en arrière-plan, le repos s'écoule, puis l'utilisateur revient : pas de décompte ni de « Terminé ».
+  await setVisibility(page, 'hidden');
+  await jumpClock(page, 120_000);
+  await setVisibility(page, 'visible');
+  await page.clock.runFor(300);
+  await expect(page.locator('.rest-panel')).toHaveCount(0);
+});
+
+test('minuteur écoulé app fermée : pas restauré au relancement', async ({ page, seeded }) => {
+  await page.clock.install();
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+
+  await checkSet(page, BENCH.name, 0);
+  await expect(page.locator('.rest-panel .time')).toHaveText(/^1:(30|29|28)$/);
+
+  // L'app est suspendue puis relancée par le système après l'échéance.
+  await setVisibility(page, 'hidden');
+  await jumpClock(page, 120_000);
+  await page.reload();
+  await expect(page.locator('.ex')).toHaveCount(2);
+  await page.clock.runFor(300);
+  await expect(page.locator('.rest-panel')).toHaveCount(0);
+});
