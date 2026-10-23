@@ -128,6 +128,109 @@ function ValueInput(props: {
 }
 
 const SWIPE_DELETE_PX = 80;
+// Déplacement minimal avant de trancher entre glissement horizontal (suppression) et défilement vertical.
+const SWIPE_SLOP_PX = 10;
+
+type SwipeState = { id: number; x: number; y: number; dx: number; active: boolean };
+
+// Cette méthode permet de supprimer une série par glissement vers la gauche sans re-rendu React pendant le geste :
+// la ligne suit le doigt via une variable CSS (mise à jour par requestAnimationFrame) et le défilement vertical reste libre.
+function useSwipeToDelete(disabled: boolean, onDelete: () => void) {
+  const ref = useRef<HTMLTableRowElement>(null);
+  const onDeleteRef = useRef(onDelete);
+  onDeleteRef.current = onDelete;
+
+  useEffect(() => {
+    const row = ref.current;
+    if (!row || disabled) return;
+    let s: SwipeState | null = null;
+    let frame = 0;
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    let swallowClick = false;
+
+    // Cette méthode permet d'appliquer le décalage courant à la ligne au prochain rafraîchissement d'écran.
+    const paint = () => {
+      frame = 0;
+      const dx = s?.dx ?? 0;
+      row.style.setProperty('--swipe-x', `${dx}px`);
+      row.classList.toggle('swipe-armed', dx < -SWIPE_DELETE_PX);
+    };
+    // Cette méthode permet de terminer le geste : suppression si le seuil est franchi, sinon retour animé en place.
+    const end = (commit: boolean) => {
+      const wasActive = s?.active;
+      const deleted = commit && wasActive && s!.dx < -SWIPE_DELETE_PX;
+      if (wasActive && row.hasPointerCapture(s!.id)) row.releasePointerCapture(s!.id);
+      s = null;
+      if (!wasActive) return;
+      swallowClick = true;
+      setTimeout(() => (swallowClick = false), 0);
+      cancelAnimationFrame(frame);
+      frame = 0;
+      row.classList.remove('swiping');
+      paint();
+      settle = setTimeout(() => row.classList.remove('swipe'), 200);
+      if (deleted) onDeleteRef.current();
+    };
+
+    const down = (e: PointerEvent) => {
+      if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      s = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, active: false };
+    };
+    const move = (e: PointerEvent) => {
+      if (!s || e.pointerId !== s.id) return;
+      const ddx = e.clientX - s.x;
+      const ddy = e.clientY - s.y;
+      if (!s.active) {
+        if (Math.abs(ddy) > SWIPE_SLOP_PX && Math.abs(ddy) >= Math.abs(ddx)) {
+          s = null; // Geste vertical : on laisse défiler la page.
+          return;
+        }
+        if (Math.abs(ddx) <= SWIPE_SLOP_PX || Math.abs(ddx) <= Math.abs(ddy)) return;
+        s.active = true;
+        s.x = e.clientX; // Repart du point de décision pour éviter un saut de 10 px.
+        clearTimeout(settle);
+        row.setPointerCapture(s.id);
+        row.classList.add('swipe', 'swiping');
+        if (row.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
+      }
+      s.dx = Math.min(0, e.clientX - s.x);
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const up = () => end(true);
+    const cancel = () => end(false);
+    // Filet de sécurité iOS : une fois le glissement engagé, le navigateur ne doit plus faire défiler la page.
+    const touchMove = (e: TouchEvent) => {
+      if (s?.active && e.cancelable) e.preventDefault();
+    };
+    // Un glissement terminé sur un bouton ne doit pas le déclencher.
+    const click = (e: MouseEvent) => {
+      if (!swallowClick) return;
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    row.addEventListener('pointerdown', down);
+    row.addEventListener('pointermove', move);
+    row.addEventListener('pointerup', up);
+    row.addEventListener('pointercancel', cancel);
+    row.addEventListener('touchmove', touchMove, { passive: false });
+    row.addEventListener('click', click, true);
+    return () => {
+      row.removeEventListener('pointerdown', down);
+      row.removeEventListener('pointermove', move);
+      row.removeEventListener('pointerup', up);
+      row.removeEventListener('pointercancel', cancel);
+      row.removeEventListener('touchmove', touchMove);
+      row.removeEventListener('click', click, true);
+      cancelAnimationFrame(frame);
+      clearTimeout(settle);
+      row.classList.remove('swipe', 'swiping', 'swipe-armed');
+      row.style.removeProperty('--swipe-x');
+    };
+  }, [disabled]);
+
+  return ref;
+}
 
 export type SetRowProps = {
   set: WorkoutSet;
@@ -150,43 +253,11 @@ export type SetRowProps = {
 // Un glissement de plus de 80 px vers la gauche supprime la série.
 export const SetRow = memo(function SetRow(p: SetRowProps) {
   const fields = fieldsFor(p.type);
-  const [dx, setDx] = useState(0);
-  const start = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const rowRef = useSwipeToDelete(p.readOnly, () => p.onDelete(p.set.id));
   const kindClass = { normal: '', warmup: 'W', drop: 'D', failure: 'X' }[p.set.kind];
 
   return (
-    <tr
-      className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}
-      style={
-        dx
-          ? {
-              transform: `translateX(${dx}px)`,
-              background:
-                dx < -SWIPE_DELETE_PX ? 'color-mix(in srgb, var(--fail) 25%, transparent)' : undefined,
-            }
-          : undefined
-      }
-      onPointerDown={(e) => {
-        if (p.readOnly || (e.target as HTMLElement).closest('input,button')) return;
-        start.current = { x: e.clientX, y: e.clientY, active: false };
-      }}
-      onPointerMove={(e) => {
-        const s = start.current;
-        if (!s) return;
-        const ddx = e.clientX - s.x;
-        if (!s.active && Math.abs(ddx) > 10 && Math.abs(ddx) > Math.abs(e.clientY - s.y)) s.active = true;
-        if (s.active) setDx(Math.min(0, ddx));
-      }}
-      onPointerUp={() => {
-        if (start.current?.active && dx < -SWIPE_DELETE_PX) p.onDelete(p.set.id);
-        start.current = null;
-        setDx(0);
-      }}
-      onPointerCancel={() => {
-        start.current = null;
-        setDx(0);
-      }}
-    >
+    <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>
       <td>
         <button
           className={`type ${kindClass}`}

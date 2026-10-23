@@ -62,3 +62,36 @@ test('modifier un poids puis valider : 2 touchers et la saisie (§F9, 3 au plus)
   await expect(weight).toHaveValue('62,5');
   await expect(row.getByRole('textbox', { name: 'Répétitions' })).toHaveAttribute('inputmode', 'numeric');
 });
+
+// Cette méthode permet de glisser horizontalement une ligne de série depuis son champ « Poids » (geste de suppression).
+async function swipeRow(page: import('@playwright/test').Page, row: ReturnType<typeof setRow>, dx: number) {
+  const box = (await row.getByRole('textbox', { name: 'Poids' }).boundingBox())!;
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + dx, y + 2, { steps: 12 });
+  await page.mouse.up();
+}
+
+test('glisser une série vers la gauche la supprime, même dans le 2e exercice et depuis un champ (#22)', async ({
+  page,
+  seeded,
+}) => {
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+  const rows = page.locator('.ex', { hasText: DB_BENCH.name }).locator('tr.set');
+  const before = await rows.count();
+
+  // Un glissement court sous le seuil ne supprime rien et la ligne revient en place.
+  await swipeRow(page, rows.first(), -50);
+  await expect(rows).toHaveCount(before);
+  await expect(rows.first()).not.toHaveClass(/\bswipe-armed\b/);
+
+  await swipeRow(page, rows.first(), -140);
+  await expect(rows).toHaveCount(before - 1);
+  await swipeRow(page, rows.first(), -140);
+  await expect(rows).toHaveCount(before - 2);
+  // Le geste ne doit pas avoir ouvert le champ touché (pas de clavier).
+  await expect(page.locator('input.val:focus')).toHaveCount(0);
+});
