@@ -51,11 +51,13 @@ function isTargetValue(set: WorkoutSet, field: SetField): boolean {
 }
 
 // Cette méthode permet de sélectionner toute la valeur d'un champ qui prend le focus, pour que la frappe la remplace,
-// y compris sous Safari où le toucher replace le curseur juste après le focus (sélection refaite au tour suivant).
+// y compris sous Safari où le toucher replace le curseur juste après le focus (sélection refaite au tour suivant,
+// seulement si rien n'a été tapé entre-temps : sinon les premiers chiffres seraient resélectionnés puis écrasés).
 function selectAll(el: HTMLInputElement): void {
   el.select();
+  const initial = el.value;
   setTimeout(() => {
-    if (document.activeElement === el) el.setSelectionRange(0, el.value.length);
+    if (document.activeElement === el && el.value === initial) el.setSelectionRange(0, el.value.length);
   }, 0);
 }
 
