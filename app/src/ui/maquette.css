@@ -989,6 +989,19 @@ tr.pr .trophy {
   font-size: 0.9375rem;
   outline: 0;
   resize: none;
+  /* Sans ça, les champs (date iOS surtout) gardent une largeur intrinsèque et débordent. */
+  min-width: 0;
+}
+/* iOS Safari impose une largeur minimale et centre la valeur des champs date. */
+.field input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-height: 46px;
+  text-align: left;
+}
+.field input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
 }
 .field input:focus,
 .field textarea:focus {
@@ -996,7 +1009,7 @@ tr.pr .trophy {
 }
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 .photo-add {
