@@ -506,6 +506,11 @@ Les images de la source ne sont pas reprises. Les modifications ultérieures du 
   - `overload-export-AAAA-MM-JJ.json` : profil, paramètres, séances, routines, dossiers, exercices personnalisés, réglages de progression (`exercise_prefs`), mesures (documents bruts plus `schemaVersion`) ;
   - `overload-seances-AAAA-MM-JJ.csv` : une ligne par série (date, titre, exercice, type de série, poids, unité, reps, durée, distance, poids visé, reps visées, durée visée, note), séparateur `;`, encodage UTF-8 avec BOM (ouverture correcte dans Excel FR).
   - Partage via `navigator.share({ files })` sur iOS, téléchargement ailleurs.
+- **Import HEVY** (Paramètres › Compte, `features/settings/importHevy.ts`, domaine pur `domain/hevy.ts`) : lecture côté client de `workout_data.csv` et `measurement_data.csv`, reconnus par leur en-tête ; dates FR/EN lues en heure locale.
+  - Séances : id UUID v5 de (`user_id`, début local `AAAA-MM-JJTHH:mm`, titre), donc réimport idempotent ; une séance déjà présente (même supprimée) est ignorée. Types de série `dropset` → `drop` ; RPE et supersets ignorés ; repos `null` ; durée = fin − début.
+  - Exercices : suggestion par nom (exact sans accents, sinon Dice pondéré sur les mots, pénalisé si matériel ou type de mesure diffère), présélectionnée au-delà de `MATCH_THRESHOLD` ; sinon exercice perso au type de mesure déduit des colonnes remplies, matériel et muscle devinés.
+  - Mesures : une par jour ; une mesure existante n'est complétée que sur ses champs vides. Colonnes avant-bras et abdomen ignorées.
+  - Écriture en une transaction Dexie (outbox comprise), poussée ensuite par la synchro normale.
 - **Suppression** : double confirmation (saisie de « SUPPRIMER »), puis Edge Function `delete-account` : suppression des objets Storage `<user_id>/*`, puis `auth.admin.deleteUser`, qui supprime tout le reste en cascade. Le client vide ensuite IndexedDB, les caches et l'abonnement push.
 
 ## 15. Performance et budgets
