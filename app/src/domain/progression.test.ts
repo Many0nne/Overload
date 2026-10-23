@@ -431,8 +431,10 @@ describe('série en échec et objectif manqué (#20)', () => {
 
   it('un objectif manqué dans la fourchette ne compte pas comme un échec pour le plateau', () => {
     // 80 × 12/12 visé, 80 × 12/9 fait deux fois : 9 ≥ min (8), donc pas de plateau.
+    // Série par série (#18) : la 1re monte, la 2e prend +1 rep.
     const r = targetsFrom([sets(80, [12, 9]), sets(80, [12, 9])]);
-    expect(r?.reason?.kind).toBe('reps_up');
+    expect(r?.reason?.kind).toBe('mixed');
+    expect(summary(r)).toEqual(['82.5x10', '80x10']);
   });
 
   it('la nature X ne change pas le calcul : mêmes objectifs qu’une série normale', () => {
