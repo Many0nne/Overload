@@ -10,6 +10,7 @@ import {
   updateRoutine,
 } from '@/data/repositories';
 import type { FolderRow, RoutineRow } from '@/domain/types';
+import { unlockAudio } from '@/features/workout-live/restTimer';
 import { startEmptyWorkout, startFromRoutine, WorkoutAlreadyRunning } from '@/features/workout-live/start';
 import { Sheet, toast } from '@/ui/components';
 import { PlusIcon } from '@/ui/icons';
@@ -34,6 +35,7 @@ export default function SeancePage() {
 export function useStartWorkout() {
   const navigate = useNavigate();
   return async (routineId?: string) => {
+    unlockAudio(); // dans le geste, avant tout await : iOS n'accepterait plus le son ensuite
     try {
       const id = routineId ? await startFromRoutine(routineId) : await startEmptyWorkout();
       navigate(`/workout/${id}`);

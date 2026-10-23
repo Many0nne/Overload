@@ -56,29 +56,62 @@ export const useRestTimer = create<Store>((set, get) => ({
 }));
 
 let audioCtx: AudioContext | null = null;
+let unlockListeners = 0;
 
-// Cette méthode permet de débloquer le son lors d'un toucher (iOS n'autorise Web Audio qu'après un geste).
+// Cette méthode permet de débloquer le son lors d'un toucher (iOS n'autorise Web Audio qu'après un geste) :
+// reprise du contexte et lecture d'un échantillon muet, à refaire après une interruption (veille, appel, arrière-plan).
 export function unlockAudio(): void {
   try {
     audioCtx ??= new AudioContext();
-    if (audioCtx.state === 'suspended') void audioCtx.resume();
+    if (audioCtx.state === 'running') return;
+    void audioCtx.resume().catch(() => undefined);
+    const src = audioCtx.createBufferSource();
+    src.buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    src.connect(audioCtx.destination);
+    src.start(0);
   } catch {
     audioCtx = null;
   }
 }
 
-// Cette méthode permet de jouer le bip de fin de repos lorsque l'app est ouverte.
+// Cette méthode permet de débloquer le son à chaque toucher tant qu'un écran de séance est affiché ;
+// elle renvoie la fonction qui retire l'écoute (compteur, pour supporter plusieurs abonnés).
+export function listenAudioUnlock(): () => void {
+  if (unlockListeners++ === 0) {
+    document.addEventListener('touchend', unlockAudio, true);
+    document.addEventListener('click', unlockAudio, true);
+  }
+  return () => {
+    if (--unlockListeners > 0) return;
+    document.removeEventListener('touchend', unlockAudio, true);
+    document.removeEventListener('click', unlockAudio, true);
+  };
+}
+
+// Cette méthode permet de jouer le bip de fin de repos lorsque l'app est ouverte,
+// en relançant d'abord le contexte s'il a été suspendu depuis le dernier toucher.
 export function playRestEndSound(): void {
-  if (!audioCtx) return;
-  const t0 = audioCtx.currentTime;
+  const ctx = audioCtx;
+  if (!ctx) return;
+  if (ctx.state === 'running') beep(ctx);
+  else
+    void ctx
+      .resume()
+      .then(() => beep(ctx))
+      .catch(() => undefined);
+}
+
+// Cette méthode permet de programmer les trois tonalités du bip sur un contexte audio actif.
+function beep(ctx: AudioContext): void {
+  const t0 = ctx.currentTime;
   for (const [i, freq] of [880, 880, 1320].entries()) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.0001, t0 + i * 0.22);
     gain.gain.exponentialRampToValueAtTime(0.4, t0 + i * 0.22 + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.22 + 0.18);
-    osc.connect(gain).connect(audioCtx.destination);
+    osc.connect(gain).connect(ctx.destination);
     osc.start(t0 + i * 0.22);
     osc.stop(t0 + i * 0.22 + 0.2);
   }

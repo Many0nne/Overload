@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { enablePush, pushSupported } from '@/data/push';
+import { unlockAudio } from '@/features/workout-live/restTimer';
 import { startEmptyWorkout } from '@/features/workout-live/start';
 import { toast } from '@/ui/components';
 
@@ -60,7 +61,10 @@ export default function WelcomePage() {
         <button
           className="btn btn-soft btn-block"
           style={{ marginTop: 8 }}
-          onClick={async () => navigate(`/workout/${await startEmptyWorkout()}`, { replace: true })}
+          onClick={async () => {
+            unlockAudio();
+            navigate(`/workout/${await startEmptyWorkout()}`, { replace: true });
+          }}
         >
           Démarrer une séance vide
         </button>

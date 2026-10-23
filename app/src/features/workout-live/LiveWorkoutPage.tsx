@@ -31,7 +31,7 @@ import {
   removeSet,
 } from './editor';
 import { RestPanel } from './RestPanel';
-import { unlockAudio, useRestTimer } from './restTimer';
+import { listenAudioUnlock, useRestTimer } from './restTimer';
 import { buildWorkoutExercise, loadBuildContext } from './start';
 
 // Cette méthode permet d'afficher le chronomètre de durée totale, isolé pour ne pas re-rendre la liste (§11).
@@ -64,6 +64,9 @@ export default function LiveWorkoutPage() {
   useEffect(() => {
     void timer.load();
   }, [timer.load]);
+
+  // Chaque toucher pendant la séance garde le son débloqué pour le bip de fin de repos (iOS, §F7.4).
+  useEffect(() => listenAudioUnlock(), []);
 
   // L'état local suit la base tant qu'on ne modifie pas, ou quand la séance appartient à un autre appareil.
   useEffect(() => {
@@ -133,7 +136,6 @@ export default function LiveWorkoutPage() {
         setErrors((e) => (e[setId] ? { ...e, [setId]: [] } : e));
       },
       onCheck: (entryId, setId) => {
-        unlockAudio();
         const d = docRef.current;
         const entry = d?.exercises.find((e) => e.id === entryId);
         const set = entry?.sets.find((s) => s.id === setId);
