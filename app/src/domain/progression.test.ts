@@ -6,6 +6,7 @@ import {
   computeTargets,
   type ExerciseLike,
   equivalentReps,
+  missedTarget,
   parseRepRange,
   resolveRepRange,
   setMeetsTarget,
@@ -341,6 +342,34 @@ describe('objectifs figés et objectifs atteints', () => {
       met: 1,
       total: 2,
     });
+  });
+});
+
+describe('série en échec et objectif manqué (#20)', () => {
+  it('objectif manqué : reps réalisées gardées, objectif figé conservé et déduit', () => {
+    const r = targetsFrom([sets(80, [11, 11])]);
+    const we = applyTargets(entry('ex', sets(0, [0, 0])), r);
+    const done = we.sets.map((s, i) => ({ ...s, done: true, reps: i === 1 ? 9 : s.reps }));
+    expect(done[1]?.reps).toBe(9);
+    expect(missedTarget(done[1]!, 'weight_reps')).toEqual({ weight: { v: 80, u: 'kg' }, reps: 12 });
+    expect(missedTarget(done[0]!, 'weight_reps')).toBeUndefined();
+    expect(missedTarget({ ...done[1]!, done: false }, 'weight_reps')).toBeUndefined();
+    expect(missedTarget({ ...done[1]!, kind: 'warmup' }, 'weight_reps')).toBeUndefined();
+    expect(missedTarget(set({ kg: 80, reps: 9 }), 'weight_reps')).toBeUndefined();
+  });
+
+  it('un objectif manqué dans la fourchette ne compte pas comme un échec pour le plateau', () => {
+    // 80 × 12/12 visé, 80 × 12/9 fait deux fois : 9 ≥ min (8), donc pas de plateau.
+    const r = targetsFrom([sets(80, [12, 9]), sets(80, [12, 9])]);
+    expect(r?.reason?.kind).toBe('reps_up');
+  });
+
+  it('la nature X ne change pas le calcul : mêmes objectifs qu’une série normale', () => {
+    const normal = targetsFrom([sets(80, [10, 7]), sets(80, [10, 7])]);
+    const failure = targetsFrom([sets(80, [10, 7], 'failure'), sets(80, [10, 7], 'failure')]);
+    expect(failure).toEqual(normal);
+    expect(normal?.reason?.kind).toBe('plateau');
+    expect(summary(targetsFrom([sets(80, [12, 12], 'failure')]))).toEqual(['82.5x10', '82.5x10']);
   });
 });
 

@@ -394,6 +394,9 @@ Les objectifs se calculent sur les valeurs exactes et s'affichent dans l'unité 
 **Objectifs atteints**
 - Un exercice a atteint son objectif si chaque série de travail qui avait un objectif est validée avec une charge au moins égale à l'objectif (une assistance au plus égale pour l'assisté) **et** des reps ou une durée au moins égales.
 - Le récapitulatif et l'historique affichent « objectifs atteints : n / m exercices ». Les exercices sans objectif ne comptent pas.
+- **Objectif manqué** : chaque série enregistre ses reps réalisées et garde son objectif figé à part. L'utilisateur saisit ce qu'il a vraiment fait (9 reps pour un objectif de 10), et le fait d'avoir manqué l'objectif s'en **déduit** : il ne se saisit pas. Dans le détail d'une séance passée, une série validée qui a manqué son objectif affiche discrètement l'objectif visé (« 80 kg × 9 · obj. 80 kg × 10 »). Celles qui l'ont atteint affichent ✓.
+- **Échec et algorithme** : pour le plateau, un « échec » est une série de travail **sous le min de la fourchette**, que la série ait eu un objectif ou non. Un objectif manqué sans passer sous le min (9 reps pour 10 visées dans une fourchette 8–12) n'est pas un échec : la progression continue normalement.
+- **Série à l'échec (X)** : c'est une nature saisie à la main, qui veut dire que la série a été volontairement menée jusqu'à l'échec. Elle est indépendante de l'objectif et ne change pas le calcul (voir plus haut). Sans objectif (progression désactivée, premier essai), c'est la seule information d'échec disponible.
 
 **Tendance projetée** (fiche exercice, type poids et répétitions uniquement)
 - **Données** : le meilleur 1RM estimé de chaque semaine calendaire, calculé sur les séries de travail de 12 reps au plus. Prendre le maximum par semaine atténue le bruit d'une séance à l'autre.
@@ -495,6 +498,7 @@ Quand une séance est en cours, elle est accessible depuis tous les onglets par 
 | Q8 | Les seuils heuristiques du §7.10 sont-ils bons ? Il s'agit de la baisse de 10 % en cas de plateau, du barème de reprise, des +5 % sur la durée et du plafond de la projection. | Ce sont des valeurs de départ, prudentes et compatibles avec la littérature, mais aucune étude ne les fixe précisément. À réévaluer après 4 semaines d'usage réel (§10, critère 6). |
 | Q9 | Faut-il demander l'ancienneté d'entraînement à l'inscription ? | **Tranché** (v0.6) : oui, en question facultative et modifiable dans les paramètres. Elle fixe l'origine du temps de la projection (§7.10). Sans elle, la projection part de la première séance enregistrée, et le garde-fou de 4 %/mois limite le biais. |
 | Q10 | Ajouter un ressenti de difficulté (RPE ou RIR) pour affiner les objectifs ? | **Tranché** (v0.6) : non en V1. On utilise les reps réalisées et les séries à l'échec. L'estimation des reps restantes est imprécise d'environ 1 rep (Halperin et al. 2021) et ajouterait une saisie à chaque série. |
+| Q11 | Quand une série est-elle un échec, et qu'enregistre-t-on (reps réalisées ou objectif) ? | **Tranché** (#20) : on enregistre les reps réalisées et on garde l'objectif à part. L'objectif manqué s'en déduit, et l'historique l'affiche. Pour l'algorithme, un échec reste une série sous le min de la fourchette. La nature X (menée à l'échec) est une information sans effet sur le calcul (voir §7.10, Objectifs atteints). |
 
 ---
 
