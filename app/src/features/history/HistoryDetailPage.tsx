@@ -3,10 +3,16 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useHistoryWithBadges } from '@/data/derived';
 import { useExerciseMap, useSettings, useWorkout } from '@/data/queries';
 import { createRoutine, deleteWorkout } from '@/data/repositories';
-import { criterionLabel, formatDurationHuman, formatKg, formatSetValues } from '@/domain/format';
+import {
+  criterionLabel,
+  formatDurationHuman,
+  formatKg,
+  formatSetValues,
+  formatTarget,
+} from '@/domain/format';
 import { uuidv7 } from '@/domain/ids';
 import { setLabels } from '@/domain/labels';
-import { setMeetsTarget, targetsMet } from '@/domain/progression';
+import { missedTarget, setMeetsTarget, targetsMet } from '@/domain/progression';
 import { workoutToRoutine } from '@/domain/routineDiff';
 import { workoutSummary } from '@/domain/summary';
 import { Sheet, SubHead, toast } from '@/ui/components';
@@ -100,6 +106,7 @@ export default function HistoryDetailPage() {
           const ex = exercises.get(e.exerciseId);
           const labels = setLabels(e.sets.map((s) => s.kind));
           const met = targetsMet(e);
+          const missed = e.sets.map((s) => missedTarget(s, e.measurementType));
           return (
             <div key={e.id} className="card hist">
               <Link to={`/exercise/${e.exerciseId}`} style={{ textDecoration: 'none' }}>
@@ -145,6 +152,12 @@ export default function HistoryDetailPage() {
                       </span>
                     ) : null}
                     {setMeetsTarget(s, e.measurementType) ? <span className="ok">✓</span> : null}
+                    {missed[i] ? (
+                      <span className="muted">
+                        {' '}
+                        · obj. {formatTarget(missed[i], e.measurementType, settings.units)}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

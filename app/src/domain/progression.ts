@@ -332,6 +332,13 @@ export function setMeetsTarget(set: WorkoutSet, type: MeasurementType): boolean 
   return true;
 }
 
+// Cette méthode permet d'obtenir l'objectif manqué d'une série validée (reps réalisées et objectif restent distincts, §F7.10).
+// undefined si la série n'avait pas d'objectif actif, n'est pas validée ou l'a atteint.
+export function missedTarget(set: WorkoutSet, type: MeasurementType): SetTarget | undefined {
+  const t = activeTarget(set);
+  return t && set.done && !setMeetsTarget(set, type) ? t : undefined;
+}
+
 // Cette méthode permet de savoir si un exercice a atteint son objectif ; undefined s'il n'en avait pas.
 // Une série avec objectif supprimée (targetCount) ou non validée compte comme non atteinte.
 export function targetsMet(we: WorkoutExercise): boolean | undefined {
