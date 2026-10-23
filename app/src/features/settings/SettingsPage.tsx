@@ -124,7 +124,12 @@ export default function SettingsPage() {
           />
         </div>
         <div className="set-row">
-          Son du minuteur
+          <span>
+            Son du minuteur
+            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+              app ouverte ; coupé par le mode silencieux de l'iPhone
+            </small>
+          </span>
           <Switch label="Son du minuteur" on={settings.timerSound} onChange={(v) => set({ timerSound: v })} />
         </div>
         <div className="set-row">
