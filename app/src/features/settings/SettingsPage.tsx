@@ -187,6 +187,13 @@ export default function SettingsPage() {
         <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('export')}>
           Exporter mes données<span className="t2">JSON · CSV ›</span>
         </button>
+        <button
+          className="set-row"
+          style={{ width: '100%' }}
+          onClick={() => navigate('/profile/settings/import-hevy')}
+        >
+          Importer depuis HEVY<span className="t2">CSV ›</span>
+        </button>
         <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('logout')}>
           Se déconnecter
           <span />

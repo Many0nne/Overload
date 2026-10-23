@@ -69,7 +69,7 @@ L'app est un site web que l'on **ajoute à l'écran d'accueil** de l'iPhone (Saf
 - Séries d'échauffement calculées automatiquement.
 - RPE / RIR (effort ressenti).
 - Calculateur de disques.
-- Import/export CSV, et import depuis HEVY ou Strong.
+- Import CSV générique, et import depuis Strong (l'import HEVY est disponible, voir §7.1).
 - Intégration Apple Santé / Health Connect.
 - Programmes multi-semaines avec périodisation (cycles, semaines de deload planifiées). La V1 ne propose que l'objectif de la séance suivante (§7.10).
 - Objectifs pour les types « poids et durée » et « distance et durée » (§7.10).
@@ -144,6 +144,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Le **profil** affiche : photo, nom, nombre de séances, et un graphique hebdomadaire (au choix : durée, volume ou nombre de séances).
 - **Suppression du compte** avec toutes ses données.
 - **Export** de ses données : un fichier JSON complet (profil, séances, routines, exercices personnalisés, mesures), et un fichier CSV des séances lisible dans un tableur.
+- **Import HEVY** : l'utilisateur choisit les fichiers CSV exportés par HEVY (séances, et mesures en option). Avant l'import, il vérifie la correspondance de chaque exercice HEVY : exercice de la bibliothèque proposé automatiquement, exercice personnalisé à créer, ou exercice ignoré. Une séance déjà importée n'est jamais dupliquée ni modifiée ; une mesure existante n'est complétée que sur ses champs vides.
 
 ### 7.2 Bibliothèque d'exercices
 - Le catalogue est fourni au départ : environ 150 à 250 exercices courants, en français.
@@ -310,7 +311,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Notification de fin de repos : activée ou non.
 - Objectifs de progression : activés ou non (activés par défaut). Désactivés, les champs se pré-remplissent comme sans objectif et la tendance projetée est masquée.
 - Ancienneté en musculation, modifiable à tout moment : « Je débute », « Moins de 6 mois », « 6 mois à 1 an », « 1 à 2 ans », « 2 à 5 ans », « Plus de 5 ans », ou « Non renseignée ».
-- Compte : e-mail, mot de passe, lien d'invitation (copier, régénérer), export des données, suppression du compte, déconnexion.
+- Compte : e-mail, mot de passe, lien d'invitation (copier, régénérer), export des données, import HEVY, suppression du compte, déconnexion.
 
 ### 7.9 Plusieurs appareils et hors ligne
 **Séance en cours**
@@ -484,7 +485,7 @@ Quand une séance est en cours, elle est accessible depuis tous les onglets par 
 | Q1 | Nom et identité visuelle de l'app ? | **Tranché** (v0.7) : « Overload » (la surcharge progressive, principe des objectifs de progression). Identité visuelle : celle de la maquette (thème sombre, accent bleu). |
 | Q2 | Photo de séance : 1 seule ou plusieurs ? | 1 photo en V1, pour limiter le stockage gratuit. |
 | Q3 | Inscription ouverte à tous ou uniquement sur invitation ? | **Tranché** : sur invitation (voir §7.1). |
-| Q4 | Faut-il récupérer son historique HEVY existant ? | Hors V1. Si c'est bloquant pour l'adoption, prévoir l'import CSV HEVY en V1.1. |
+| Q4 | Faut-il récupérer son historique HEVY existant ? | **Tranché** : import CSV HEVY disponible (voir §7.1). |
 | Q5 | Illustrations des exercices en V1 ? | **Tranché** : non. Les consignes et les muscles ciblés sont affichés en texte. Des visuels propres (SVG ou modèle 3D) sont prévus après la V1. |
 | Q6 | Visuels d'exercices après la V1 : SVG ou modèle 3D ? | À décider plus tard. Les SVG sont plus simples à produire et plus légers. Un modèle 3D est plus riche mais demande plus de travail et pèse plus lourd sur mobile. |
 | Q7 | Fonctions sociales (abonnements, fil, likes, partage) ? | **Tranché** (v0.4) : non. App personnelle, comptes isolés. |
