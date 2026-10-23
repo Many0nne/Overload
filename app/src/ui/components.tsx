@@ -1,7 +1,15 @@
-import { type ReactNode, useEffect } from 'react';
+import {
+  type ReactNode,
+  type TextareaHTMLAttributes,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate } from 'react-router';
 import { create } from 'zustand';
 import { BackIcon } from './icons';
+import { noteCounter } from './note';
 
 // ---------- Toast ----------
 
@@ -155,6 +163,55 @@ export function Chips<T extends string>(props: {
           {o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ---------- Note (zone de texte extensible) ----------
+
+// Cette méthode permet d'ajuster la hauteur d'une zone de texte à son contenu, pour qu'elle s'étende au lieu de défiler.
+function fitHeight(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
+// Cette méthode permet d'afficher une note qui s'étend avec son contenu, bornée à maxLength caractères (issue #30),
+// avec un compteur discret à l'approche de la limite ; contrôlée (value) ou non (defaultValue).
+export function NoteField(
+  props: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'maxLength'> & { maxLength: number },
+) {
+  const { maxLength, className, onInput, ...rest } = props;
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const initial = String(props.value ?? props.defaultValue ?? '');
+  const [length, setLength] = useState(initial.length);
+  const counter = noteCounter(length, maxLength);
+
+  const value = props.value;
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    fitHeight(el);
+    setLength(String(value ?? el.value).length);
+  }, [value]);
+
+  return (
+    <div className={`note-field${className ? ` ${className}` : ''}`}>
+      <textarea
+        {...rest}
+        ref={ref}
+        maxLength={maxLength}
+        onInput={(e) => {
+          fitHeight(e.currentTarget);
+          setLength(e.currentTarget.value.length);
+          onInput?.(e);
+        }}
+      />
+      {counter && (
+        <span className={`note-count${length >= maxLength ? ' full' : ''}`} aria-live="polite">
+          {counter}
+        </span>
+      )}
     </div>
   );
 }

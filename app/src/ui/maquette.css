@@ -591,7 +591,11 @@ textarea {
 }
 .ex-note {
   margin: 10px 18px 0;
-  width: calc(100% - 36px);
+}
+.ex-note textarea {
+  display: block;
+  width: 100%;
+  padding: 0;
   background: none;
   border: 0;
   outline: 0;
@@ -599,8 +603,24 @@ textarea {
   color: var(--text-2);
   resize: none;
 }
-.ex-note::placeholder {
+.ex-note textarea::placeholder {
   color: var(--muted);
+}
+/* Note extensible (issue #30) : la hauteur suit le contenu, pas de défilement interne. */
+.note-field textarea {
+  overflow: hidden;
+}
+.note-field .note-count {
+  display: block;
+  margin: 4px 0 0;
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.note-field .note-count.full {
+  color: var(--warm);
 }
 .rest-link {
   margin: 6px 18px 8px;

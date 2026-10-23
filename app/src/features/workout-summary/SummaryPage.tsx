@@ -21,7 +21,8 @@ import { defaultTitle, isForgotten, pruneUnvalidated, workoutSummary } from '@/d
 import type { RoutineRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
 import { PhotoView } from '@/features/history/PhotoView';
 import { useRestTimer } from '@/features/workout-live/restTimer';
-import { Sheet, SubHead, toast } from '@/ui/components';
+import { NoteField, Sheet, SubHead, toast } from '@/ui/components';
+import { WORKOUT_NOTE_MAX } from '@/ui/note';
 import { compressImage } from '@/ui/photo';
 
 const longDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -272,8 +273,9 @@ export default function SummaryPage() {
         </label>
         <label className="field">
           <span>Note</span>
-          <textarea
+          <NoteField
             rows={2}
+            maxLength={WORKOUT_NOTE_MAX}
             placeholder="Comment s'est passée la séance ?"
             value={note}
             onChange={(e) => setNote(e.target.value)}
