@@ -1,5 +1,6 @@
 // Généré par app/scripts/build-edge-domain.mjs depuis app/src/domain : ne pas modifier.
 // Records par exercice (§F7.6, §10.3). Les badges ne sont jamais stockés : ils sont dérivés de l'historique trié.
+import { dayKey } from './dates.ts';
 import type { MeasurementType, WorkoutExercise, WorkoutRow, WorkoutSet } from './types.ts';
 import { toKg, toKm } from './units.ts';
 
@@ -132,9 +133,20 @@ const CRITERIA: Record<MeasurementType, CriterionDef[]> = {
   distance_duration: [maxDistance, maxDuration, bestPace],
 };
 
+const CRITERION_DEFS = new Map(
+  Object.values(CRITERIA)
+    .flat()
+    .map((c) => [c.id, c] as const),
+);
+
 // Cette méthode permet d'obtenir les critères de record suivis pour un type de mesure (table §F7.6).
 export function criteriaFor(type: MeasurementType): CriterionDef[] {
   return CRITERIA[type];
+}
+
+// Cette méthode permet de retrouver la définition d'un critère, quel que soit le type de mesure qui le suit.
+export function criterionDef(id: RecordCriterion): CriterionDef {
+  return CRITERION_DEFS.get(id)!;
 }
 
 // Cette méthode permet de savoir si une valeur bat strictement un meilleur courant (absent = battu).
@@ -168,7 +180,9 @@ export type RecordValue = {
   setId?: string; // absent pour un critère de séance
 };
 
-export type RecordEvent = RecordValue & { exerciseId: string; criterion: RecordCriterion };
+// `previous` : meilleur résultat avant la séance du record (absent si le critère n'avait encore aucune valeur). Il est le même
+// pour tous les records d'un critère battus dans une séance : le gain se mesure contre l'avant-séance.
+export type RecordEvent = RecordValue & { exerciseId: string; criterion: RecordCriterion; previous?: number };
 
 export type WorkoutExerciseBadges = {
   sets: Record<string, RecordCriterion[]>; // id de série → critères battus
@@ -197,13 +211,15 @@ export function scanExercise(exerciseId: string, workouts: WorkoutRow[]): Exerci
   let seenBefore = false;
 
   for (const w of sorted) {
+    const before = { ...bests }; // meilleurs résultats au début de la séance
     const entries = w.doc.exercises.filter((e) => e.exerciseId === exerciseId);
     const wb: WorkoutExerciseBadges = { sets: {}, entries: {} };
     const award = (criterion: RecordCriterion, rv: RecordValue) => {
       if (!seenBefore) return;
       if (rv.setId) pushBadge(wb.sets, rv.setId, criterion);
       else pushBadge(wb.entries, rv.entryId, criterion);
-      events.push({ ...rv, exerciseId, criterion });
+      const previous = before[criterion]?.value;
+      events.push({ ...rv, exerciseId, criterion, ...(previous !== undefined && { previous }) });
     };
 
     for (const we of entries) {
@@ -323,4 +339,107 @@ export function recentRecords(workouts: WorkoutRow[], limit = 20): RecordEvent[]
   const events: RecordEvent[] = [];
   for (const id of ids) events.push(...scanExercise(id, workouts).events);
   return events.sort((a, b) => b.startedAt - a.startedAt).slice(0, limit);
+}
+
+export type RecordLineItem = {
+  criterion: RecordCriterion;
+  value: number; // meilleure valeur de la séance
+  previous?: number; // meilleur résultat avant la séance (absent : premier résultat sur ce critère)
+  gain?: number; // value − previous : positif pour un critère « max », négatif pour un critère « min » (assistance, allure)
+  workoutId: string;
+  entryId: string;
+  setId?: string;
+};
+
+export type RecordLine = {
+  workoutId: string;
+  exerciseId: string;
+  startedAt: number;
+  records: RecordLineItem[]; // critères battus dans l'ordre de la table §F7.6 : le premier est le critère principal
+};
+
+// Cette méthode permet de regrouper des records battus par séance et exercice, du plus récent au plus ancien : pour chaque
+// critère, la meilleure valeur de la séance et le gain par rapport au meilleur résultat d'avant la séance.
+export function recordLines(
+  events: RecordEvent[],
+  typeOf: (exerciseId: string) => MeasurementType,
+): RecordLine[] {
+  const groups = new Map<string, RecordEvent[]>();
+  for (const e of events) {
+    const key = `${e.workoutId}|${e.exerciseId}`;
+    const list = groups.get(key);
+    if (list) list.push(e);
+    else groups.set(key, [e]);
+  }
+  const lines: RecordLine[] = [];
+  for (const list of groups.values()) {
+    const first = list[0]!;
+    const records: RecordLineItem[] = [];
+    // Ordre du type de mesure actuel, puis les critères restants (type d'exercice modifié depuis la séance).
+    const defs = [...criteriaFor(typeOf(first.exerciseId))];
+    for (const e of list) if (!defs.some((d) => d.id === e.criterion)) defs.push(criterionDef(e.criterion));
+    for (const c of defs) {
+      const same = list.filter((e) => e.criterion === c.id);
+      if (same.length === 0) continue;
+      // Le meilleur événement de la séance porte la valeur finale ; tous partagent l'ancien record d'avant la séance.
+      const best = same.reduce((a, b) => (isBetter(c.dir, b.value, a.value) ? b : a));
+      const previous = best.previous;
+      records.push({
+        criterion: c.id,
+        value: best.value,
+        workoutId: best.workoutId,
+        entryId: best.entryId,
+        ...(best.setId !== undefined && { setId: best.setId }),
+        ...(previous !== undefined && { previous, gain: best.value - previous }),
+      });
+    }
+    if (records.length > 0)
+      lines.push({
+        workoutId: first.workoutId,
+        exerciseId: first.exerciseId,
+        startedAt: first.startedAt,
+        records,
+      });
+  }
+  return lines.sort(
+    (a, b) =>
+      b.startedAt - a.startedAt || (a.workoutId < b.workoutId ? -1 : a.workoutId > b.workoutId ? 1 : 0),
+  );
+}
+
+// Cette méthode permet de fusionner les paliers « meilleur poids à N reps » consécutifs battus avec la même charge, pour
+// n'afficher qu'une pastille (« à 1, 3 et 5 reps 65 kg ») ; `reps` est vide pour les autres critères.
+export function mergeRepMilestones(items: RecordLineItem[]): { item: RecordLineItem; reps: number[] }[] {
+  const out: { item: RecordLineItem; reps: number[] }[] = [];
+  for (const item of items) {
+    const n = item.criterion.startsWith('weight_at_') ? Number(item.criterion.slice('weight_at_'.length)) : 0;
+    const last = out.at(-1);
+    if (n && last && last.reps.length > 0 && last.item.value === item.value) last.reps.push(n);
+    else out.push({ item, reps: n ? [n] : [] });
+  }
+  return out;
+}
+
+// Cette méthode permet de retrouver la série d'un record (meilleure série en volume affichée « 80 kg × 8 ») dans sa séance.
+export function recordSet(
+  workout: WorkoutRow | undefined,
+  rv: { entryId: string; setId?: string },
+): WorkoutSet | undefined {
+  if (!rv.setId) return undefined;
+  return workout?.doc.exercises.find((e) => e.id === rv.entryId)?.sets.find((s) => s.id === rv.setId);
+}
+
+export type RecordDay = { key: string; startedAt: number; lines: RecordLine[] };
+
+// Cette méthode permet de regrouper des lignes de records (triées du plus récent au plus ancien) par jour de début de
+// séance, dans le fuseau de l'appareil (§F7.6).
+export function recordDays(lines: RecordLine[]): RecordDay[] {
+  const days: RecordDay[] = [];
+  for (const line of lines) {
+    const key = dayKey(line.startedAt);
+    const last = days.at(-1);
+    if (last?.key === key) last.lines.push(line);
+    else days.push({ key, startedAt: line.startedAt, lines: [line] });
+  }
+  return days;
 }

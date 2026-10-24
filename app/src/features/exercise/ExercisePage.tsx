@@ -17,6 +17,7 @@ import {
   criterionLabel,
   formatCanonical,
   formatKg,
+  formatMetric,
   formatReason,
   formatRpe,
   formatSetValues,
@@ -27,7 +28,14 @@ import { EQUIPMENT_LABELS, MUSCLE_LABELS, setLabels } from '@/domain/labels';
 import { fieldsFor, hasReps, hasTargets, isWorkingKind } from '@/domain/measurement';
 import { plateSetFor } from '@/domain/plates';
 import { incrementFor, parseRepRange, targetsMet } from '@/domain/progression';
-import { bestRecords, criteriaFor, e1rm, REP_MILESTONES, type RecordCriterion } from '@/domain/records';
+import {
+  bestRecords,
+  criteriaFor,
+  e1rm,
+  REP_MILESTONES,
+  type RecordCriterion,
+  recordSet,
+} from '@/domain/records';
 import {
   currentRate,
   firstSessionAt,
@@ -61,18 +69,6 @@ type Units = Settings['units'];
 type Tab = 'resume' | 'histo' | 'consignes';
 const monthFmt = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
 const WEIGHTED: MeasurementType[] = ['weight_reps', 'weighted_bw', 'assisted_bw'];
-
-// Cette méthode permet d'afficher une valeur canonique de courbe ou de record, avec le « + » des charges ajoutées.
-function formatMetric(
-  v: number,
-  unit: Parameters<typeof formatCanonical>[1],
-  type: MeasurementType,
-  units: Units,
-) {
-  const prefix =
-    unit === 'kg' && type === 'weighted_bw' ? '+' : unit === 'kg' && type === 'assisted_bw' ? '−' : '';
-  return `${prefix}${formatCanonical(v, unit, units)}`;
-}
 
 // Cette méthode permet d'afficher la fiche d'un exercice : onglets Résumé, Historique et Consignes (§F7.2, §F7.6, §F7.10).
 // Elle donne aussi accès à la modification et à l'archivage (exercice personnel, ou catalogue pour l'administrateur).
@@ -485,9 +481,12 @@ function RecordsSection(props: {
   // Cette méthode permet d'afficher la série d'un record de volume (« 80 kg × 8 ») plutôt que son produit.
   const setText = (c: RecordCriterion): string | undefined => {
     const rv = bests[c];
-    if (!rv?.setId) return undefined;
-    const w = props.workouts.find((x) => x.id === rv.workoutId);
-    const set = w?.doc.exercises.find((e) => e.id === rv.entryId)?.sets.find((s) => s.id === rv.setId);
+    const set =
+      rv &&
+      recordSet(
+        props.workouts.find((x) => x.id === rv.workoutId),
+        rv,
+      );
     return set ? formatSetValues(set, type, units) : undefined;
   };
 

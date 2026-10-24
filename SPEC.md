@@ -297,7 +297,11 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Répartition des séries par **groupe musculaire** sur une période. Un muscle principal compte pour 1 série, un muscle secondaire pour 0,5.
 - **Calendrier** des jours d'entraînement et série de semaines consécutives avec au moins une séance.
 - Règles de date communes : une séance appartient au jour de son **début** (même si elle se termine après minuit), dans le fuseau horaire de l'appareil. La semaine va du lundi au dimanche. La semaine en cours ne casse pas la série de semaines tant qu'elle n'est pas terminée.
-- Liste des records battus récemment.
+- Liste des records battus récemment, du plus récent au plus ancien (10 lignes au plus, une par exercice et par séance), groupée sous un en-tête de jour : « Aujourd'hui », « Hier » ou « Il y a N j » (jusqu'à 6 jours) suivi de la date, puis la date seule (avec l'année si ce n'est pas l'année en cours).
+  - Chaque ligne donne le nom de l'exercice (2 lignes au plus), le critère principal battu en clair (premier dans l'ordre de la table des records), sa valeur et le **gain** sur l'ancien record, à droite. La meilleure série en volume s'affiche comme une série (« 100 kg × 5 ») et son gain en volume (« +20 kg vol. »).
+  - Le gain se mesure contre le meilleur résultat **d'avant la séance**, même si le critère a été battu plusieurs fois dans la séance. Pour l'assistance et l'allure, il est négatif (« −0:08 /km »). Sans ancien résultat sur ce critère (ex. premier passage à 12 reps), la ligne affiche « 🏆 nouveau ».
+  - Les autres critères battus dans la même séance sont affichés en pastilles, avec leur valeur (« 1RM estimé 115,5 kg », « à 5 reps 100 kg »). Les paliers « meilleur poids à N reps » qui se suivent et sont battus avec la même charge forment une seule pastille (« à 1, 3 et 5 reps 65 kg »).
+  - Valeurs et gains dans les unités de l'utilisateur. Toute la ligne ouvre la fiche de l'exercice.
 
 **Mesures corporelles**
 - Saisie datée de : poids, % de masse grasse, et tours (cou, épaules, poitrine, bras G/D, taille, hanches, cuisse G/D, mollet G/D).

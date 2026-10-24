@@ -94,6 +94,84 @@
 .rec-list b {
   font-variant-numeric: tabular-nums;
 }
+/* Records récents (Statistiques) : en-tête de jour, puis une ligne par exercice et séance, cliquable vers la fiche. */
+.rec-day {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 12px;
+}
+.card > div:first-child > .rec-day {
+  padding-top: 0;
+}
+.rec-line {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.rec-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rec-name {
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.rec-crit {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.rec-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+.rec-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.rec-pill b {
+  color: var(--text);
+}
+.rec-val {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+.rec-gain {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--done);
+  font-variant-numeric: tabular-nums;
+}
+.rec-gain.new {
+  color: var(--gold);
+}
+.rec-chev {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 1.125rem;
+}
 .reps-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
