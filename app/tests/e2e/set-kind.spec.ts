@@ -24,10 +24,10 @@ test('Nature de série : le numéro ouvre un sélecteur, un choix enregistre et 
     .poll(async () => (await localWorkoutDoc(page, workoutId))?.exercises[0]?.sets[1]?.kind)
     .toBe('warmup');
 
-  // Le badge « Normale » montre le numéro que reprendrait la série ; le fond referme sans rien changer.
+  // Le badge « Normale » montre le numéro que reprendrait la série ; Échap referme sans rien changer.
   await kindButton.click();
   await expect(sheet.getByRole('button', { name: /Normale/ })).toContainText('2');
-  await page.locator('.scrim').click({ position: { x: 10, y: 10 } });
+  await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
   await expect(kindButton).toHaveText('É');
 });
