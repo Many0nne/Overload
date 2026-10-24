@@ -1168,6 +1168,7 @@ tr.pr .trophy {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 13px 16px;
   background: var(--surface);
   font-size: 0.9375rem;
@@ -1191,6 +1192,7 @@ tr.pr .trophy {
   background: var(--line);
   position: relative;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 .switch::after {
   content: "";

@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
       endpoint: sub.endpoint,
       keys: { p256dh: sub.p256dh, auth: sub.auth },
     });
+    // topic (RFC 8030 §5.4) : ne remplace qu'un push encore en attente au service push (appareil hors ligne),
+    // jamais une notification déjà livrée ; le son dépend du tag choisi par le service worker (#44).
     await subscriber.pushTextMessage(JSON.stringify({ title: body.title ?? 'Overload', body: body.body ?? '' }), {
       ttl: 120,
       urgency: webpush.Urgency.High,

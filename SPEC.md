@@ -222,6 +222,9 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Il démarre automatiquement à la validation d'une série, avec le temps de repos de l'exercice. La valeur par défaut est réglable dans les paramètres (90 s par défaut), et le minuteur peut être désactivé (« Off »).
 - Contrôles : −15 s, +15 s, Passer.
 - À la fin : notification (si le téléphone a du réseau), ainsi qu'un son si l'app est ouverte.
+  - Chaque fin de repos produit une nouvelle notification (les précédentes sont retirées du centre de notifications) et doit donc sonner à chaque fois, pas seulement au 1ᵉʳ repos.
+  - **Limites iOS** (notifications web d'une app installée sur l'écran d'accueil) : pas de son personnalisé, seulement le son système par défaut (ou rien). Le son dépend de *Réglages → Notifications → Overload → Sons* ; un bug iOS fait parfois disparaître cette option, ce qui rend les notifications muettes : supprimer puis réajouter l'app à l'écran d'accueil la rétablit. Le mode silencieux, Ne pas déranger et les Concentrations coupent aussi le son. Le texte d'aide du réglage « Notification fin de repos » le rappelle.
+  - La mention « from Overload » (ou « de Overload ») sous la notification est ajoutée par iOS aux notifications web ; ni l'app ni le serveur ne l'envoient, elle ne peut pas être retirée.
 - Le minuteur reste juste même si l'app a été mise en arrière-plan.
 
 **Fin de séance**

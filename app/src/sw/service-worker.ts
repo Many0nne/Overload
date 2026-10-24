@@ -2,6 +2,7 @@
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
+import { parseRestPush, showRestNotification } from './restNotification';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -40,21 +41,7 @@ self.addEventListener('message', (event) => {
 
 // Cette méthode permet d'afficher la notification de fin de repos lorsqu'un push arrive (iOS exige un affichage).
 self.addEventListener('push', (event) => {
-  const data = (() => {
-    try {
-      return event.data?.json() as { title?: string; body?: string };
-    } catch {
-      return { title: 'Overload', body: event.data?.text() };
-    }
-  })();
-  event.waitUntil(
-    self.registration.showNotification(data?.title ?? 'Overload', {
-      body: data?.body ?? '',
-      tag: 'rest',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-    }),
-  );
+  event.waitUntil(showRestNotification(self.registration, parseRestPush(event.data), crypto.randomUUID()));
 });
 
 // Cette méthode permet de ramener l'utilisateur dans l'app lorsqu'il touche la notification.
