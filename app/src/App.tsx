@@ -11,9 +11,9 @@ import { currentExerciseId } from '@/domain/current';
 import { formatClock } from '@/domain/format';
 import { isStorageNearQuota } from '@/domain/quota';
 import { Sheet, ToastHost } from '@/ui/components';
+import { ErrorBoundary, PageBoundary } from '@/ui/ErrorBoundary';
 import { DumbbellIcon, HomeIcon, TrashIcon, UserIcon } from '@/ui/icons';
 import { isIos, isStandalone } from '@/ui/platform';
-import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { useNow } from '@/ui/useNow';
 
 // Écrans publics en lazy : absents du JS initial d'un utilisateur déjà connecté (budget §15).
@@ -35,6 +35,8 @@ const ExercisePage = lazy(() => import('@/features/exercise/ExercisePage'));
 // Consentement du connecteur Claude : page publique hors Dexie et hors synchronisation (docs/spec-mcp.md §5.4).
 const ConsentPage = lazy(() => import('@/features/oauth/ConsentPage'));
 const CONSENT_PATH = '/oauth/consent';
+// Enregistrement du service worker (workbox-window) chargé juste après le démarrage, hors du JS initial (budget §15).
+const UpdatePrompt = lazy(() => import('@/ui/UpdatePrompt').then((m) => ({ default: m.UpdatePrompt })));
 
 // Cette méthode permet d'appliquer le thème choisi (sombre par défaut, auto = selon le système) sur <html>.
 function useTheme() {
@@ -135,11 +137,16 @@ function TabBar() {
 }
 
 // Cette méthode permet d'habiller un écran à onglets : contenu, bandeau de séance et barre d'onglets.
+// Une erreur de rendu reste confinée au contenu : bandeau et onglets restent utilisables.
 function TabShell(props: { children: ReactNode }) {
   return (
     <>
-      <main className="page with-banner">{props.children}</main>
-      <WorkoutBanner />
+      <main className="page with-banner">
+        <PageBoundary scope="page">{props.children}</PageBoundary>
+      </main>
+      <ErrorBoundary scope="banner" fallback={null}>
+        <WorkoutBanner />
+      </ErrorBoundary>
       <TabBar />
     </>
   );
@@ -190,9 +197,30 @@ function SignedInRoutes() {
             </TabShell>
           }
         />
-        <Route path="/workout/:id" element={<LiveWorkoutPage />} />
-        <Route path="/workout/:id/summary" element={<SummaryPage />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route
+          path="/workout/:id"
+          element={
+            <PageBoundary scope="page" workout>
+              <LiveWorkoutPage />
+            </PageBoundary>
+          }
+        />
+        <Route
+          path="/workout/:id/summary"
+          element={
+            <PageBoundary scope="page">
+              <SummaryPage />
+            </PageBoundary>
+          }
+        />
+        <Route
+          path="/welcome"
+          element={
+            <PageBoundary scope="page">
+              <WelcomePage />
+            </PageBoundary>
+          }
+        />
         <Route path="/reset" element={<ResetPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/signup" element={<Navigate to="/" replace />} />
@@ -239,7 +267,9 @@ function Root() {
   return (
     <>
       <TopNotices showReauth={needsReauth && location.pathname !== '/login'} />
-      <UpdatePrompt />
+      <Suspense fallback={null}>
+        <UpdatePrompt />
+      </Suspense>
       <SignedInRoutes />
     </>
   );

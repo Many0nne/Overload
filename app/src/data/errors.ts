@@ -19,3 +19,21 @@ export async function logError(scope: string, error: unknown): Promise<void> {
 export async function readErrors(): Promise<LoggedError[]> {
   return (await getMeta<LoggedError[]>('errors')) ?? [];
 }
+
+// Message bénin de Chromium (boucle de ResizeObserver) : il remplirait le journal sans rien signaler d'utile.
+const IGNORED = /ResizeObserver loop/;
+
+// Cette méthode permet de journaliser les erreurs non capturées (exceptions globales et promesses rejetées sans catch),
+// et de recharger une fois la page lorsqu'un module préchargé par Vite a disparu après une mise à jour.
+export function installGlobalErrorHandlers(onPreloadError: () => boolean): void {
+  window.addEventListener('error', (e) => {
+    const error = e.error ?? e.message;
+    if (!IGNORED.test(String(e.message))) void logError('window', error);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    void logError('promise', e.reason);
+  });
+  window.addEventListener('vite:preloadError', (e) => {
+    if (onPreloadError()) e.preventDefault();
+  });
+}
