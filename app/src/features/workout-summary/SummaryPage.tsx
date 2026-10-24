@@ -303,11 +303,11 @@ export default function SummaryPage() {
             />
           </label>
         )}
-        <div className="field-row">
-          <label className="field">
-            <span>Date</span>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
+        <label className="field">
+          <span>Date</span>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <div className="field-row cols-2">
           <label className="field">
             <span>Début</span>
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
