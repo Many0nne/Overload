@@ -252,7 +252,16 @@ type Settings = {
 };
 ```
 
-Les documents portent un champ `schemaVersion` (1 à la création) ; une fonction `migrateDoc()` côté client mettra à niveau les anciens documents à la lecture lors des évolutions futures. Aucune migration n'existe au départ : les `RoutineDoc` sont créés avec `repRange` dès le lot L4.
+Les documents portent un champ `schemaVersion` (1 à la création, absent = 1). Versions et migrations sont dans `domain/schema.ts` (#71) :
+`DOC_VERSIONS` donne la version de l'app par table, `MIGRATIONS[table][i]` fait passer un document de la version i + 1 à i + 2
+(aucune migration à ce jour : les `RoutineDoc` sont créés avec `repRange` dès le lot L4). Les documents sont mis au format de l'app :
+- au pull, au réalignement (`sync_fetch`) et à la reprise d'une séance, avant l'écriture locale ;
+- à l'ouverture d'IndexedDB (`db.on('ready')`), une seule fois par jeu de versions (`meta.doc_versions`).
+
+Un document d'un format **plus récent** que l'app bloque le pull : la page n'est pas appliquée et les curseurs n'avancent pas,
+la base locale ne contient donc jamais un format qu'elle ne comprend pas. La mise à jour de l'app devient obligatoire
+(bannière sans « Plus tard », jamais pendant une séance §9) ; la synchro reprend ensuite. Le push continue : `sync_push`
+refuse (`outdated`) un document d'un format plus ancien que celui stocké, et le client garde alors sa ligne locale.
 
 `trainingAge` est stocké comme une **tranche plus une date de déclaration**, et non comme une date de début. Le début de l'entraînement vaut `declaredAt − durée(tranche)`. Il reste donc juste si l'utilisateur modifie sa tranche plus tard.
 

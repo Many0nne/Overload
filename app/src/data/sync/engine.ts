@@ -1,4 +1,5 @@
 import type Dexie from 'dexie';
+import { upgradeRow } from '@/domain/schema';
 import type { SyncTable, WorkoutRow } from '@/domain/types';
 import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
@@ -6,11 +7,12 @@ import { logError } from '../errors';
 import { MAX_PHOTO_ATTEMPTS, photosToUpload } from '../photos';
 import { photosBucket, supabase } from '../supabase';
 import { recordRejects, type SyncReject } from './rejects';
+import { useSyncStatus } from './status';
 
 export const PUSH_BATCH = 100;
 export const NIL_DEVICE = '00000000-0000-0000-0000-000000000000';
 
-type PushStatus = 'accepted' | 'stale' | 'rejected_not_owner' | 'forbidden' | 'invalid';
+type PushStatus = 'accepted' | 'stale' | 'rejected_not_owner' | 'forbidden' | 'invalid' | 'outdated';
 type PushResult = { table: SyncTable; id: string; status: PushStatus };
 type FetchResult = { table: SyncTable; id: string; row: Record<string, unknown> | null };
 type PullKey = SyncTable | 'catalog';
@@ -21,6 +23,11 @@ type PullResponse = {
 };
 
 export class SyncAuthError extends Error {}
+
+/** Opération impossible tant que l'app n'est pas mise à jour (document d'un format plus récent, #71). */
+export class AppOutdatedError extends Error {}
+
+const OUTDATED_TAKE_OVER = "Séance d'un format plus récent : mets à jour l'app pour la reprendre.";
 
 const AUTH_ERROR = /jwt|token|not authenticated|401/i;
 
@@ -107,7 +114,7 @@ export async function push(): Promise<{ rejected: string[] }> {
             // Appareil dépossédé : la séance passe en lecture seule jusqu'à la réception de la version serveur.
             await db.workouts.update(entry.row_id, { owner_device_id: NIL_DEVICE });
           }
-          if (status === 'invalid' || status === 'forbidden')
+          if (status === 'invalid' || status === 'forbidden' || status === 'outdated')
             refused.push({ at: Date.now(), table: entry.table, id: entry.row_id, status });
         }
       });
@@ -118,8 +125,24 @@ export async function push(): Promise<{ rejected: string[] }> {
   return { rejected };
 }
 
+// Cette méthode permet de mettre à niveau une ligne reçue du serveur avant de l'écrire localement (#71).
+// Un document d'un format plus récent que l'app renvoie null et signale qu'une mise à jour de l'app est requise.
+function incomingRow(table: string, row: Record<string, unknown>): Record<string, unknown> | null {
+  const res = upgradeRow(table, row);
+  if (res.ok) return res.row;
+  if (!useSyncStatus.getState().appOutdated)
+    void logError(
+      'sync',
+      `Format plus récent que l'app : ${table} ${String(row.id)} (v${res.version}), mise à jour requise`,
+    );
+  useSyncStatus.getState().set({ appOutdated: true });
+  return null;
+}
+
 // Cette méthode permet de réaligner la base locale sur le serveur lorsqu'il a refusé des lignes (invalid, forbidden, #58) :
 // la version serveur remplace la ligne locale, ou la ligne locale est supprimée si le serveur n'en a aucune.
+// Refus 'outdated' (#71) : le serveur porte un format plus récent ; la ligne locale est gardée telle quelle et le pull,
+// bloqué sur cette ligne, la remplacera après la mise à jour de l'app.
 async function realignRefused(refused: SyncReject[]): Promise<void> {
   for (const r of refused) void logError('sync', `Refus du serveur : ${r.table} ${r.id} (${r.status})`);
   await recordRejects(refused);
@@ -131,8 +154,12 @@ async function realignRefused(refused: SyncReject[]): Promise<void> {
     for (const { table, id, row } of results) {
       // Modifiée de nouveau entre-temps : le prochain push la soumettra au serveur.
       if (await db.outbox.where('[table+row_id]').equals([table, id]).count()) continue;
-      if (row) await db.table(table).put(row);
-      else await db.table(table).delete(id);
+      if (!row) {
+        await db.table(table).delete(id);
+        continue;
+      }
+      const upgraded = incomingRow(table, row);
+      if (upgraded) await db.table(table).put(upgraded);
     }
   });
 }
@@ -157,6 +184,8 @@ export function shouldApply(
 }
 
 // Cette méthode permet de récupérer les lignes modifiées depuis les curseurs et de les appliquer localement, page par page.
+// Les documents sont mis à la version de l'app ; une page contenant un format plus récent n'est pas appliquée et les
+// curseurs n'avancent pas : rien n'est perdu, le pull reprendra après la mise à jour de l'app (#71).
 export async function pull(): Promise<number> {
   const me = deviceIdSync();
   let applied = 0;
@@ -164,11 +193,18 @@ export async function pull(): Promise<number> {
     const cursors = (await getMeta<Partial<Record<PullKey, number>>>('cursors')) ?? {};
     const res = check(await supabase.rpc('sync_pull', { p_cursors: cursors })) as PullResponse;
     const keys = Object.keys(res.changes) as PullKey[];
+    const rows = new Map<PullKey, Record<string, unknown>[]>();
+    for (const key of keys) {
+      const table = key === 'catalog' ? 'exercises' : key;
+      const upgraded = (res.changes[key] ?? []).map((row) => incomingRow(table, row));
+      if (upgraded.some((r) => r === null)) return applied;
+      rows.set(key, upgraded as Record<string, unknown>[]);
+    }
     const tables = [...new Set(keys.map((k) => (k === 'catalog' ? 'exercises' : k)))];
     await db.transaction('rw', [db.outbox, db.meta, ...tables.map((t) => db.table(t))], async () => {
       for (const key of keys) {
         const table: SyncTable = key === 'catalog' ? 'exercises' : key;
-        for (const row of res.changes[key] ?? []) {
+        for (const row of rows.get(key) ?? []) {
           const pending = await db.outbox
             .where('[table+row_id]')
             .equals([table, row.id as string])
@@ -188,11 +224,14 @@ export async function pull(): Promise<number> {
 
 // Cette méthode permet de faire reprendre ici une séance démarrée sur un autre appareil (§6.4).
 export async function takeOverWorkout(id: string): Promise<void> {
+  if (useSyncStatus.getState().appOutdated) throw new AppOutdatedError(OUTDATED_TAKE_OVER);
   const row = check(
     await supabase.rpc('take_over_workout', { p_id: id, p_device_id: deviceIdSync() }),
   ) as WorkoutRow;
+  const upgraded = incomingRow('workouts', row as unknown as Record<string, unknown>);
+  if (!upgraded) throw new AppOutdatedError(OUTDATED_TAKE_OVER);
   await db.transaction('rw', db.workouts, db.outbox, async () => {
-    await db.workouts.put(row);
+    await db.workouts.put(upgraded as unknown as WorkoutRow);
     const pending = await db.outbox.where('[table+row_id]').equals(['workouts', id]).first();
     if (pending) await db.outbox.delete(pending.seq!);
   });
