@@ -93,6 +93,13 @@ export async function removeExercise(id: string) {
   }
 }
 
+// Cette méthode permet de restaurer un exercice personnel archivé (remet archived_at à null) lorsqu'il l'est.
+export async function restoreExercise(id: string) {
+  const prev = await db.exercises.get(id);
+  if (!prev || prev.user_id === null || prev.archived_at == null) return;
+  await saveRow('exercises', { ...prev, archived_at: null });
+}
+
 // ---------- Dossiers ----------
 
 // Cette méthode permet de créer un dossier de routines, placé en dernier.
