@@ -1135,14 +1135,16 @@ tr.done .rpe-btn {
   min-width: 0;
 }
 /* iOS Safari impose une largeur minimale et centre la valeur des champs date. */
-.field input[type="date"] {
+.field input[type="date"],
+.field input[type="time"] {
   -webkit-appearance: none;
   appearance: none;
   display: block;
   min-height: 46px;
   text-align: left;
 }
-.field input[type="date"]::-webkit-date-and-time-value {
+.field input[type="date"]::-webkit-date-and-time-value,
+.field input[type="time"]::-webkit-date-and-time-value {
   text-align: left;
 }
 .field input:focus,
@@ -1153,6 +1155,14 @@ tr.done .rpe-btn {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+.field-row.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+/* iOS donne aux champs date/heure une largeur intrinsèque minimale : sans min-width, ils débordent de leur colonne. */
+.field-row .field,
+.field-row .field input {
+  min-width: 0;
 }
 .photo-add {
   height: 96px;
