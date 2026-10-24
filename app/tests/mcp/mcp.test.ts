@@ -1,8 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
 import { v7 as uuidv7 } from 'uuid';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   callTool,
   catalogId,
+  config,
   createAccount,
   type McpAccount,
   mcpUrl,
@@ -41,6 +43,46 @@ describe('découverte et authentification', () => {
     expect((await rpc(accessToken, 'tools/list')).status).toBe(401);
     const again = await oauthToken(account, { clientId });
     expect((await rpc(again.accessToken, 'tools/list')).status).toBe(200);
+  });
+
+  it('applique lecture seule et déconnexion en base, même sans passer par le connecteur', async () => {
+    const account = await createAccount();
+    const { url, anonKey } = config();
+    const { clientId, accessToken, refreshToken } = await oauthToken(account, { canWrite: false });
+    const direct = createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    expect((await direct.from('profiles').select('id')).data).toHaveLength(1);
+    const push = await direct.rpc('sync_push', { p_device_id: DEVICE, p_changes: [] });
+    expect(push.error?.message).toBe('connection_read_only');
+    const upgrade = await direct.rpc('upsert_mcp_connection', {
+      p_client_id: clientId,
+      p_client_name: 'Claude',
+      p_can_write: true,
+    });
+    expect(upgrade.error?.message).toBe('oauth_forbidden');
+    const del = await fetch(`${url}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${accessToken}`, apikey: anonKey },
+    });
+    expect(del.status).toBe(403);
+
+    // Cette méthode permet de renouveler le jeton OAuth comme le fait Claude à son expiration.
+    const refresh = (token: string) =>
+      fetch(`${url}/auth/v1/oauth/token`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: token, client_id: clientId }),
+      });
+    const renewed = await refresh(refreshToken);
+    expect(renewed.ok).toBe(true);
+    const next = ((await renewed.json()) as { refresh_token: string }).refresh_token;
+
+    // « Déconnecter » côté base seulement : lectures refusées et refresh token invalidé.
+    await account.app.rpc('revoke_mcp_connection', { p_client_id: clientId });
+    expect((await direct.from('profiles').select('id')).data).toHaveLength(0);
+    expect((await refresh(next)).ok).toBe(false);
   });
 
   it('initialise avec les instructions et liste les outils annotés', async () => {
