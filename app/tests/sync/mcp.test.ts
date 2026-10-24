@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/data/db';
 import { saveRow } from '@/data/repositories/base';
@@ -20,7 +21,8 @@ beforeAll(async () => {
       userId: account.userId,
       email: '',
       password: '',
-      app: supabase,
+      // Le client de l'app est remplacé par un client supabase-js complet dans setup.ts.
+      app: supabase as unknown as SupabaseClient,
       appToken: account.accessToken,
     })
   ).accessToken;
