@@ -52,6 +52,7 @@ export function Sheet(props: {
   title?: string;
   children?: ReactNode;
   actions?: SheetAction[];
+  className?: string;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -63,7 +64,12 @@ export function Sheet(props: {
   if (!props.open) return null;
   return (
     <div className="scrim show" onClick={props.onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`sheet${props.className ? ` ${props.className}` : ''}`}
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="grab" />
         {props.title && <h3>{props.title}</h3>}
         {props.children}

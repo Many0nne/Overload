@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { formatReason, formatTargets } from '@/domain/format';
+import { formatReason, formatSetValues, formatTargets } from '@/domain/format';
 import { setLabels } from '@/domain/labels';
 import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
@@ -12,6 +12,7 @@ import { NoteField, Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { EXERCISE_NOTE_MAX } from '@/ui/note';
 import { formatRest } from '@/ui/time';
+import { RpeSheet } from './RpeSheet';
 import { type SetPatch, SetRow } from './SetRow';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
@@ -50,7 +51,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const { entry, actions: a } = props;
   const [menu, setMenu] = useState(false);
   const [restSheet, setRestSheet] = useState(false);
-  // Série dont la rangée de RPE est ouverte (après validation, ou en touchant son badge).
+  // Série dont la feuille de RPE est ouverte (en touchant sa case RPE).
   const [rpeFor, setRpeFor] = useState<string | null>(null);
   const name = props.exercise?.name ?? 'Exercice supprimé';
   const kinds = entry.sets.map((s) => s.kind);
@@ -63,6 +64,10 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
     : undefined;
   const targets = entry.sets.map(activeTarget);
   const hasTargets = targets.some(Boolean);
+  // La colonne RPE suit le réglage, mais reste visible si une série porte déjà un RPE (saisi ou importé).
+  const showRpe = props.rpeEnabled || entry.sets.some((s) => s.rpe !== undefined);
+  const rpeIndex = entry.sets.findIndex((s) => s.id === rpeFor);
+  const rpeSet = entry.sets[rpeIndex];
 
   return (
     <div className="ex">
@@ -111,7 +116,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
           ⏱ Repos : {formatRest(entry.restS)}
         </button>
       )}
-      <table className="sets">
+      <table className={`sets${showRpe ? ' with-rpe' : ''}`}>
         <thead>
           <tr>
             <th>Série</th>
@@ -119,6 +124,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
             {cols.map((c) => (
               <th key={c}>{c}</th>
             ))}
+            {showRpe && <th>RPE</th>}
             <th>✓</th>
           </tr>
         </thead>
@@ -136,16 +142,9 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               errors={props.errors[s.id] ?? []}
               readOnly={props.readOnly}
               onPatch={(id, patch) => a.onPatchSet(entry.id, id, patch)}
-              rpeOpen={rpeFor === s.id}
-              onCheck={(id) => {
-                setRpeFor(props.rpeEnabled && !s.done ? id : null);
-                a.onCheck(entry.id, id);
-              }}
-              onOpenRpe={(id) => setRpeFor(rpeFor === id ? null : id)}
-              onPickRpe={(id, rpe) => {
-                a.onPatchSet(entry.id, id, { rpe });
-                setRpeFor(null);
-              }}
+              showRpe={showRpe}
+              onCheck={(id) => a.onCheck(entry.id, id)}
+              onOpenRpe={setRpeFor}
               onCycleKind={(id) => a.onCycleKind(entry.id, id)}
               onCopyPrevious={(id) => a.onCopyPrevious(entry.id, id)}
               onDelete={(id) => a.onDeleteSet(entry.id, id)}
@@ -213,6 +212,17 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
             },
           },
         ]}
+      />
+      <RpeSheet
+        open={Boolean(rpeSet?.done) && !props.readOnly}
+        subtitle={
+          rpeSet
+            ? `Série ${labels[rpeIndex] ?? ''} : ${formatSetValues(rpeSet, entry.measurementType, props.units)}`
+            : ''
+        }
+        value={rpeSet?.rpe}
+        onPick={(rpe) => rpeSet && a.onPatchSet(entry.id, rpeSet.id, { rpe })}
+        onClose={() => setRpeFor(null)}
       />
       <Sheet open={restSheet} title={`Repos · ${name}`} onClose={() => setRestSheet(false)}>
         <div className="chips wrap" style={{ marginTop: 8 }}>

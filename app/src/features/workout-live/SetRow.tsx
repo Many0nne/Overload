@@ -1,10 +1,10 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { formatDuration, formatRpe, formatSetValues, parseDuration } from '@/domain/format';
-import { fieldsFor, RPE_VALUES, type SetField } from '@/domain/measurement';
+import { fieldsFor, type SetField } from '@/domain/measurement';
 import { activeTarget } from '@/domain/progression';
 import type { MeasurementType, Settings, WorkoutSet } from '@/domain/types';
 import { displayDistanceNumber, displayWeightNumber, parseDecimal, parseInteger } from '@/domain/units';
-import { CheckIcon } from '@/ui/icons';
+import { CheckIcon, GaugeIcon } from '@/ui/icons';
 
 type Units = Settings['units'];
 export type SetPatch = Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'durationS' | 'distance' | 'rpe'>>;
@@ -237,49 +237,6 @@ function useSwipeToDelete(disabled: boolean, onDelete: () => void) {
   return ref;
 }
 
-// Cette méthode permet de rappeler l'équivalence en reps en réserve d'un RPE (« 2 reps en réserve »).
-function rirHint(rpe: number | undefined): string {
-  if (rpe === undefined) return '10 = échec · 9 = 1 rep en réserve · 8 = 2…';
-  const rir = 10 - rpe;
-  if (rir === 0) return 'Échec : aucune rep en réserve';
-  return `${formatRpe(rir)} rep${rir > 1 ? 's' : ''} en réserve`;
-}
-
-// Cette méthode permet de choisir le RPE d'une série validée : une puce par demi-point, la puce active l'efface.
-function RpePicker(p: {
-  value: number | undefined;
-  colSpan: number;
-  onPick: (rpe: number | undefined) => void;
-  onClose: () => void;
-}) {
-  return (
-    <tr className="rpe-row">
-      <td className="rpe-cell" colSpan={p.colSpan}>
-        <div className="rpe-head">
-          <span>
-            Effort ressenti (RPE) <span className="muted">· {rirHint(p.value)}</span>
-          </span>
-          <button className="rpe-close" aria-label="Fermer le choix du RPE" onClick={p.onClose}>
-            ×
-          </button>
-        </div>
-        <div className="chips wrap rpe-chips">
-          {RPE_VALUES.map((v) => (
-            <button
-              key={v}
-              className={`chip${p.value === v ? ' on' : ''}`}
-              aria-pressed={p.value === v}
-              onClick={() => p.onPick(p.value === v ? undefined : v)}
-            >
-              {formatRpe(v)}
-            </button>
-          ))}
-        </div>
-      </td>
-    </tr>
-  );
-}
-
 export type SetRowProps = {
   set: WorkoutSet;
   label: string;
@@ -290,29 +247,26 @@ export type SetRowProps = {
   goal: boolean;
   errors: SetField[];
   readOnly: boolean;
-  rpeOpen: boolean;
+  showRpe: boolean;
   onPatch: (setId: string, patch: SetPatch) => void;
   onCheck: (setId: string) => void;
   onOpenRpe: (setId: string) => void;
-  onPickRpe: (setId: string, rpe: number | undefined) => void;
   onCycleKind: (setId: string) => void;
   onCopyPrevious: (setId: string) => void;
   onDelete: (setId: string) => void;
 };
 
 // Cette méthode permet d'afficher une ligne de série : type, « Précédent », champs du type de mesure et coche (§F7.4).
-// Un glissement de plus de 80 px vers la gauche supprime la série. Une série validée affiche son RPE et, ouverte, son choix.
+// Un glissement de plus de 80 px vers la gauche supprime la série. Record et objectif atteint sont des pastilles sur le numéro.
 export const SetRow = memo(function SetRow(p: SetRowProps) {
   const fields = fieldsFor(p.type);
   const rowRef = useSwipeToDelete(p.readOnly, () => p.onDelete(p.set.id));
   const kindClass = { normal: '', warmup: 'W', drop: 'D', failure: 'X' }[p.set.kind];
 
-  const showPicker = p.rpeOpen && p.set.done && !p.readOnly;
-
   return (
-    <>
-      <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>
-        <td>
+    <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>
+      <td>
+        <span className="type-wrap">
           <button
             className={`type ${kindClass}`}
             disabled={p.readOnly}
@@ -321,61 +275,63 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
           >
             {p.label}
           </button>
-        </td>
-        <td>
-          <button
-            className="prev"
-            disabled={p.readOnly || !p.previous}
-            onClick={() => p.onCopyPrevious(p.set.id)}
-          >
-            {p.previous ? formatSetValues(p.previous, p.type, p.units) : '—'}
-          </button>
-        </td>
-        {fields.map((f) => (
-          <td key={f}>
-            <ValueInput
-              field={f}
-              set={p.set}
-              units={p.units}
-              placeholder={p.previous ? fieldText(p.previous, f, p.units) : ''}
-              target={!p.set.done && isTargetValue(p.set, f)}
-              error={p.errors.includes(f)}
-              disabled={p.readOnly}
-              onCommit={(patch) => p.onPatch(p.set.id, patch)}
-            />
-          </td>
-        ))}
-        <td>
-          <button
-            className="check"
-            disabled={p.readOnly}
-            aria-label={p.set.done ? 'Annuler la validation' : 'Valider la série'}
-            onClick={() => p.onCheck(p.set.id)}
-          >
-            <CheckIcon />
-          </button>
-          <span className="trophy">🏆</span>
-          {p.goal && <span style={{ fontSize: '.8125rem', marginLeft: 2 }}>🎯</span>}
-          {p.set.done && p.set.rpe !== undefined && (
-            <button
-              className="rpe-badge"
-              disabled={p.readOnly}
-              aria-label={`RPE ${formatRpe(p.set.rpe)}, modifier`}
-              onClick={() => p.onOpenRpe(p.set.id)}
-            >
-              RPE {formatRpe(p.set.rpe)}
-            </button>
+          {p.record && (
+            <span className="pastille pr" role="img" aria-label="Record">
+              🏆
+            </span>
           )}
+          {p.goal && (
+            <span className="pastille goal" role="img" aria-label="Objectif atteint">
+              🎯
+            </span>
+          )}
+        </span>
+      </td>
+      <td>
+        <button
+          className="prev"
+          disabled={p.readOnly || !p.previous}
+          onClick={() => p.onCopyPrevious(p.set.id)}
+        >
+          {p.previous ? formatSetValues(p.previous, p.type, p.units) : '—'}
+        </button>
+      </td>
+      {fields.map((f) => (
+        <td key={f}>
+          <ValueInput
+            field={f}
+            set={p.set}
+            units={p.units}
+            placeholder={p.previous ? fieldText(p.previous, f, p.units) : ''}
+            target={!p.set.done && isTargetValue(p.set, f)}
+            error={p.errors.includes(f)}
+            disabled={p.readOnly}
+            onCommit={(patch) => p.onPatch(p.set.id, patch)}
+          />
         </td>
-      </tr>
-      {showPicker && (
-        <RpePicker
-          value={p.set.rpe}
-          colSpan={fields.length + 3}
-          onPick={(rpe) => p.onPickRpe(p.set.id, rpe)}
-          onClose={() => p.onOpenRpe(p.set.id)}
-        />
+      ))}
+      {p.showRpe && (
+        <td>
+          <button
+            className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
+            disabled={p.readOnly || !p.set.done}
+            aria-label={p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'}
+            onClick={() => p.onOpenRpe(p.set.id)}
+          >
+            {p.set.rpe !== undefined ? formatRpe(p.set.rpe) : <GaugeIcon />}
+          </button>
+        </td>
       )}
-    </>
+      <td>
+        <button
+          className="check"
+          disabled={p.readOnly}
+          aria-label={p.set.done ? 'Annuler la validation' : 'Valider la série'}
+          onClick={() => p.onCheck(p.set.id)}
+        >
+          <CheckIcon />
+        </button>
+      </td>
+    </tr>
   );
 });

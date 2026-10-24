@@ -117,3 +117,18 @@ export const TimerIcon = () => (
     <path d="M12 9v4l2.5 2M9 2h6" />
   </svg>
 );
+
+export const GaugeIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <path d="M4.5 17a8.5 8.5 0 1 1 15 0" />
+    <path d="M12 15.5l3.5-4.5" />
+    <circle cx="12" cy="15.5" r="1.2" fill="currentColor" />
+  </svg>
+);
