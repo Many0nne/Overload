@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { type PendingSync, signOut, syncBeforeSignOut } from '@/data/auth';
-import { enablePush, sendTestNotification } from '@/data/push';
+import { disablePush, enablePush, sendTestNotification } from '@/data/push';
 import { useProfile, useSettings } from '@/data/queries';
 import { updateSettings } from '@/data/repositories';
 import { useSession } from '@/data/session';
@@ -156,7 +156,8 @@ export default function SettingsPage() {
             label="Notification fin de repos"
             on={settings.restNotification}
             onChange={async (v) => {
-              if (v && (await enablePush()) === 'denied')
+              if (!v) void disablePush();
+              else if ((await enablePush()) === 'denied')
                 toast('Autorise les notifications dans Réglages iOS');
               set({ restNotification: v });
             }}
