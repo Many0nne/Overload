@@ -243,6 +243,7 @@ mcp_audit(
 - Purge du journal après 90 jours (tâche `pg_cron` quotidienne).
 - Non synchronisées : l'écran Paramètres › Claude les lit en ligne seulement.
 - À la révocation, appeler aussi la révocation du grant côté Supabase Auth si l'API l'expose (à vérifier en L0) ; sinon le refus par `mcp_connections` suffit.
+- Garde en base (#62) : le jeton OAuth est un JWT `authenticated` ordinaire, utilisable directement sur PostgREST et les RPC. Pour un jeton avec `client_id` : lectures (politiques restrictives, `sync_pull`, `sync_fetch`) si la connexion existe et n'est pas révoquée (`private.oauth_read_allowed()`) ; écritures (`insert`/`update`, `sync_push`, `take_over_workout`, `mcp_log`) si elle a en plus `can_write` (`private.oauth_write_allowed()`) ; gestion du compte (connexions, invitation, notifications, minuteurs, photos, `admin_storage_usage`, Edge Function `delete-account`) refusée. `revoke_mcp_connection` ferme aussi les sessions Supabase Auth du client (refresh tokens) et son consentement.
 
 ### 7.4 Erreurs
 

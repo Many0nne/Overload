@@ -15,6 +15,11 @@ Deno.serve(async (req) => {
   });
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData.user) return json({ error: 'unauthorized' }, 401);
+  // Un jeton OAuth (connecteur Claude, claim client_id) ne peut pas supprimer le compte : session de l'app seulement.
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  const { data: claimsData } = await userClient.auth.getClaims(token);
+  if (!claimsData?.claims || (claimsData.claims as { client_id?: string }).client_id)
+    return json({ error: 'forbidden' }, 403);
   const uid = userData.user.id;
 
   const admin = serviceClient();
