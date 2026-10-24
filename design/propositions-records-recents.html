@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Overload : records récents lisibles (issue #102)</title>
+<style>
+  /* Couleurs de l'app (ui/styles/tokens.css), thèmes sombre et clair */
+  .app {
+    --radius: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto, sans-serif;
+  }
+  .dark {
+    --bg: #000; --surface: #1c1c1e; --surface-2: #2c2c2e; --line: #38383a; --text: #f5f5f7; --text-2: #aeaeb2;
+    --muted: #8e8e93; --accent: #4c8dff; --accent-soft: rgba(76,141,255,.15); --done: #22c55e; --done-soft: rgba(34,197,94,.15);
+    --gold: #f5c518;
+  }
+  .light {
+    --bg: #fff; --surface: #f4f6f9; --surface-2: #eaedf2; --line: #e2e6ed; --text: #101318; --text-2: #4b5563;
+    --muted: #626a77; --accent: #1f6fe5; --accent-soft: rgba(31,111,229,.1); --done: #16a34a; --done-soft: #dcf7e6;
+    --gold: #c99a00;
+  }
+  .opt { margin-bottom: 30px; }
+  .opt h3 { margin: 0 0 4px; font-size: 15px; font-family: var(--font-sans); color: var(--foreground, #f5f5f7); }
+  .opt h3 .k { display: inline-block; min-width: 22px; padding: 1px 6px; margin-right: 6px; border-radius: 6px;
+    background: var(--accent-surface, #2a6ae0); color: var(--accent-surface-foreground, #fff); text-align: center; }
+  .opt p { margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--muted-foreground, #aeaeb2); font-family: var(--font-sans); max-width: 820px; }
+  .opt ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; color: var(--muted-foreground, #aeaeb2); font-family: var(--font-sans); max-width: 820px; }
+  .opt ul li.plus::marker { content: "+  "; color: var(--success, #22c55e); }
+  .opt ul li.moins::marker { content: "−  "; color: var(--destructive, #f87171); }
+  .opt .reco { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--success, #22c55e); }
+  h2 { font-family: var(--font-sans); font-size: 16px; margin: 26px 0 4px; color: var(--foreground, #f5f5f7); }
+  h2:first-child { margin-top: 0; }
+  .lead { font-family: var(--font-sans); font-size: 13px; color: var(--muted-foreground, #aeaeb2); margin: 0 0 12px; max-width: 820px; line-height: 1.5; }
+  .note { font-family: var(--font-sans); font-size: 12.5px; color: var(--muted-foreground, #aeaeb2); padding: 12px 0 0; line-height: 1.5; max-width: 820px; }
+  .pair { display: flex; flex-wrap: wrap; gap: 16px; }
+
+  /* Écran simulé : iPhone 390 px, section « Records récents » de Profil › Statistiques */
+  .phone { background: var(--bg); color: var(--text); border-radius: var(--radius); padding: 14px 18px 18px; width: 390px;
+    max-width: 100%; box-sizing: border-box; border: 1px solid var(--line); }
+  .sec-title { font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .card { background: var(--surface); border-radius: var(--radius); padding: 2px 16px; }
+  ul.rl { list-style: none; margin: 0; padding: 0; }
+  .muted { color: var(--muted); }
+  .chev { color: var(--muted); font-size: 18px; line-height: 1; flex-shrink: 0; }
+
+  /* Avant : ligne actuelle */
+  .before li { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; font-size: 15px; border-bottom: 1px solid var(--line); }
+  .before li:last-child { border: 0; }
+
+  /* Ligne à deux niveaux (A et C) */
+  .r2 { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .r2:last-child { border: 0; }
+  .r2 .l { flex: 1; min-width: 0; }
+  .r2 .name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .r2 .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .r2 .r { text-align: right; flex-shrink: 0; }
+  .r2 .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .r2 .d { font-size: 12.5px; font-weight: 700; color: var(--done); font-variant-numeric: tabular-nums; margin-top: 2px; white-space: nowrap; }
+  .r2 .d.new { color: var(--gold); }
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .pill { font-size: 12px; font-weight: 600; color: var(--text-2); background: var(--surface-2); border-radius: 10px; padding: 2px 8px;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill b { color: var(--text); font-weight: 700; }
+
+  /* B : regroupé par séance */
+  .day { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding: 14px 0 4px; }
+  .day:first-child { padding-top: 10px; }
+  .day span { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .exb { border-bottom: 1px solid var(--line); padding: 8px 0 10px; display: flex; gap: 10px; align-items: center; min-height: 44px; }
+  .exb:last-child { border: 0; }
+  .exb .l { flex: 1; min-width: 0; }
+  .exb .name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 2px 0; color: var(--text-2); }
+  .crow b { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .crow .d { color: var(--done); font-weight: 700; font-size: 12.5px; margin-left: 6px; }
+  .crow .d.new { color: var(--gold); }
+  .more { font-size: 12.5px; color: var(--accent); font-weight: 600; padding-top: 2px; }
+
+  /* C : regroupé par jour, une ligne par exercice */
+  .cday { font-size: 12px; font-weight: 700; color: var(--muted); padding: 12px 0 0; }
+  .cday:first-child { padding-top: 10px; }
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+<script>
+// Données fictives réalistes, « aujourd'hui » = dimanche 25 octobre. Chaque exercice d'une séance porte ses critères battus,
+// dans l'ordre de la table §F7.6 (le premier est le critère principal), avec la valeur, l'ancien record et le gain affichés.
+const SESSIONS = [
+  { rel: "Aujourd'hui", date: 'dim. 25 oct.', title: 'Push – dimanche', ex: [
+    { name: 'Développé couché (barre)', recs: [
+      { c: 'Charge max', s: 'Charge max', v: '105 kg', d: '+2,5 kg' },
+      { c: 'Meilleur 1RM estimé', s: '1RM estimé', v: '115,5 kg', d: '+2,8 kg' },
+      { c: 'Meilleur poids à 3 reps', s: 'à 3 reps', v: '105 kg', d: '+2,5 kg' },
+      { c: 'Meilleur poids à 5 reps', s: 'à 5 reps', v: '100 kg', d: '+2,5 kg' } ] },
+    { name: 'Élévations latérales unilatérales à la poulie basse', recs: [
+      { c: 'Meilleure série', s: 'Meilleure série', v: '12 kg × 15', d: '+1 rep' } ] },
+    { name: 'Dips lestés', recs: [ { c: 'Charge ajoutée max', s: 'Charge ajoutée max', v: '+25 kg', d: '+2,5 kg' } ] } ] },
+  { rel: 'Il y a 2 j', date: 'ven. 23 oct.', title: 'Legs – vendredi', ex: [
+    { name: 'Squat (barre)', recs: [
+      { c: 'Meilleur poids à 5 reps', s: 'à 5 reps', v: '110 kg', d: '+5 kg' },
+      { c: 'Meilleur poids à 12 reps', s: 'à 12 reps', v: '80 kg', d: 'nouveau', isNew: true } ] },
+    { name: 'Soulevé de terre jambes tendues (haltères)', recs: [
+      { c: 'Meilleur poids à 8 reps', s: 'à 8 reps', v: '30 kg', d: '+2 kg' } ] } ] },
+  { rel: 'Il y a 5 j', date: 'mar. 20 oct.', title: 'Pull – mardi', ex: [
+    { name: 'Tractions', recs: [
+      { c: 'Plus de reps en une série', s: 'Reps en une série', v: '14 reps', d: '+1 rep' },
+      { c: 'Plus de reps sur une séance', s: 'Reps sur la séance', v: '46 reps', d: '+4 reps' } ] },
+    { name: 'Rowing (barre)', recs: [ { c: 'Meilleur 1RM estimé', s: '1RM estimé', v: '96 kg', d: '+1,3 kg' } ] } ] },
+  { rel: '12 oct.', date: 'lun. 12 oct.', title: 'Footing', ex: [
+    { name: 'Course à pied', recs: [
+      { c: 'Plus grande distance', s: 'Distance', v: '8,2 km', d: '+0,7 km' },
+      { c: 'Meilleure allure', s: 'Allure', v: '5:12 /km', d: '−0:08 /km' } ] } ] },
+];
+
+const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+const delta = (r, cls = 'd') => `<div class="${cls}${r.isNew ? ' new' : ''}">${r.isNew ? '🏆 nouveau' : r.d}</div>`;
+
+// Cette méthode permet de rendre la liste actuelle (« Exercice · critère (+N autres) », valeur à droite) pour comparaison.
+function before() {
+  const li = SESSIONS.flatMap((s) => s.ex).map((e) => {
+    const others = e.recs.length - 1;
+    const more = others > 0 ? ` <span class="muted">(+${others} autre${others > 1 ? 's' : ''})</span>` : '';
+    return `<li><span>${e.name} · ${lower(e.recs[0].c)}${more}</span><b>${e.recs[0].v}</b></li>`;
+  }).join('');
+  return `<ul class="rl before">${li}</ul>`;
+}
+
+// Cette méthode permet de rendre la variante A : liste plate, une ligne par exercice et par séance sur deux niveaux,
+// avec la date relative dans la sous-ligne et les autres critères battus en pastilles (libellé court + valeur).
+function variantA() {
+  const li = SESSIONS.flatMap((s) => s.ex.map((e) => ({ ...e, rel: s.rel }))).map((e) => {
+    const [main, ...rest] = e.recs;
+    const pills = rest.length
+      ? `<div class="pills">${rest.map((r) => `<span class="pill">${r.s} <b>${r.v}</b></span>`).join('')}</div>` : '';
+    return `<li class="r2"><div class="l"><div class="name">${e.name}</div>
+      <div class="sub">${main.c} · ${e.rel}</div>${pills}</div>
+      <div class="r"><div class="v">${main.v}</div>${delta(main)}</div><span class="chev">›</span></li>`;
+  }).join('');
+  return `<ul class="rl">${li}</ul>`;
+}
+
+// Cette méthode permet de rendre la variante B : regroupement par séance (en-tête date + nom de séance), puis pour chaque
+// exercice une sous-ligne par critère battu avec sa valeur et son gain ; au-delà de 3 critères, « + N » détaillés sur la fiche.
+function variantB() {
+  const body = SESSIONS.slice(0, 3).map((s) => {
+    const ex = s.ex.map((e) => {
+      const shown = e.recs.slice(0, 3);
+      const rows = shown.map((r) => `<div class="crow"><span>${r.c}</span><span><b>${r.v}</b><span class="d${r.isNew ? ' new' : ''}">${r.isNew ? 'nouveau' : r.d}</span></span></div>`).join('');
+      const more = e.recs.length > 3 ? `<div class="more">+ ${e.recs.length - 3} autre (${lower(e.recs[3].c)})</div>` : '';
+      return `<li class="exb"><div class="l"><div class="name">${e.name}</div>${rows}${more}</div><span class="chev">›</span></li>`;
+    }).join('');
+    return `<div class="day">${s.rel === s.date ? s.date : `${s.rel}`} <span>· ${s.title}</span></div><ul class="rl">${ex}</ul>`;
+  }).join('');
+  return body;
+}
+
+// Cette méthode permet de rendre la variante C : en-têtes de jour légers, une ligne par exercice sur deux niveaux
+// (nom, critère principal en clair), valeur et gain à droite, autres critères en pastilles sous la ligne.
+function variantC() {
+  return SESSIONS.map((s) => {
+    const li = s.ex.map((e) => {
+      const [main, ...rest] = e.recs;
+      const pills = rest.length
+        ? `<div class="pills">${rest.map((r) => `<span class="pill">${r.s} <b>${r.v}</b></span>`).join('')}</div>` : '';
+      return `<li class="r2"><div class="l"><div class="name">${e.name}</div><div class="sub">${main.c}</div>${pills}</div>
+        <div class="r"><div class="v">${main.v}</div>${delta(main)}</div><span class="chev">›</span></li>`;
+    }).join('');
+    const head = s.rel === s.date.slice(5) || /^\d/.test(s.rel) ? s.date : `${s.rel} · ${s.date}`;
+    return `<div class="cday">${head}</div><ul class="rl">${li}</ul>`;
+  }).join('');
+}
+
+// Cette méthode permet d'afficher un écran simulé (section « Records récents ») dans un thème donné.
+function phone(theme, inner) {
+  return `<div class="phone ${theme}"><div class="sec-title">Records récents</div><div class="card">${inner}</div></div>`;
+}
+// Cette méthode permet d'afficher le même contenu côte à côte en thème sombre puis clair.
+const both = (fn) => `<div class="pair">${phone('dark', fn())}${phone('light', fn())}</div>`;
+
+// Cette méthode permet d'assembler une carte « option » : titre, explication, écrans et avantages/inconvénients.
+function opt(key, title, desc, screen, plus, moins, reco) {
+  return `<div class="opt"><h3><span class="k">${key}</span>${title}${reco ? '<span class="reco">recommandé</span>' : ''}</h3><p>${desc}</p>${screen}
+    <ul>${plus.map((t) => `<li class="plus">${t}</li>`).join('')}${moins.map((t) => `<li class="moins">${t}</li>`).join('')}</ul></div>`;
+}
+
+document.getElementById('root').innerHTML = `
+<h2>Records récents (Profil › Statistiques)</h2>
+<p class="lead">Données identiques pour toutes les variantes : 4 séances, dont une avec 4 critères battus sur le développé couché, des noms
+d'exercice longs, un premier record à 12 reps (pas d'ancien record), une allure (critère « plus petit = mieux »). Écrans 390 px (iPhone).
+Dans toutes les variantes, toute la ligne (≥ 44 px) ouvre la fiche exercice, indiquée par un chevron ›.</p>
+
+<div class="opt"><h3><span class="k">0</span>Aujourd'hui</h3><p>Pour mémoire : pas de date, critère lu comme la suite du nom, « +3 autres » opaque, pas de gain.</p>${both(before)}</div>
+
+${opt('A', 'Liste plate à deux niveaux + pastilles',
+  'Même liste qu\'aujourd\'hui (une ligne par exercice et par séance, 10 lignes max), réorganisée : nom en titre (une ligne, coupé par « … »), sous-ligne grise « critère principal · date relative », valeur et gain alignés à droite. Les autres critères battus dans la séance apparaissent en pastilles « libellé court + valeur ».',
+  both(variantA),
+  ['Changement minimal de structure, liste compacte', 'Date et gain visibles sur chaque ligne', 'Plus de « +N autres » : chaque critère et sa valeur sont visibles'],
+  ['Les records d\'une même séance ne se repèrent qu\'en lisant les dates', 'Le gain n\'est affiché que pour le critère principal', 'Nom long coupé (le nom complet est sur la fiche)'])}
+
+${opt('B', 'Regroupé par séance, tous les critères détaillés',
+  'En-tête par séance (date relative + nom de la séance), puis un bloc par exercice : nom en titre, une sous-ligne par critère battu avec valeur et gain. Au-delà de 3 critères pour un exercice, une ligne « + N autre (…) » nomme le reste. Limite : les 3 dernières séances avec records.',
+  both(variantB),
+  ['Le plus complet : chaque critère a sa valeur et son gain', 'La séance est le repère naturel (« ma séance push d\'aujourd\'hui »)', 'Nom long affiché en entier (retour à la ligne)'],
+  ['Beaucoup plus haut : un exercice à 4 critères prend 5 lignes, la section s\'allonge vite', 'Densité de chiffres : on perd le « coup d\'œil »', 'Le nom de séance répète une info déjà dans l\'historique'])}
+
+${opt('C', 'En-têtes de jour + ligne à deux niveaux',
+  'Compromis : un en-tête de jour léger (« Aujourd\'hui · dim. 25 oct. », « Il y a 2 j · ven. 23 oct. », puis la date seule au-delà d\'une semaine) regroupe les records d\'une même séance. Chaque exercice garde une ligne à deux niveaux : nom, critère principal en clair, valeur et gain à droite ; les autres critères en pastilles « libellé court + valeur ». 10 lignes max comme aujourd\'hui.',
+  both(variantC),
+  ['Repérage immédiat des records d\'une même séance, sans répéter la date sur chaque ligne', 'Hiérarchie nette : nom → critère → valeur + gain', 'Les critères multiples sont nommés avec leur valeur', 'Hauteur proche de A'],
+  ['Le gain n\'est affiché que pour le critère principal (les pastilles donnent la valeur, pas le gain)', 'Un en-tête de plus par jour (léger, sans fond)'], true)}
+
+<p class="note"><b>Recommandation : C.</b> Elle répond à tous les points de l'issue en gardant une section courte : la date est
+portée une fois par jour, le critère est séparé du nom et relié à la valeur, les critères multiples sont nommés avec leur valeur,
+le gain motivant est sur le critère principal, le chevron signale le clic. B est plus complet mais trop long pour un résumé ;
+A perd le regroupement par séance.</p>
+<p class="note">Communs à toutes les variantes : gain calculé dans <code>domain/records.ts</code> (pur, testé) contre le meilleur résultat
+<i>avant la séance</i> ; « 🏆 nouveau » quand il n'existait pas d'ancienne valeur (ex. premier passage à 12 reps) ; critères « plus petit = mieux »
+(allure, assistance) affichés en baisse, en vert (« −0:08 /km ») ; valeurs et gains dans les unités de l'utilisateur (kg/lb, km/mi) ;
+meilleure série affichée « 12 kg × 15 » comme sur la fiche ; dates dans le fuseau de l'appareil (§F7.6).</p>
+`;
+</script>
+</body>
+</html>

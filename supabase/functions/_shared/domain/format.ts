@@ -1,5 +1,6 @@
 // Généré par app/scripts/build-edge-domain.mjs depuis app/src/domain : ne pas modifier.
 // Formatage des valeurs pour l'affichage, dans les unités de l'utilisateur (§F7.4, §F7.8, §F7.10).
+import { calendarDaysBetween } from './dates.ts';
 import type { CriterionUnit, RecordCriterion } from './records.ts';
 import type {
   Distance,
@@ -211,6 +212,81 @@ export function criterionLabel(c: RecordCriterion, type: MeasurementType): strin
     default:
       return `Meilleur poids à ${c.slice('weight_at_'.length)} rep${c === 'weight_at_1' ? '' : 's'}`;
   }
+}
+
+// Cette méthode permet d'obtenir le libellé court d'un critère, pour une pastille (« 1RM estimé », « à 5 reps »).
+export function criterionShortLabel(c: RecordCriterion, type: MeasurementType): string {
+  switch (c) {
+    case 'best_e1rm':
+      return '1RM estimé';
+    case 'best_set_volume':
+      return 'Meilleure série';
+    case 'max_reps':
+      return 'Reps en une série';
+    case 'session_reps':
+      return 'Reps sur la séance';
+    case 'min_assistance':
+      return 'Assistance min';
+    case 'max_duration':
+      return 'Durée';
+    case 'max_distance':
+      return 'Distance';
+    case 'best_pace':
+      return 'Allure';
+    case 'max_weight':
+      return criterionLabel(c, type);
+    default:
+      return `à ${c.slice('weight_at_'.length)} rep${c === 'weight_at_1' ? '' : 's'}`;
+  }
+}
+
+// Cette méthode permet de nommer plusieurs paliers « meilleur poids à N reps » battus avec la même charge (« à 1, 3 et 5 reps »).
+export function repMilestonesLabel(ns: number[]): string {
+  const list = ns.length > 1 ? `${ns.slice(0, -1).join(', ')} et ${ns.at(-1)}` : String(ns[0] ?? '');
+  return `à ${list} rep${ns.length === 1 && ns[0] === 1 ? '' : 's'}`;
+}
+
+// Cette méthode permet d'afficher la valeur d'un record avec son signe de charge : « + » pour le lest, « − » pour l'assistance.
+export function formatMetric(v: number, unit: CriterionUnit, type: MeasurementType, units: Units): string {
+  const prefix =
+    unit === 'kg' && type === 'weighted_bw' ? '+' : unit === 'kg' && type === 'assisted_bw' ? '−' : '';
+  return `${prefix}${formatCanonical(v, unit, units)}`;
+}
+
+// Cette méthode permet d'afficher le gain d'un record sur l'ancien (« +2,5 kg », « −0:08 /km », « +1 rep ») ;
+// le volume d'une série est suffixé « vol. ». undefined si le gain arrondi est nul (« +0 kg » se lirait comme un non-record).
+export function formatGain(
+  gain: number,
+  unit: CriterionUnit,
+  criterion: RecordCriterion,
+  units: Units,
+): string | undefined {
+  const sign = gain < 0 ? '−' : '+';
+  const abs = Math.abs(gain);
+  const text =
+    unit === 'reps' ? `${formatNumber(abs, 0)} rep${abs > 1 ? 's' : ''}` : formatCanonical(abs, unit, units);
+  if (!/[1-9]/.test(text)) return undefined;
+  return `${sign}${text}${criterion === 'best_set_volume' ? ' vol.' : ''}`;
+}
+
+const recordDayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+const recordDayYearFmt = new Intl.DateTimeFormat('fr-FR', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+// Cette méthode permet d'obtenir l'en-tête de jour des records récents, dans le fuseau de l'appareil : « Aujourd'hui · dim.
+// 25 oct. », « Hier · … », « Il y a 3 j · … » jusqu'à 6 jours, puis la date seule (avec l'année si ce n'est pas l'année en cours).
+export function recordDayLabel(ms: number, now: number): string {
+  const days = calendarDaysBetween(ms, now);
+  const sameYear = new Date(ms).getFullYear() === new Date(now).getFullYear();
+  const date = (sameYear ? recordDayFmt : recordDayYearFmt).format(ms);
+  if (days === 0) return `Aujourd'hui · ${date}`;
+  if (days === 1) return `Hier · ${date}`;
+  if (days > 1 && days < 7) return `Il y a ${days} j · ${date}`;
+  return date;
 }
 
 // Cette méthode permet d'afficher la valeur canonique d'un critère ou d'une courbe dans les unités de l'utilisateur.

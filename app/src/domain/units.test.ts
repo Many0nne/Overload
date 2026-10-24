@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  criterionShortLabel,
   formatDuration,
+  formatGain,
+  formatMetric,
   formatReason,
   formatSetValues,
   formatTargets,
   formatWeight,
   parseDuration,
+  recordDayLabel,
+  repMilestonesLabel,
 } from './format';
 import { prefsId, uuidv7 } from './ids';
 import { matchesSearch, normalizeSearch } from './search';
@@ -103,5 +108,47 @@ describe('recherche et identifiants', () => {
     expect(uuidv7()).toMatch(/^[0-9a-f-]{36}$/);
     expect(prefsId('u', 'e')).toBe(prefsId('u', 'e'));
     expect(prefsId('u', 'e')).not.toBe(prefsId('u', 'f'));
+  });
+});
+
+describe('records récents : gain, libellés et dates (§F7.6)', () => {
+  it('affiche le gain dans les unités de l’utilisateur, signé', () => {
+    expect(formatGain(2.5, 'kg', 'max_weight', units)).toBe('+2,5 kg');
+    expect(formatGain(2.5, 'kg', 'max_weight', { ...units, weight: 'lb' })).toBe('+5,5 lb');
+    expect(formatGain(-8, 's_per_km', 'best_pace', units)).toBe('−0:08 /km');
+    expect(formatGain(1, 'reps', 'max_reps', units)).toBe('+1 rep');
+    expect(formatGain(4, 'reps', 'session_reps', units)).toBe('+4 reps');
+    expect(formatGain(-5, 'kg', 'min_assistance', units)).toBe('−5 kg');
+    expect(formatGain(60, 'kg', 'best_set_volume', units)).toBe('+60 kg vol.');
+    expect(formatGain(0.7, 'km', 'max_distance', units)).toBe('+0,7 km');
+    // Gain réel mais arrondi à zéro : pas affiché.
+    expect(formatGain(0.01, 'kg', 'best_e1rm', units)).toBeUndefined();
+    expect(formatGain(-0.4, 's_per_km', 'best_pace', units)).toBeUndefined();
+  });
+
+  it('signe la charge des records lestés et assistés', () => {
+    expect(formatMetric(25, 'kg', 'weighted_bw', units)).toBe('+25 kg');
+    expect(formatMetric(20, 'kg', 'assisted_bw', units)).toBe('−20 kg');
+    expect(formatMetric(100, 'kg', 'weight_reps', units)).toBe('100 kg');
+  });
+
+  it('libellés courts des pastilles', () => {
+    expect(criterionShortLabel('best_e1rm', 'weight_reps')).toBe('1RM estimé');
+    expect(criterionShortLabel('weight_at_1', 'weight_reps')).toBe('à 1 rep');
+    expect(criterionShortLabel('weight_at_5', 'weight_reps')).toBe('à 5 reps');
+    expect(criterionShortLabel('max_weight', 'weighted_bw')).toBe('Charge ajoutée max');
+    expect(repMilestonesLabel([1])).toBe('à 1 rep');
+    expect(repMilestonesLabel([8])).toBe('à 8 reps');
+    expect(repMilestonesLabel([1, 3, 5])).toBe('à 1, 3 et 5 reps');
+  });
+
+  it('en-tête de jour relatif puis date seule au-delà de 6 jours', () => {
+    const now = new Date(2026, 9, 25, 18).getTime();
+    const at = (m: number, d: number, y = 2026) => new Date(y, m, d, 9).getTime();
+    expect(recordDayLabel(at(9, 25), now)).toBe("Aujourd'hui · dim. 25 oct.");
+    expect(recordDayLabel(at(9, 24), now)).toBe('Hier · sam. 24 oct.');
+    expect(recordDayLabel(at(9, 19), now)).toBe('Il y a 6 j · lun. 19 oct.');
+    expect(recordDayLabel(at(9, 18), now)).toBe('dim. 18 oct.');
+    expect(recordDayLabel(at(11, 30, 2025), now)).toBe('mar. 30 déc. 2025');
   });
 });

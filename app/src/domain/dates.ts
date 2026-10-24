@@ -61,6 +61,11 @@ export function localDiff(a: number, b: number): number {
   return b - off(b) - (a - off(a));
 }
 
+// Cette méthode permet de compter les jours calendaires locaux entre deux instants (0 = même jour, 1 = la veille de b).
+export function calendarDaysBetween(a: number, b: number): number {
+  return Math.round(localDiff(startOfDay(a), startOfDay(b)) / DAY_MS);
+}
+
 // Cette méthode permet de compter les semaines calendaires entre deux débuts de semaine (b − a), sans dérive d'heure d'été.
 export function weeksBetween(a: number, b: number): number {
   return Math.round((b - a) / WEEK_MS);

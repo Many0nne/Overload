@@ -2,42 +2,32 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useCompletedWorkouts, useExerciseMap, useSettings } from '@/data/queries';
 import { DAY_MS, dayKey, monthGrid } from '@/domain/dates';
-import { criterionLabel, formatCanonical } from '@/domain/format';
+import {
+  criterionLabel,
+  criterionShortLabel,
+  formatGain,
+  formatMetric,
+  formatSetValues,
+  recordDayLabel,
+  repMilestonesLabel,
+} from '@/domain/format';
 import { MUSCLE_LABELS } from '@/domain/labels';
-import { criteriaFor, type RecordCriterion, type RecordEvent, recentRecords } from '@/domain/records';
+import {
+  criterionDef,
+  mergeRepMilestones,
+  type RecordLineItem,
+  recentRecords,
+  recordDays,
+  recordLines,
+  recordSet,
+} from '@/domain/records';
 import { muscleDistribution, trainingDays, weekStreak } from '@/domain/stats';
-import type { MeasurementType, Muscle } from '@/domain/types';
+import type { Muscle } from '@/domain/types';
 import { formatNumber } from '@/domain/units';
 import { SubHead } from '@/ui/components';
 
 const monthFmt = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
 const dayLetters = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-
-// Cette méthode permet de passer la première lettre d'un libellé en minuscule (« Meilleur 1RM » → « meilleur 1RM »).
-const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
-
-type RecordLine = { event: RecordEvent; others: number };
-
-// Cette méthode permet de regrouper les records par séance et exercice : une ligne avec le critère principal (ordre du §F7.6)
-// et le nombre d'autres critères battus. Pour un même critère, le dernier événement de la séance est le meilleur.
-function recordLines(events: RecordEvent[], typeOf: (exerciseId: string) => MeasurementType): RecordLine[] {
-  const groups = new Map<string, Map<RecordCriterion, RecordEvent>>();
-  for (const e of events) {
-    const key = `${e.workoutId}|${e.exerciseId}`;
-    const g = groups.get(key) ?? new Map<RecordCriterion, RecordEvent>();
-    g.set(e.criterion, e);
-    groups.set(key, g);
-  }
-  const lines: RecordLine[] = [];
-  for (const g of groups.values()) {
-    const any = [...g.values()][0]!;
-    const main = criteriaFor(typeOf(any.exerciseId))
-      .map((c) => g.get(c.id))
-      .find((e) => e !== undefined);
-    lines.push({ event: main ?? any, others: g.size - 1 });
-  }
-  return lines.sort((a, b) => b.event.startedAt - a.event.startedAt);
-}
 
 // Cette méthode permet d'afficher les statistiques globales : calendrier et série de semaines, séries par muscle, records récents (§F7.6).
 export default function StatsPage() {
@@ -52,7 +42,7 @@ export default function StatsPage() {
   });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul à la minute, pas à chaque rendu
-  const { days, streak, muscles, records } = useMemo(() => {
+  const { days, streak, muscles, records, byId } = useMemo(() => {
     const all = workouts ?? [];
     const dist = muscleDistribution(all, (id) => exercises.get(id), now - 30 * DAY_MS, now + 1);
     const list = (Object.entries(dist) as [Muscle, number][])
@@ -62,10 +52,13 @@ export default function StatsPage() {
       days: trainingDays(all),
       streak: weekStreak(all, now),
       muscles: list,
-      records: recordLines(
-        recentRecords(all, 200),
-        (id) => exercises.get(id)?.measurement_type ?? 'weight_reps',
-      ).slice(0, 10),
+      records: recordDays(
+        recordLines(
+          recentRecords(all, Number.POSITIVE_INFINITY),
+          (id) => exercises.get(id)?.measurement_type ?? 'weight_reps',
+        ).slice(0, 10),
+      ),
+      byId: new Map(all.map((w) => [w.id, w])),
     };
   }, [workouts, exercises, Math.floor(now / 60_000)]);
 
@@ -75,6 +68,15 @@ export default function StatsPage() {
   const isCurrent = month.y === current.getFullYear() && month.m === current.getMonth();
   const label = monthFmt.format(new Date(month.y, month.m, 1));
   const maxMuscle = muscles[0]?.[1] ?? 1;
+
+  // Cette méthode permet d'afficher la valeur d'un record : la série (« 100 kg × 5 ») pour la meilleure série en volume,
+  // sinon la valeur du critère dans les unités de l'utilisateur.
+  const recordValue = (r: RecordLineItem, exerciseId: string) => {
+    const type = exercises.get(exerciseId)?.measurement_type ?? 'weight_reps';
+    const set = r.criterion === 'best_set_volume' ? recordSet(byId.get(r.workoutId), r) : undefined;
+    if (set) return formatSetValues(set, type, settings.units);
+    return formatMetric(r.value, criterionDef(r.criterion).unit, type, settings.units);
+  };
 
   // Cette méthode permet de passer au mois précédent ou suivant du calendrier (pas au-delà du mois en cours).
   const shift = (delta: -1 | 1) =>
@@ -148,35 +150,58 @@ export default function StatsPage() {
         <div className="section-title">Records récents</div>
         <div className="card">
           {records.length === 0 && <p className="muted">Pas encore de record battu.</p>}
-          <ul className="rec-list">
-            {records.map(({ event: r, others }) => {
-              const ex = exercises.get(r.exerciseId);
-              const type = ex?.measurement_type ?? 'weight_reps';
-              const unit = criteriaFor(type).find((c) => c.id === r.criterion)?.unit ?? 'kg';
-              const prefix = type === 'weighted_bw' && unit === 'kg' ? '+' : '';
-              return (
-                <li
-                  key={`${r.workoutId}-${r.exerciseId}-${r.criterion}-${r.setId ?? r.entryId}`}
-                  onClick={() => navigate(`/exercise/${r.exerciseId}`)}
-                  className="pointer gap-12"
-                >
-                  <span>
-                    {ex?.name ?? 'Exercice'} · {lowerFirst(criterionLabel(r.criterion, type))}
-                    {others > 0 && (
-                      <span className="muted">
-                        {' '}
-                        (+{others} autre{others > 1 ? 's' : ''})
-                      </span>
-                    )}
-                  </span>
-                  <b className="nowrap">
-                    {prefix}
-                    {formatCanonical(r.value, unit, settings.units)}
-                  </b>
-                </li>
-              );
-            })}
-          </ul>
+          {records.map((day) => (
+            <div key={day.key}>
+              <div className="rec-day">{recordDayLabel(day.startedAt, now)}</div>
+              <ul className="rec-list">
+                {day.lines.map((line) => {
+                  const ex = exercises.get(line.exerciseId);
+                  const type = ex?.measurement_type ?? 'weight_reps';
+                  const [main, ...others] = line.records;
+                  if (!main) return null;
+                  const gain =
+                    main.gain === undefined
+                      ? undefined
+                      : formatGain(
+                          main.gain,
+                          criterionDef(main.criterion).unit,
+                          main.criterion,
+                          settings.units,
+                        );
+                  return (
+                    <li key={`${line.workoutId}-${line.exerciseId}`}>
+                      <button className="rec-line" onClick={() => navigate(`/exercise/${line.exerciseId}`)}>
+                        <span className="rec-main">
+                          <span className="rec-name">{ex?.name ?? 'Exercice'}</span>
+                          <span className="rec-crit">{criterionLabel(main.criterion, type)}</span>
+                          {others.length > 0 && (
+                            <span className="rec-pills">
+                              {mergeRepMilestones(others).map(({ item, reps }) => (
+                                <span key={item.criterion} className="rec-pill">
+                                  {reps.length > 1
+                                    ? repMilestonesLabel(reps)
+                                    : criterionShortLabel(item.criterion, type)}{' '}
+                                  <b>{recordValue(item, line.exerciseId)}</b>
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                        </span>
+                        <span className="rec-val">
+                          <b>{recordValue(main, line.exerciseId)}</b>
+                          {main.gain === undefined && <span className="rec-gain new">🏆 nouveau</span>}
+                          {gain && <span className="rec-gain">{gain}</span>}
+                        </span>
+                        <span className="rec-chev" aria-hidden="true">
+                          ›
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </>

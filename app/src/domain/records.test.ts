@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { allWorkoutBadges, bestRecords, e1rm, recentRecords, scanExercise, workoutBadges } from './records';
+import {
+  allWorkoutBadges,
+  bestRecords,
+  e1rm,
+  mergeRepMilestones,
+  recentRecords,
+  recordDays,
+  recordLines,
+  recordSet,
+  scanExercise,
+  workoutBadges,
+} from './records';
 import { DAY, entry, set, sets, T0, workout } from './testFixtures';
+import type { MeasurementType } from './types';
 import { exerciseVolumeKg } from './volume';
 
 const BENCH = 'bench';
@@ -113,5 +125,111 @@ describe('records', () => {
     expect(best.weight_at_8?.value).toBe(80);
     expect(recentRecords([w1, w2])[0]?.workoutId).toBe(w2.id);
     expect(scanExercise(BENCH, [w1, w2]).events.every((e) => e.workoutId === w2.id)).toBe(true);
+  });
+});
+
+describe('records récents regroupés (§F7.6)', () => {
+  const typeOf = (id: string): MeasurementType => (id === 'run' ? 'distance_duration' : 'weight_reps');
+
+  it('chaque record garde le meilleur résultat d’avant sa séance', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(80, [8]))]);
+    const w2 = workout(T0 + DAY, [entry(BENCH, [set({ kg: 85, reps: 8 }), set({ kg: 90, reps: 8 })])]);
+    const evs = scanExercise(BENCH, [w1, w2]).events.filter((e) => e.criterion === 'max_weight');
+    expect(evs.map((e) => [e.value, e.previous])).toEqual([
+      [85, 80],
+      [90, 80],
+    ]);
+  });
+
+  it('une ligne par séance et exercice, critère principal en premier, gain contre l’avant-séance', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(80, [8]))]);
+    // Deux records de charge dans la même séance : 85 puis 90. Le gain se mesure contre 80 (avant la séance).
+    const w2 = workout(T0 + DAY, [entry(BENCH, [set({ kg: 85, reps: 8 }), set({ kg: 90, reps: 8 })])]);
+    const lines = recordLines(recentRecords([w1, w2], 200), typeOf);
+    expect(lines).toHaveLength(1);
+    const [line] = lines;
+    expect(line?.workoutId).toBe(w2.id);
+    expect(line?.records.map((r) => r.criterion)).toEqual([
+      'max_weight',
+      'best_e1rm',
+      'best_set_volume',
+      'weight_at_1',
+      'weight_at_3',
+      'weight_at_5',
+      'weight_at_8',
+    ]);
+    const main = line!.records[0]!;
+    expect(main.value).toBe(90);
+    expect(main.previous).toBe(80);
+    expect(main.gain).toBe(10);
+    expect(main.setId).toBe(w2.doc.exercises[0]!.sets[1]!.id);
+  });
+
+  it('le gain reste celui d’avant la séance même si la liste d’événements est tronquée', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(80, [8]))]);
+    const w2 = workout(T0 + DAY, [entry(BENCH, [set({ kg: 85, reps: 8 }), set({ kg: 90, reps: 8 })])]);
+    // On ne garde que le dernier record de charge (90 kg) : l'ancien record reste 80 kg.
+    const last = recentRecords([w1, w2], 200).filter((e) => e.criterion === 'max_weight' && e.value === 90);
+    expect(recordLines(last, typeOf)[0]?.records[0]?.gain).toBe(10);
+  });
+
+  it('pas de gain sans ancien résultat sur le critère (premier passage à 12 reps)', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(80, [8]))]);
+    const w2 = workout(T0 + DAY, [entry(BENCH, sets(60, [12]))]);
+    const at12 = recordLines(recentRecords([w1, w2], 200), typeOf)[0]?.records.find(
+      (r) => r.criterion === 'weight_at_12',
+    );
+    expect(at12?.value).toBe(60);
+    expect(at12?.previous).toBeUndefined();
+    expect(at12?.gain).toBeUndefined();
+  });
+
+  it('critère « plus petit = mieux » : gain négatif (allure)', () => {
+    const w1 = workout(T0, [entry('run', [set({ km: 5, s: 1600 })], 'distance_duration')]);
+    const w2 = workout(T0 + DAY, [entry('run', [set({ km: 5, s: 1560 })], 'distance_duration')]);
+    const pace = recordLines(recentRecords([w1, w2], 200), typeOf)[0]?.records.find(
+      (r) => r.criterion === 'best_pace',
+    );
+    expect(pace?.gain).toBe(-8);
+  });
+
+  it('fusionne les paliers « à N reps » consécutifs de même charge', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(60, [8]))]);
+    const w2 = workout(T0 + DAY, [entry(BENCH, [set({ kg: 62.5, reps: 8 }), set({ kg: 65, reps: 5 })])]);
+    const [, ...others] = recordLines(recentRecords([w1, w2], 200), typeOf)[0]!.records;
+    const merged = mergeRepMilestones(others).map((m) => [m.item.criterion, m.reps, m.item.value]);
+    expect(merged).toEqual([
+      ['best_e1rm', [], expect.any(Number)],
+      ['best_set_volume', [], 500],
+      ['weight_at_1', [1, 3, 5], 65],
+      ['weight_at_8', [8], 62.5],
+    ]);
+  });
+
+  it('regroupe les lignes par jour local de début de séance', () => {
+    const late = new Date(2026, 0, 5, 23, 30).getTime();
+    const w1 = workout(late - 2 * DAY, [entry(BENCH, sets(80, [8])), entry('row', sets(60, [8]))]);
+    const w2 = workout(late - 60 * 60_000, [entry(BENCH, sets(85, [8]))]); // même soir, 22 h 30
+    const w3 = workout(late, [entry('row', sets(65, [8]))]); // 23 h 30, même jour
+    const w4 = workout(late + 60 * 60_000, [entry(BENCH, sets(90, [8]))]); // 0 h 30 : jour suivant
+    const days = recordDays(recordLines(recentRecords([w1, w2, w3, w4], 200), typeOf));
+    expect(days.map((d) => d.lines.map((l) => l.workoutId))).toEqual([[w4.id], [w3.id, w2.id]]);
+    expect(days[1]?.key).toBe('2026-01-05');
+  });
+
+  it('retrouve la série d’un record de volume', () => {
+    const s = set({ kg: 90, reps: 8 });
+    const we = entry(BENCH, [s]);
+    const w = workout(T0, [we]);
+    expect(recordSet(w, { entryId: we.id, setId: s.id })).toBe(s);
+    expect(recordSet(w, { entryId: we.id })).toBeUndefined();
+  });
+
+  it('trie les lignes de la plus récente à la plus ancienne', () => {
+    const w1 = workout(T0, [entry(BENCH, sets(80, [8])), entry('row', sets(60, [8]))]);
+    const w2 = workout(T0 + DAY, [entry('row', sets(65, [8]))]);
+    const w3 = workout(T0 + 2 * DAY, [entry(BENCH, sets(85, [8]))]);
+    const lines = recordLines(recentRecords([w1, w2, w3], 200), typeOf);
+    expect(lines.map((l) => l.workoutId)).toEqual([w3.id, w2.id]);
   });
 });
