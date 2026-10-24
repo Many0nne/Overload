@@ -1,0 +1,131 @@
+/* ---------- Onglet Séance ---------- */
+.folder-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 6px 0 10px;
+  width: 100%;
+  text-align: left;
+}
+.folder-h .chev {
+  transition: transform 0.2s;
+  color: var(--muted);
+}
+.folder.closed .chev {
+  transform: rotate(-90deg);
+}
+.folder.closed .folder-body {
+  display: none;
+}
+.folder-h .count {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+.folder-h .dots {
+  margin-left: auto;
+  color: var(--muted);
+}
+.routine h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.routine p {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin: 5px 0 12px;
+  line-height: 1.45;
+}
+/* ---------- Édition de routine ---------- */
+.re-ex .top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.re-ex .top b {
+  font-size: 0.9375rem;
+  color: var(--accent);
+  flex: 1;
+}
+.re-ex {
+  position: relative;
+}
+.re-ex.dragging {
+  opacity: 0.7;
+  z-index: 2;
+}
+.re-ex .grip {
+  color: var(--muted);
+  font-size: 1.125rem;
+  cursor: grab;
+  touch-action: none;
+  padding: 6px 4px;
+}
+.re-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+  margin-top: 10px;
+}
+.re-row small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.re-in {
+  width: 78px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  outline: 0;
+}
+.re-in:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.re-sets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.re-sets span {
+  min-width: 58px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.re-sets em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--muted);
+}
+.re-sets em.W {
+  color: var(--warm);
+}
+.re-sets em.D {
+  color: var(--drop);
+}
+.re-sets em.X {
+  color: var(--fail);
+}

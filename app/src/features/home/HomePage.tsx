@@ -56,17 +56,17 @@ export default function HomePage() {
           <SyncPill />
         </div>
       </div>
-      <div className="section" style={{ marginTop: 4 }}>
+      <div className="section mt-4">
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <b style={{ fontSize: '1rem' }}>Cette semaine</b>
+          <div className="flex justify-between items-baseline">
+            <b className="fs-16">Cette semaine</b>
             {first && last && (
-              <span className="muted" style={{ fontSize: '.8125rem' }}>
+              <span className="muted fs-13">
                 {rangeFmt.format(parseDayKey(first.day))} – {rangeFmt.format(parseDayKey(last.day))}
               </span>
             )}
           </div>
-          <div className="stats-row" style={{ padding: '12px 0 0' }}>
+          <div className="stats-row flush">
             <div className="stat">
               <div className="k">Séances</div>
               <div className="v">{week?.count ?? 0}</div>
@@ -89,14 +89,12 @@ export default function HomePage() {
             ))}
           </div>
           <div className="streak">
-            <span style={{ fontSize: '1.375rem' }}>🔥</span>
+            <span className="flame">🔥</span>
             <div>
               <b>
                 {streak} semaine{streak > 1 ? 's' : ''} d'affilée
               </b>
-              <div className="muted" style={{ fontSize: '.8125rem' }}>
-                au moins une séance chaque semaine
-              </div>
+              <div className="muted fs-13">au moins une séance chaque semaine</div>
             </div>
           </div>
         </div>
@@ -116,7 +114,7 @@ export default function HomePage() {
             initial={initial}
           />
         ))}
-        {count < list.length && <div ref={sentinel} style={{ height: 40 }} />}
+        {count < list.length && <div ref={sentinel} className="sentinel" />}
       </div>
     </>
   );

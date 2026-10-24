@@ -288,11 +288,7 @@ function TopNotices(props: { showReauth: boolean }) {
       {props.showReauth && <ReauthNotice />}
       {skewed && clockSkewMs !== null && <ClockNotice skewMs={clockSkewMs} />}
       {nearQuota && usedBytes !== null && (
-        <button
-          className="tag"
-          style={{ color: 'var(--warm)' }}
-          onClick={() => navigate('/profile/settings')}
-        >
+        <button className="tag c-warm" onClick={() => navigate('/profile/settings')}>
           Stockage {Math.floor((usedBytes / quotaBytes) * 100)} %
         </button>
       )}
@@ -305,7 +301,7 @@ function ReauthNotice() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="tag" style={{ color: 'var(--warm)' }} onClick={() => setOpen(true)}>
+      <button className="tag c-warm" onClick={() => setOpen(true)}>
         Reconnexion requise
       </button>
       <Sheet open={open} label="Reconnexion" onClose={() => setOpen(false)}>
@@ -321,7 +317,7 @@ function ClockNotice(props: { skewMs: number }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="tag" style={{ color: 'var(--warm)' }} onClick={() => setOpen(true)}>
+      <button className="tag c-warm" onClick={() => setOpen(true)}>
         Horloge décalée
       </button>
       <Sheet
@@ -335,7 +331,7 @@ function ClockNotice(props: { skewMs: number }) {
           donnée est modifiée sur deux appareils, c'est la modification la plus récente selon l'horloge de
           chaque appareil qui est gardée : un écart peut faire perdre la bonne version.
         </p>
-        <p style={{ marginTop: 8 }}>
+        <p className="mt-8">
           Active le réglage automatique de la date et de l'heure dans les réglages du téléphone.
         </p>
       </Sheet>

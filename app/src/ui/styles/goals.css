@@ -1,0 +1,83 @@
+/* ---------- Objectifs de progression ---------- */
+.goal-line {
+  margin: 8px 18px 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  line-height: 1.4;
+}
+.goal-line .why {
+  font-weight: 500;
+  color: var(--text-2);
+}
+.goal-line.up {
+  color: var(--done);
+}
+.goal-line.down {
+  color: var(--warm);
+}
+.goal-line.eq {
+  color: var(--text);
+}
+.goal-line .tag {
+  height: 20px;
+  font-size: 0.6875rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.val.tgt {
+  color: var(--accent);
+}
+tr.done .val.tgt {
+  color: var(--text);
+}
+.goal-card .big {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+.goal-card .why {
+  font-size: 0.8125rem;
+  color: var(--text-2);
+  margin-top: 4px;
+}
+.trend-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}
+.trend-info b {
+  color: var(--text);
+}
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend i {
+  display: inline-block;
+  width: 18px;
+  border-top: 2px dashed var(--accent);
+}
+.legend i.gold {
+  border-color: var(--gold);
+}
+.ok {
+  color: var(--done);
+  font-weight: 700;
+}
+.ko {
+  color: var(--muted);
+  font-weight: 700;
+}
+.goal-sum {
+  font-size: 0.8125rem;
+  color: var(--text-2);
+  margin: -4px 0 10px;
+}

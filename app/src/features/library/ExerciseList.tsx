@@ -104,7 +104,7 @@ export function ExerciseList(props: { onPick: (e: ExerciseRow) => void; exclude?
         allLabel="Tous muscles"
         options={MUSCLES.map((m) => ({ value: m, label: MUSCLE_LABELS[m] }))}
       />
-      <div style={{ marginTop: 8 }}>
+      <div className="mt-8">
         <Chips
           value={equipment}
           onChange={setEquipment}
@@ -112,7 +112,7 @@ export function ExerciseList(props: { onPick: (e: ExerciseRow) => void; exclude?
           options={EQUIPMENTS.map((m) => ({ value: m, label: EQUIPMENT_LABELS[m] }))}
         />
       </div>
-      <div style={{ marginTop: 6 }}>
+      <div className="mt-6">
         {recent.length > 0 && (
           <>
             <div className="lib-letter">Récents</div>

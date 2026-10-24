@@ -28,11 +28,7 @@ export const HistoryCard = memo(function HistoryCard(props: {
   const first = firstExercises(w.doc, 3);
   const others = new Set(w.doc.exercises.map((e) => e.exerciseId)).size - first.length;
   return (
-    <button
-      className="card hist"
-      style={{ width: '100%', textAlign: 'left' }}
-      onClick={() => navigate(`/history/${w.id}`)}
-    >
+    <button className="card hist" onClick={() => navigate(`/history/${w.id}`)}>
       <div className="top">
         <div className="avatar">{props.initial}</div>
         <div>
@@ -71,7 +67,7 @@ export const HistoryCard = memo(function HistoryCard(props: {
         </div>
       )}
       {w.doc.photoPath && <PhotoView path={w.doc.photoPath} />}
-      <ul style={w.doc.photoPath ? { marginTop: 12 } : undefined}>
+      <ul className={w.doc.photoPath ? 'mt-12' : undefined}>
         {first.map((e) => (
           <li key={e.exerciseId}>
             <b>{e.setCount} ×</b>

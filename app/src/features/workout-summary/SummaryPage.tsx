@@ -179,18 +179,14 @@ export default function SummaryPage() {
         <div className="recap-hero">
           <div className="big">🎉</div>
           <h2>Belle séance{profile ? `, ${profile.display_name}` : ''} !</h2>
-          <p className="muted" style={{ marginTop: 4 }}>
-            {longDate.format(row.started_at)}
-          </p>
+          <p className="muted mt-4">{longDate.format(row.started_at)}</p>
         </div>
       )}
       {forgotten && (
         <div className="section">
-          <div className="card" style={{ border: '1px solid var(--warm)' }}>
+          <div className="card outline warn">
             <b>Séance oubliée ?</b>
-            <p className="t2" style={{ fontSize: '.875rem', marginTop: 6 }}>
-              Elle dure plus de 4 h. Corrige la durée avant d'enregistrer.
-            </p>
+            <p className="t2 fs-14 mt-6">Elle dure plus de 4 h. Corrige la durée avant d'enregistrer.</p>
             <label className="field">
               <span>Durée (h:mm:ss)</span>
               <input value={duration} onChange={(e) => setDuration(e.target.value)} inputMode="numeric" />
@@ -212,13 +208,11 @@ export default function SummaryPage() {
           <div className="k">Séries</div>
         </div>
         <div className="card">
-          <div className="v" style={{ color: 'var(--gold)' }}>
-            {summary.recordCount}
-          </div>
+          <div className="v c-gold">{summary.recordCount}</div>
           <div className="k">Records</div>
         </div>
         <div className="card">
-          <div className="v" style={{ color: 'var(--done)' }}>
+          <div className="v c-done">
             {summary.targets.met}/{summary.targets.total}
           </div>
           <div className="k">Objectifs</div>
@@ -233,7 +227,7 @@ export default function SummaryPage() {
                 <li key={e.id}>
                   <span>
                     {exercises.get(e.exerciseId)?.name ?? 'Exercice'}
-                    <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+                    <small className="muted d-block fs-12">
                       {formatTargets(
                         e.sets.map((s) => s.target),
                         e.measurementType,
@@ -282,18 +276,14 @@ export default function SummaryPage() {
           />
         </label>
         {photo ? (
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <PhotoView path={photo} height={180} />
-            <button
-              className="tag"
-              style={{ position: 'absolute', top: 18, right: 8 }}
-              onClick={() => setPhoto(undefined)}
-            >
+            <button className="tag photo-remove" onClick={() => setPhoto(undefined)}>
               Retirer
             </button>
           </div>
         ) : (
-          <label className="photo-add" style={{ cursor: 'pointer' }}>
+          <label className="photo-add">
             + Ajouter une photo
             <input
               type="file"
@@ -317,19 +307,11 @@ export default function SummaryPage() {
             <input value={duration} onChange={(e) => setDuration(e.target.value)} />
           </label>
         </div>
-        <button
-          className="btn btn-primary btn-block"
-          style={{ marginTop: 20, height: 52 }}
-          onClick={() => void save()}
-        >
+        <button className="btn btn-primary btn-block mt-20 btn-lg" onClick={() => void save()}>
           Enregistrer
         </button>
         {live && (
-          <button
-            className="btn btn-danger btn-block"
-            style={{ marginTop: 6 }}
-            onClick={() => setConfirmDiscard(true)}
-          >
+          <button className="btn btn-danger btn-block mt-6" onClick={() => setConfirmDiscard(true)}>
             Abandonner la séance
           </button>
         )}

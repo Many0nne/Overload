@@ -25,7 +25,7 @@ export default function WelcomePage() {
 
   return (
     <div className="page no-tab center-page">
-      <div className="brand" style={{ paddingTop: 40 }}>
+      <div className="brand loose">
         <span className="logo">O</span>
         <h2>C'est parti !</h2>
         <p>Deux réglages rapides et tu peux t'entraîner.</p>
@@ -33,12 +33,11 @@ export default function WelcomePage() {
       <div className="section">
         <div className="card">
           <b>Fin du temps de repos</b>
-          <p className="t2" style={{ fontSize: '.875rem', marginTop: 6, lineHeight: 1.5 }}>
+          <p className="t2 fs-14 mt-6 lh-15">
             Une notification te prévient quand le repos est fini, même écran verrouillé.
           </p>
           <button
-            className="btn btn-soft btn-block"
-            style={{ marginTop: 12 }}
+            className="btn btn-soft btn-block mt-12"
             disabled={asked || !pushSupported()}
             onClick={() => void askPush()}
           >
@@ -52,15 +51,13 @@ export default function WelcomePage() {
       </div>
       <div className="section">
         <button
-          className="btn btn-primary btn-block"
-          style={{ height: 52 }}
+          className="btn btn-primary btn-block btn-lg"
           onClick={() => navigate('/seance/routine/new', { replace: true })}
         >
           Créer ma première routine
         </button>
         <button
-          className="btn btn-soft btn-block"
-          style={{ marginTop: 8 }}
+          className="btn btn-soft btn-block mt-8"
           onClick={async () => {
             unlockAudio();
             navigate(`/workout/${await startEmptyWorkout()}`, { replace: true });

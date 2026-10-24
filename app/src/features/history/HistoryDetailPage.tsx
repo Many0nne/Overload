@@ -18,6 +18,7 @@ import { workoutToRoutine } from '@/domain/routineDiff';
 import { workoutSummary } from '@/domain/summary';
 import { Sheet, SubHead, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
+import { KIND_CLASS } from '@/ui/setKind';
 import { formatWorkoutDate } from './HistoryCard';
 import { PhotoView } from './PhotoView';
 
@@ -66,11 +67,9 @@ export default function HistoryDetailPage() {
           </button>
         }
       />
-      <div className="section" style={{ marginTop: 0 }}>
-        <div className="muted" style={{ fontSize: '.875rem' }}>
-          {formatWorkoutDate(row.started_at)}
-        </div>
-        <div className="mini" style={{ display: 'flex', gap: 18, margin: '12px 0' }}>
+      <div className="section mt-0">
+        <div className="muted fs-14">{formatWorkoutDate(row.started_at)}</div>
+        <div className="mini flex gap-18 my-12">
           <div className="stat">
             <div className="k">Durée</div>
             <div className="v">{formatDurationHuman(summary.durationS)}</div>
@@ -95,11 +94,7 @@ export default function HistoryDetailPage() {
             🎯 Objectifs atteints : {summary.targets.met} / {summary.targets.total} exercices
           </div>
         )}
-        {row.doc.note && (
-          <p className="t2" style={{ fontSize: '.9375rem', lineHeight: 1.5 }}>
-            {row.doc.note}
-          </p>
-        )}
+        {row.doc.note && <p className="t2 fs-15 lh-15">{row.doc.note}</p>}
         {row.doc.photoPath && <PhotoView path={row.doc.photoPath} height={220} />}
       </div>
       <div className="section">
@@ -110,8 +105,8 @@ export default function HistoryDetailPage() {
           const missed = e.sets.map((s) => missedTarget(s, e.measurementType));
           return (
             <div key={e.id} className="card hist">
-              <Link to={`/exercise/${e.exerciseId}`} style={{ textDecoration: 'none' }}>
-                <h3 style={{ fontSize: '.9375rem', color: 'var(--accent)' }}>
+              <Link to={`/exercise/${e.exerciseId}`} className="no-underline">
+                <h3 className="sm c-accent">
                   {ex?.name ?? 'Exercice'}
                   {badges?.entries[e.id]?.length ? ' 🏆' : ''}
                 </h3>
@@ -124,23 +119,10 @@ export default function HistoryDetailPage() {
                 </div>
               )}
               {e.note && <p className="note">{e.note}</p>}
-              <ul style={{ marginTop: 10 }}>
+              <ul className="mt-10">
                 {e.sets.map((s, i) => (
                   <li key={s.id}>
-                    <b
-                      style={{
-                        color:
-                          s.kind === 'warmup'
-                            ? 'var(--warm)'
-                            : s.kind === 'drop'
-                              ? 'var(--drop)'
-                              : s.kind === 'failure'
-                                ? 'var(--fail)'
-                                : undefined,
-                      }}
-                    >
-                      {labels[i]}
-                    </b>
+                    <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                     {formatSetValues(s, e.measurementType, settings.units)}
                     {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
                     {badges?.sets[s.id]?.length ? (

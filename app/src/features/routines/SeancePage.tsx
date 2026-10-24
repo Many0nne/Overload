@@ -100,16 +100,16 @@ function SeanceHome() {
       <div className="head">
         <h2>Séance</h2>
       </div>
-      <div className="section" style={{ marginTop: 4 }}>
-        <button className="btn btn-primary btn-block" style={{ height: 52 }} onClick={() => void start()}>
+      <div className="section mt-4">
+        <button className="btn btn-primary btn-block btn-lg" onClick={() => void start()}>
           <PlusIcon />
           Démarrer une séance vide
         </button>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className="btn btn-soft" style={{ flex: 1 }} onClick={() => navigate('/seance/library')}>
+        <div className="flex gap-8 mt-8">
+          <button className="btn btn-soft flex-1" onClick={() => navigate('/seance/library')}>
             Bibliothèque
           </button>
-          <button className="btn btn-soft" style={{ flex: 1 }} onClick={() => navigate('/seance/past')}>
+          <button className="btn btn-soft flex-1" onClick={() => navigate('/seance/past')}>
             Séance passée
           </button>
         </div>
@@ -117,10 +117,9 @@ function SeanceHome() {
       <div className="section">
         <div className="section-title">
           Routines
-          <span style={{ display: 'flex', gap: 4 }}>
+          <span className="flex gap-4">
             <button
-              className="btn-ghost"
-              style={{ fontSize: '.875rem', textTransform: 'none', letterSpacing: 0 }}
+              className="btn-ghost fs-14 normal-case"
               onClick={() => {
                 setName('');
                 setFolderSheet('new');
@@ -128,30 +127,22 @@ function SeanceHome() {
             >
               + Dossier
             </button>
-            <button
-              className="btn-ghost"
-              style={{ fontSize: '.875rem', textTransform: 'none', letterSpacing: 0 }}
-              onClick={() => navigate('/seance/routine/new')}
-            >
+            <button className="btn-ghost fs-14 normal-case" onClick={() => navigate('/seance/routine/new')}>
               + Nouvelle
             </button>
           </span>
         </div>
         {routines && routines.length === 0 && (
-          <p className="empty" style={{ padding: '20px 0' }}>
+          <p className="empty compact">
             Pas encore de routine. Crée ton premier programme ou démarre une séance vide.
           </p>
         )}
         {groups.map(({ folder, list }) => {
           const closed = folder?.collapsed ?? false;
           return (
-            <div
-              key={folder?.id ?? 'none'}
-              className={`folder${closed ? ' closed' : ''}`}
-              style={{ marginTop: 12 }}
-            >
+            <div key={folder?.id ?? 'none'} className={`folder mt-12${closed ? ' closed' : ''}`}>
               {(folder || groups.length > 1) && (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="flex items-center">
                   <button
                     className="folder-h"
                     onClick={() => folder && void updateFolder(folder.id, { collapsed: !folder.collapsed })}
@@ -178,7 +169,7 @@ function SeanceHome() {
                   <div key={r.id} className="card routine">
                     <h4>
                       {r.doc.name}
-                      <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span className="flex gap-6 items-center">
                         <span className="tag">{formatEstimate(estimateMinutes(r))}</span>
                         <button className="tag acc" onClick={() => setRoutineSheet(r)}>
                           ⋯
@@ -194,11 +185,7 @@ function SeanceHome() {
                     </button>
                   </div>
                 ))}
-                {folder && list.length === 0 && (
-                  <p className="muted" style={{ fontSize: '.8125rem', padding: '0 0 8px' }}>
-                    Dossier vide.
-                  </p>
-                )}
+                {folder && list.length === 0 && <p className="muted fs-13 pb-8">Dossier vide.</p>}
               </div>
             </div>
           );
@@ -253,9 +240,7 @@ function SeanceHome() {
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. PPL" />
         </label>
         {folderSheet !== 'new' && (
-          <p style={{ fontSize: '.8125rem', marginTop: 8 }}>
-            Supprimer le dossier garde ses routines dans « Mes routines ».
-          </p>
+          <p className="fine mt-8">Supprimer le dossier garde ses routines dans « Mes routines ».</p>
         )}
       </Sheet>
 

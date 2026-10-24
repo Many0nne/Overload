@@ -75,8 +75,8 @@ export default function ImportHevyPage() {
         <SubHead title="Import HEVY" onBack={() => navigate('/profile/settings')} />
         <div className="section">
           <div className="card">
-            <p style={{ fontWeight: 600 }}>Import terminé</p>
-            <p className="t2" style={{ marginTop: 6 }}>
+            <p className="fw-600">Import terminé</p>
+            <p className="t2 mt-6">
               {plural(result.workouts, 'séance importée', 'séances importées')}
               {result.exercisesCreated > 0 &&
                 ` · ${plural(result.exercisesCreated, 'exercice perso créé', 'exercices perso créés')}`}
@@ -84,11 +84,7 @@ export default function ImportHevyPage() {
                 ` · ${plural(result.measurements, 'mesure enregistrée', 'mesures enregistrées')}`}
             </p>
           </div>
-          <button
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 14 }}
-            onClick={() => navigate('/')}
-          >
+          <button className="btn btn-primary btn-block mt-14" onClick={() => navigate('/')}>
             Voir l'historique
           </button>
         </div>
@@ -117,14 +113,13 @@ export default function ImportHevyPage() {
             Dans HEVY, exporte tes séances en CSV depuis les paramètres (et tes mesures si tu veux les
             garder), puis choisis le ou les fichiers : <b>workout_data.csv</b>, <b>measurement_data.csv</b>.
           </p>
-          <p className="t2" style={{ marginTop: 10 }}>
+          <p className="t2 mt-10">
             Les séances déjà importées sont ignorées : tu peux réimporter un export plus récent sans créer de
             doublons.
           </p>
           {fileInput}
           <button
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 18 }}
+            className="btn btn-primary btn-block mt-18"
             disabled={busy}
             onClick={() => input.current?.click()}
           >
@@ -147,12 +142,10 @@ export default function ImportHevyPage() {
     if (c.kind === 'create') return <span className="tag">Nouvel exercice perso</span>;
     const row = exercises.get(c.exerciseId);
     return (
-      <span style={{ color: 'var(--accent)' }}>
+      <span className="c-accent">
         {row?.name ?? '—'}
         {row && row.measurement_type !== ex.measurementType && (
-          <span className="tag" style={{ marginLeft: 6, color: 'var(--warm)' }}>
-            {MEASUREMENT_LABELS[row.measurement_type]}
-          </span>
+          <span className="tag ml-6 c-warm">{MEASUREMENT_LABELS[row.measurement_type]}</span>
         )}
       </span>
     );
@@ -200,18 +193,15 @@ export default function ImportHevyPage() {
       <SubHead title="Import HEVY" onBack={() => setPlan(null)} />
       <div className="section">
         <div className="card">
-          <p style={{ fontWeight: 600 }}>
-            {plural(plan.workouts.length, 'nouvelle séance', 'nouvelles séances')}
-          </p>
-          <p className="t2" style={{ marginTop: 4, fontSize: '.875rem' }}>
+          <p className="fw-600">{plural(plan.workouts.length, 'nouvelle séance', 'nouvelles séances')}</p>
+          <p className="t2 mt-4 fs-14">
             {plan.alreadyImported > 0 &&
               `${plural(plan.alreadyImported, 'déjà importée', 'déjà importées')} · `}
             {plural(plan.measurements.length, 'mesure à enregistrer', 'mesures à enregistrer')}
             {plan.measurementsUnchanged > 0 && ` · ${plan.measurementsUnchanged} déjà à jour`}
           </p>
           <button
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 12 }}
+            className="btn btn-primary btn-block mt-12"
             disabled={busy || nothing}
             onClick={() => void run()}
           >
@@ -229,7 +219,7 @@ export default function ImportHevyPage() {
           <div className="section-title">
             Exercices <span>{plan.exercises.length}</span>
           </div>
-          <p className="t2" style={{ fontSize: '.8125rem', marginBottom: 6 }}>
+          <p className="t2 fs-13 mb-6">
             Vérifie la correspondance de chaque exercice HEVY. Touche une ligne pour la changer.
           </p>
         </div>
@@ -237,14 +227,12 @@ export default function ImportHevyPage() {
       <div>
         {plan.exercises.map((ex) => (
           <button key={ex.title} className="lib-item" onClick={() => setEditing(ex)}>
-            <span style={{ minWidth: 0 }}>
+            <span className="min-w-0">
               <div className="n">{ex.title}</div>
               <div className="m">
                 {plural(ex.setCount, 'série', 'séries')} · {MEASUREMENT_LABELS[ex.measurementType]}
               </div>
-              <div className="m" style={{ marginTop: 4 }}>
-                → {target(ex)}
-              </div>
+              <div className="m next">→ {target(ex)}</div>
             </span>
           </button>
         ))}
@@ -258,9 +246,7 @@ export default function ImportHevyPage() {
       >
         {editing && current?.kind === 'create' && (
           <>
-            <p className="t2" style={{ fontSize: '.875rem' }}>
-              Nouvel exercice perso · {MEASUREMENT_LABELS[current.measurement_type]}
-            </p>
+            <p className="t2 fs-14">Nouvel exercice perso · {MEASUREMENT_LABELS[current.measurement_type]}</p>
             <div className="field">
               <span>Muscle principal</span>
               <div className="chips wrap">
@@ -294,19 +280,16 @@ export default function ImportHevyPage() {
       </Sheet>
 
       {picking && (
-        <div className="scrim show" style={{ alignItems: 'stretch' }}>
-          <div className="sheet" style={{ height: '100%', overflowY: 'auto', borderRadius: 0 }}>
-            <div
-              className="head"
-              style={{ padding: '8px 0 12px', paddingTop: 'calc(var(--safe-top) + 8px)', top: 0 }}
-            >
+        <div className="scrim show full">
+          <div className="sheet full">
+            <div className="head sheet-head">
               <button className="btn-ghost" onClick={() => setPicking(null)}>
                 Annuler
               </button>
               <span className="title-sm">{picking.title}</span>
-              <span style={{ width: 60 }} />
+              <span className="head-spacer" />
             </div>
-            <div style={{ margin: '0 -18px' }}>
+            <div className="bleed">
               <ExerciseList
                 onPick={(e: ExerciseRow) => {
                   choose(picking.title, { kind: 'existing', exerciseId: e.id });

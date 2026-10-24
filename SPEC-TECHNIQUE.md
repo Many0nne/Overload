@@ -79,7 +79,7 @@
     /features               un dossier par écran/parcours
       onboarding/ auth/ home/ workout-live/ workout-summary/ routines/
       library/ exercise/ history/ stats/ measurements/ profile/ settings/
-    /ui                     composants génériques, tokens CSS (repris de la maquette)
+    /ui                     composants génériques ; /ui/styles : CSS (tokens, base, un fichier par écran, utilitaires)
     /sw                     service-worker.ts
   /tests/e2e                Playwright
 /supabase
@@ -485,7 +485,7 @@ type Trend = { a: number; b: number; origin: number; status: 'up' | 'flat' };
 | Routine (édition) | Les reps se saisissent sous forme de fourchette (« 8–12 », ou « 8 » pour une fourchette fixe), une fois par exercice et non par série. |
 | Saisie a posteriori | Même éditeur que la séance en direct en mode `completed`, sans minuteur, avec date, heure et durée. |
 
-Thème et tokens : variables CSS reprises de la maquette (`--bg`, `--surface`, `--accent`, `--done`, `--warm`, `--drop`, `--fail`, `--gold`…), thème piloté par `data-theme` sur `<html>`. Les tailles de texte sont en `rem` pour suivre la taille de texte agrandie d'iOS. Zones tactiles d'au moins 44 × 44 px.
+Thème et tokens : variables CSS reprises de la maquette (`--bg`, `--surface`, `--accent`, `--done`, `--warm`, `--drop`, `--fail`, `--gold`…), thème piloté par `data-theme` sur `<html>`. Styles dans `app/src/ui/styles/` (point d'entrée `index.css`, ordre de cascade : tokens, base, habillage, composants, un fichier par écran, utilitaires en dernier) ; pas de couleur en dur hors `tokens.css`, pas de style inline sauf valeurs calculées (position d'infobulle, largeur de barre, glisser-déposer). Les tailles de texte sont en `rem` pour suivre la taille de texte agrandie d'iOS. Zones tactiles d'au moins 44 × 44 px.
 
 ## 12. Photos
 

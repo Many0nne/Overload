@@ -1,0 +1,445 @@
+/* ---------- Séance en direct ---------- */
+/* En-tête collant flouté, comme celui des pages (voir layout.css). */
+.live-head {
+  position: sticky;
+  top: 0;
+  margin-top: calc(-1 * var(--safe-top));
+  padding-top: var(--safe-top);
+  background: transparent;
+  isolation: isolate;
+  z-index: 6;
+}
+.live-head .head {
+  position: static;
+  padding-bottom: 6px;
+  background: transparent;
+}
+.live-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+/* Place sous la dernière carte pour le minuteur de repos. */
+.page.live-wrap {
+  padding-bottom: 200px;
+}
+/* Séance sans exercice. */
+.live-empty {
+  text-align: center;
+  padding: 40px 18px;
+}
+.live-empty .icon {
+  font-size: 2.5rem;
+}
+.ex {
+  padding: 16px 0 6px;
+  border-bottom: 8px solid var(--surface);
+}
+.ex-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+}
+.ex-top .name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: left;
+  flex: 1;
+}
+.ex-note {
+  margin: 10px 18px 0;
+}
+.ex-note textarea {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  resize: none;
+}
+.ex-note textarea::placeholder {
+  color: var(--muted);
+}
+/* Note extensible (issue #30) : la hauteur suit le contenu, pas de défilement interne. */
+.note-field textarea {
+  overflow: hidden;
+}
+.note-field .note-count {
+  display: block;
+  margin: 4px 0 0;
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.note-field .note-count.full {
+  color: var(--warm);
+}
+.rest-link {
+  margin: 6px 18px 8px;
+  font-size: 0.875rem;
+  color: var(--accent);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sets {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.sets th {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 4px;
+  text-align: center;
+}
+.sets th:first-child,
+.sets td:first-child {
+  padding-left: 18px;
+  width: 58px;
+}
+.sets th:last-child,
+.sets td:last-child {
+  padding-right: 14px;
+  width: 56px;
+}
+.sets td {
+  text-align: center;
+  padding: 5px 4px;
+  height: 48px;
+}
+.sets tr.set {
+  transition: background 0.2s;
+}
+/* Glissement pour supprimer : touch-action est ignoré sur un <tr>, on le pose sur les cellules, qu'on translate aussi
+   (variable --swipe-x écrite par SetRow, sans re-rendu React). */
+.sets tr.set > td {
+  touch-action: pan-y;
+}
+.sets tr.set.swipe > td {
+  transform: translateX(var(--swipe-x, 0px));
+  transition: transform 0.18s ease-out;
+}
+.sets tr.set.swiping > td {
+  transition: none;
+}
+.sets tr.set.swipe-armed {
+  background: color-mix(in srgb, var(--fail) 25%, transparent);
+}
+.sets tr.set:nth-child(even) {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.sets tr.set.done {
+  background: var(--done-soft);
+}
+.type {
+  width: 34px;
+  height: 30px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.9375rem;
+}
+.type.W {
+  color: var(--warm);
+}
+.type.D {
+  color: var(--drop);
+}
+.type.X {
+  color: var(--fail);
+}
+.prev {
+  font-size: 0.875rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.prev:hover {
+  color: var(--text-2);
+}
+.val {
+  width: 64px;
+  height: 36px;
+  border-radius: 9px;
+  border: 0;
+  background: var(--surface-2);
+  text-align: center;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  outline: 0;
+}
+.val::placeholder {
+  color: var(--muted);
+  font-weight: 600;
+}
+.val:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.val.err {
+  box-shadow: 0 0 0 2px var(--fail);
+  animation: shake 0.3s;
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+tr.done .val {
+  background: transparent;
+}
+.check {
+  width: 38px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin: auto;
+}
+.check svg {
+  width: 20px;
+  height: 20px;
+}
+tr.done .check {
+  background: var(--done);
+  color: var(--white);
+}
+.type-wrap {
+  position: relative;
+  display: inline-block;
+}
+/* Record et objectif atteint : pastilles sur le numéro de série, sans changer la hauteur de la ligne (issue #29). */
+.pastille {
+  position: absolute;
+  right: -7px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.5625rem;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--bg);
+  pointer-events: none;
+}
+.pastille.pr {
+  top: -6px;
+  background: var(--gold);
+}
+.pastille.goal {
+  bottom: -6px;
+  background: var(--surface-2);
+}
+.sets.with-rpe .val {
+  width: 58px;
+}
+.sets.with-rpe th:nth-last-child(2),
+.sets.with-rpe td:nth-last-child(2) {
+  width: 44px;
+}
+.rpe-btn {
+  width: 38px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  margin: auto;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+.rpe-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.rpe-btn:disabled {
+  opacity: 0.35;
+}
+tr.done .rpe-btn {
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.rpe-btn.set {
+  color: var(--accent);
+}
+.sets tr.done .rpe-btn.set {
+  box-shadow: none;
+}
+/* Feuille de saisie du RPE */
+.rpe-sheet {
+  text-align: center;
+}
+.sheet.rpe-sheet h3 {
+  font-size: 1.0625rem;
+  margin-bottom: 2px;
+}
+.sheet.rpe-sheet p.rpe-sub {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.rpe-big {
+  margin-top: 14px;
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.rpe-label {
+  margin-top: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.rpe-rir {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.rpe-track {
+  display: flex;
+  margin-top: 18px;
+  padding: 3px;
+  border-radius: 24px;
+  background: var(--surface-2);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.rpe-track button {
+  flex: 1;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.rpe-track button.on {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+}
+.rpe-clear {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+/* Feuille de choix de la nature d'une série */
+.kind-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.kind-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+}
+.kind-opt.on {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.kind-opt .type {
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+}
+.kind-opt .type::after {
+  content: none;
+}
+.kind-txt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.kind-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.kind-hint {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.kind-opt svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+}
+.add-set {
+  margin: 8px 18px 10px;
+  width: calc(100% - 36px);
+}
+.rest-panel {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface-2);
+  border-radius: 20px;
+  padding: 14px 16px 16px;
+  z-index: 22;
+  box-shadow: var(--shadow-panel);
+  display: none;
+  border: 1px solid var(--line);
+}
+.rest-panel.show {
+  display: block;
+  animation: up 0.25s ease;
+}
+@keyframes up {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+}
+.rest-panel .lbl {
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}
+.rest-panel .time {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.rest-panel .bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  margin: 10px 0 14px;
+  overflow: hidden;
+}
+.rest-panel .bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s linear;
+}
+.rest-panel .ctrls {
+  display: flex;
+  gap: 8px;
+}
+.rest-panel .ctrls .btn {
+  flex: 1;
+}

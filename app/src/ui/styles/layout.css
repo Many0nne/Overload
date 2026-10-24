@@ -1,64 +1,42 @@
-/* Habillage plein écran de l'app (remplace le cadre téléphone de la maquette). */
-@supports (font: -apple-system-body) {
-  html {
-    /* biome-ignore lint/a11y/useGenericFontNames: police système iOS (Dynamic Type), sans famille générique possible */
-    font: -apple-system-body;
-  }
-}
-html,
-body,
-#root {
-  height: 100%;
-}
-html {
-  /* Pas de zoom au double-tap (taps rapides sur +/−) ; le pincement reste possible. */
-  touch-action: manipulation;
-}
-html,
-body {
-  /* Filet de sécurité : jamais de défilement horizontal de la page, même après un zoom. */
-  overflow-x: clip;
-}
-body {
-  background: var(--bg);
-  font-family: var(--font);
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
-}
-input,
-textarea,
-select {
-  font-size: 1rem;
-}
-:root {
-  /* En PWA iOS (barre d'état translucide), le système floute une bande plus haute que la zone sûre :
-     on ajoute une marge pour que les titres restent nets. */
-  --safe-top: calc(env(safe-area-inset-top) + 14px);
-  /* Pilule d'onglets flottante : posée dans la zone de l'indicateur d'accueil, comme les apps natives. */
-  --tabbar-h: 58px;
-  --tabbar-bottom: max(12px, calc(env(safe-area-inset-bottom) - 8px));
-}
+/* ---------- Habillage plein écran de l'app (remplace le cadre téléphone de la maquette) ---------- */
 .app {
   min-height: 100%;
   display: flex;
   flex-direction: column;
   padding-top: var(--safe-top);
 }
+.page {
+  flex: 1;
+  padding-bottom: calc(110px + env(safe-area-inset-bottom));
+}
+.page.no-tab {
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+.page.with-banner {
+  padding-bottom: calc(170px + env(safe-area-inset-bottom));
+}
+@media (min-width: 700px) {
+  .page,
+  .live-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+.center-page {
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* En-têtes collants façon iOS : ils remontent sous la barre d'état et floutent le contenu qui défile
    derrière eux (pas de bande opaque), avec un bord inférieur fondu. */
-.page > .head:first-child,
-.live-head {
+.page > .head:first-child {
   top: 0;
   margin-top: calc(-1 * var(--safe-top));
   background: transparent;
   isolation: isolate;
-}
-.page > .head:first-child {
   padding-top: calc(var(--safe-top) + 8px);
-}
-.live-head {
-  padding-top: var(--safe-top);
-  border-bottom: none;
 }
 .page > .head:first-child::before,
 .live-head::before {
@@ -75,6 +53,7 @@ select {
   );
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
+  /* Masque d'opacité (seul le canal alpha compte), pas une couleur affichée. */
   --fade: linear-gradient(
     to bottom,
     #000 calc(100% - 56px),
@@ -88,19 +67,8 @@ select {
   -webkit-mask-image: var(--fade);
   pointer-events: none;
 }
-.live-head .head {
-  background: transparent;
-}
-.page {
-  flex: 1;
-  padding-bottom: calc(110px + env(safe-area-inset-bottom));
-}
-.page.no-tab {
-  padding-bottom: calc(40px + env(safe-area-inset-bottom));
-}
-.page.with-banner {
-  padding-bottom: calc(170px + env(safe-area-inset-bottom));
-}
+
+/* ---------- Barre d'onglets ---------- */
 .tabbar {
   position: fixed;
   left: 50%;
@@ -114,7 +82,7 @@ select {
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid var(--line);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-bar);
   display: flex;
   z-index: 20;
 }
@@ -139,8 +107,10 @@ select {
   width: 24px;
   height: 24px;
 }
-/* Bandeau « Séance en cours » façon HEVY : carte compacte alignée sur la colonne du contenu
-   (marges de 18px, 640px max moins ces marges), au-dessus de la barre d'onglets. */
+
+/* ---------- Bandeau « Séance en cours » ---------- */
+/* Façon HEVY : carte compacte alignée sur la colonne du contenu (marges de 18px, 640px max moins ces marges),
+   au-dessus de la barre d'onglets. */
 .banner {
   position: fixed;
   left: 50%;
@@ -158,7 +128,7 @@ select {
   align-items: center;
   gap: 6px;
   z-index: 21;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-float);
 }
 .banner-main {
   flex: 1;
@@ -191,6 +161,18 @@ select {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.dot-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--white);
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
 .banner .dot-live {
   flex: none;
   background: var(--done);
@@ -212,59 +194,6 @@ select {
   width: 20px;
   height: 20px;
 }
-.scrim {
-  position: fixed;
-}
-.rest-panel {
-  position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-}
-.toast {
-  position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
-}
-.menu {
-  position: fixed;
-}
-a {
-  color: var(--accent);
-}
-.sync-pill {
-  font-size: 0.75rem;
-  color: var(--muted);
-  padding: 3px 8px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  white-space: nowrap;
-}
-.sync-pill.off {
-  color: var(--warm);
-}
-.center-page {
-  max-width: 480px;
-  margin: 0 auto;
-  width: 100%;
-}
-.error-text {
-  color: var(--fail);
-  font-size: 0.875rem;
-  margin-top: 8px;
-}
-.empty {
-  text-align: center;
-  color: var(--muted);
-  padding: 40px 18px;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-@media (min-width: 700px) {
-  .page,
-  .live-wrap {
-    max-width: 640px;
-    margin: 0 auto;
-    width: 100%;
-  }
-}
 
 /* Pastilles d'alerte empilées en haut à droite (reconnexion, horloge décalée). */
 .top-notices {
@@ -277,32 +206,22 @@ a {
   align-items: flex-end;
   gap: 6px;
 }
-
-/* Zones tactiles d'au moins 44 × 44 px (§F9) sans changer le rendu : un pseudo-élément transparent, centré sur
-   le bouton, agrandit la cible des petites commandes (validation de série, boutons icônes, segments…). */
-.icon-btn,
-.check,
-.btn-sm,
-.seg button,
-.type,
-.prev,
-.rest-link {
-  position: relative;
+/* Invitation à recharger après une mise à jour du service worker. */
+.update-prompt {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  top: calc(10px + env(safe-area-inset-top));
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-float);
+  border: 1px solid var(--line);
 }
-.icon-btn::after,
-.check::after,
-.btn-sm::after,
-.seg button::after,
-.type::after,
-.prev::after,
-.rest-link::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100%, 44px);
-  height: max(100%, 44px);
-  transform: translate(-50%, -50%);
+.update-prompt span {
+  flex: 1;
+  font-size: 0.9375rem;
 }
 
 /* Écran de secours d'une erreur de rendu (issue #64), à la place d'un écran blanc. */
@@ -333,15 +252,4 @@ a {
   flex-direction: column;
   gap: 10px;
   margin-top: 12px;
-}
-/* Feuille modale : elle reçoit le focus à l'ouverture (lecteur d'écran), sans contour visible. */
-.sheet:focus {
-  outline: none;
-}
-/* Ligne d'historique cliquable (mesures) : un vrai bouton, à la mise en page de la ligne. */
-.rec-row {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  text-align: left;
 }

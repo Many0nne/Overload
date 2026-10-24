@@ -32,8 +32,8 @@ export function ExerciseForm(props: {
     setSecondary((s) => (s.includes(m) ? s.filter((x) => x !== m) : [...s, m]));
 
   return (
-    <div className="section" style={{ marginTop: 0 }}>
-      <label className="field" style={{ marginTop: 0 }}>
+    <div className="section mt-0">
+      <label className="field mt-0">
         <span>Nom</span>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="ex. Hip thrust (barre)" />
       </label>
@@ -78,7 +78,6 @@ export function ExerciseForm(props: {
             <button
               key={t}
               disabled={props.typeLocked && t !== type}
-              style={props.typeLocked && t !== type ? { opacity: 0.4 } : undefined}
               className={`chip${type === t ? ' on' : ''}`}
               onClick={() => !props.typeLocked && setType(t)}
             >
@@ -93,8 +92,7 @@ export function ExerciseForm(props: {
       </label>
       {error && <p className="error-text">{error}</p>}
       <button
-        className="btn btn-primary btn-block"
-        style={{ marginTop: 18, height: 52 }}
+        className="btn btn-primary btn-block mt-18 btn-lg"
         onClick={() => {
           if (!name.trim()) return setError('Donne un nom à l’exercice.');
           void props.onSubmit({

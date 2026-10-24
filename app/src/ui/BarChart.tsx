@@ -22,7 +22,7 @@ export function BarChart(props: {
   const hv = hover !== null ? props.values[hover] : undefined;
 
   return (
-    <div className="chart-wrap" style={{ marginTop: 8 }}>
+    <div className="chart-wrap mt-8">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"

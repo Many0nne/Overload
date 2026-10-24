@@ -1,0 +1,104 @@
+/* ---------- Profil / stats / paramètres ---------- */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 18px 4px;
+}
+.profile .avatar {
+  width: 68px;
+  height: 68px;
+  font-size: 1.625rem;
+}
+.profile h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  text-align: center;
+}
+.cal .h {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+.cal .c {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+.cal .c.on {
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.cal .c.today {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.cal .c.fut {
+  color: var(--muted);
+  opacity: 0.5;
+}
+.hbar {
+  display: grid;
+  grid-template-columns: 86px 1fr 38px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  padding: 5px 0;
+}
+.hbar .track {
+  height: 10px;
+}
+.hbar .fill {
+  height: 10px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+.hbar .n {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hero.compact {
+  font-size: 1.5rem;
+}
+
+/* ---------- Paramètres ---------- */
+.log-card {
+  font-size: 0.8125rem;
+  word-break: break-word;
+}
+/* Connecteur Claude : étapes, clients autorisés, journal des modifications. */
+.claude-steps {
+  margin: 0 16px 0 34px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.client-card {
+  margin: 0 16px 10px;
+  padding: 14px;
+}
+.client-card .set-row {
+  padding: 10px 0 0;
+}
+ul.event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.event-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}

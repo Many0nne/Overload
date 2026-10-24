@@ -131,21 +131,18 @@ export default function ClaudePage() {
   return (
     <>
       <SubHead title="Claude" />
-      <div className="section" style={{ marginTop: 4 }}>
+      <div className="section mt-4">
         <div className="section-title">Connecteur</div>
-        <p className="t2" style={{ padding: '0 16px 10px', fontSize: '.875rem', lineHeight: 1.5 }}>
+        <p className="t2 px-16 pb-10 fs-14 lh-15">
           Branche ton propre Claude sur Overload pour l'interroger sur tes séances ou lui faire créer des
           routines. Les données lues par Claude sont transmises à Anthropic, dans le cadre de ton compte
           Claude.
         </p>
-        <div className="set-row" style={{ gap: 12 }}>
-          <code data-testid="connector-url" style={{ fontSize: '.8125rem', wordBreak: 'break-all' }}>
+        <div className="set-row">
+          <code data-testid="connector-url" className="fs-13 break-all">
             {url}
           </code>
-          <button
-            style={{ color: 'var(--accent)', flexShrink: 0 }}
-            onClick={() => void copy(url, 'URL copiée')}
-          >
+          <button className="c-accent shrink-0" onClick={() => void copy(url, 'URL copiée')}>
             Copier
           </button>
         </div>
@@ -153,7 +150,7 @@ export default function ClaudePage() {
 
       <div className="section">
         <div className="section-title">Mode d'emploi</div>
-        <ol className="t2" style={{ margin: '0 16px 0 34px', fontSize: '.875rem', lineHeight: 1.6 }}>
+        <ol className="t2 claude-steps">
           <li>
             claude.ai, Claude Desktop ou mobile :{' '}
             <b>Paramètres › Connecteurs › Ajouter un connecteur personnalisé</b>, puis colle l'URL.
@@ -161,7 +158,7 @@ export default function ClaudePage() {
           <li>
             Claude Code :{' '}
             <button
-              style={{ color: 'var(--accent)', textAlign: 'left' }}
+              className="c-accent ta-left"
               onClick={() => void copy(`claude mcp add --transport http overload ${url}`, 'Commande copiée')}
             >
               <code>claude mcp add --transport http overload {url}</code>
@@ -173,37 +170,25 @@ export default function ClaudePage() {
 
       <div className="section">
         <div className="section-title">Connexions</div>
-        {!online && (
-          <p className="t2" style={{ padding: '0 16px 12px' }}>
-            Disponible en ligne uniquement.
-          </p>
-        )}
-        {online && connections === null && (
-          <p className="t2" style={{ padding: '0 16px 12px' }}>
-            Chargement…
-          </p>
-        )}
-        {online && connections?.length === 0 && (
-          <p className="t2" style={{ padding: '0 16px 12px' }}>
-            Aucune connexion active.
-          </p>
-        )}
+        {!online && <p className="t2 px-16 pb-12">Disponible en ligne uniquement.</p>}
+        {online && connections === null && <p className="t2 px-16 pb-12">Chargement…</p>}
+        {online && connections?.length === 0 && <p className="t2 px-16 pb-12">Aucune connexion active.</p>}
         {online &&
           connections?.map((c) => (
-            <div key={c.client_id} className="card" style={{ margin: '0 16px 10px', padding: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div key={c.client_id} className="card client-card">
+              <div className="flex justify-between items-baseline">
                 <b>{c.client_name || 'Client OAuth'}</b>
-                <button style={{ color: 'var(--fail)' }} onClick={() => setToRevoke(c)}>
+                <button className="c-fail" onClick={() => setToRevoke(c)}>
                   Déconnecter
                 </button>
               </div>
-              <p className="t2" style={{ fontSize: '.8125rem', marginTop: 4 }}>
+              <p className="t2 fs-13 mt-4">
                 Connecté le {dateTime.format(new Date(c.created_at))}
                 {c.last_used_at
                   ? ` · utilisé le ${dateTime.format(new Date(c.last_used_at))}`
                   : ' · jamais utilisé'}
               </p>
-              <div className="set-row" style={{ padding: '10px 0 0' }}>
+              <div className="set-row">
                 Modifications autorisées
                 <Switch
                   on={c.can_write}
@@ -214,7 +199,7 @@ export default function ClaudePage() {
             </div>
           ))}
         {online && (
-          <button className="set-row" style={{ width: '100%' }} onClick={() => void openAudit()}>
+          <button className="set-row" onClick={() => void openAudit()}>
             Voir les modifications de Claude<span className="t2">›</span>
           </button>
         )}
@@ -224,21 +209,17 @@ export default function ClaudePage() {
         {audit === null && <p className="t2">Chargement…</p>}
         {audit?.length === 0 && <p className="t2">Aucune modification pour le moment.</p>}
         {audit && audit.length > 0 && (
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: '60vh', overflowY: 'auto' }}>
+          <ul className="event-list">
             {audit.map((e) => (
-              <li key={e.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
+              <li key={e.id}>
                 <b>{TOOL_LABELS[e.tool] ?? e.tool}</b>
                 {auditTarget(e) && <span> · {auditTarget(e)}</span>}
-                <div className="t2" style={{ fontSize: '.8125rem' }}>
-                  {dateTime.format(new Date(e.at))}
-                </div>
+                <div className="t2 fs-13">{dateTime.format(new Date(e.at))}</div>
               </li>
             ))}
           </ul>
         )}
-        <p className="t2" style={{ marginTop: 10, fontSize: '.8125rem' }}>
-          Les 30 dernières, conservées 90 jours.
-        </p>
+        <p className="t2 fine mt-10">Les 30 dernières, conservées 90 jours.</p>
       </Sheet>
 
       <Sheet
