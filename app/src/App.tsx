@@ -2,15 +2,16 @@ import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { initAuth } from '@/data/auth';
 import { deviceIdSync } from '@/data/device';
-import { useInProgressWorkouts, useSettings } from '@/data/queries';
+import { useExercise, useInProgressWorkouts, useSettings } from '@/data/queries';
 import { useSession } from '@/data/session';
 import { useStorageUsage } from '@/data/storageUsage';
 import { useSyncStatus } from '@/data/sync/status';
 import { formatClockSkew, isClockSkewed } from '@/domain/clock';
+import { currentExerciseId } from '@/domain/current';
 import { formatClock } from '@/domain/format';
 import { isStorageNearQuota } from '@/domain/quota';
 import { Sheet, ToastHost } from '@/ui/components';
-import { DumbbellIcon, HomeIcon, UserIcon } from '@/ui/icons';
+import { DumbbellIcon, HomeIcon, TrashIcon, UserIcon } from '@/ui/icons';
 import { isIos, isStandalone } from '@/ui/platform';
 import { UpdatePrompt } from '@/ui/UpdatePrompt';
 import { useNow } from '@/ui/useNow';
@@ -63,14 +64,53 @@ function WorkoutBanner() {
   const mine = workouts?.find((w) => w.owner_device_id === deviceIdSync());
   const other = workouts?.find((w) => w.owner_device_id !== deviceIdSync());
   const w = mine ?? other;
+  const exercise = useExercise(w ? currentExerciseId(w.doc) : undefined);
+  const [confirm, setConfirm] = useState(false);
   if (!w) return null;
+
+  // Cette méthode permet d'abandonner la séance de cet appareil depuis le bandeau, sans rien conserver.
+  // Minuteur et écriture sont chargés à la demande pour rester hors du JS initial (budget §15).
+  const discard = async () => {
+    setConfirm(false);
+    const { useRestTimer } = await import('@/features/workout-live/restTimer');
+    await useRestTimer.getState().skip();
+    const { deleteWorkout } = await import('@/data/repositories');
+    await deleteWorkout(w.id);
+  };
+
   return (
-    <button className={`banner${mine ? '' : ' other'}`} onClick={() => navigate(`/workout/${w.id}`)}>
-      <span className="dot-live" style={mine ? undefined : { background: 'var(--accent)' }} />
-      {mine ? 'Séance en cours' : 'Séance en cours sur un autre appareil'} ·{' '}
-      <b>{formatClock(Math.max(0, now - w.started_at) / 1000)}</b>
-      <span className="go">{mine ? 'Reprendre' : 'Voir'}</span>
-    </button>
+    <>
+      <div className={`banner${mine ? '' : ' other'}`}>
+        <button className="banner-main" onClick={() => navigate(`/workout/${w.id}`)}>
+          <span className="banner-title">
+            <span className="dot-live" />
+            {mine ? 'Séance en cours' : 'Séance en cours sur un autre appareil'}
+            <b>{formatClock(Math.max(0, now - w.started_at) / 1000)}</b>
+          </span>
+          <span className="banner-sub">{exercise?.name ?? 'Aucun exercice'}</span>
+        </button>
+        {mine && (
+          <button
+            className="banner-discard"
+            aria-label="Abandonner la séance"
+            onClick={() => setConfirm(true)}
+          >
+            <TrashIcon />
+          </button>
+        )}
+      </div>
+      <Sheet
+        open={confirm}
+        title="Abandonner la séance ?"
+        onClose={() => setConfirm(false)}
+        actions={[
+          { label: 'Abandonner', kind: 'danger', onClick: () => void discard() },
+          { label: 'Continuer la séance', onClick: () => setConfirm(false) },
+        ]}
+      >
+        <p>Rien ne sera conservé.</p>
+      </Sheet>
+    </>
   );
 }
 

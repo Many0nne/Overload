@@ -139,28 +139,78 @@ select {
   width: 24px;
   height: 24px;
 }
+/* Bandeau « Séance en cours » façon HEVY : carte compacte alignée sur la colonne du contenu
+   (marges de 18px, 640px max moins ces marges), au-dessus de la barre d'onglets. */
 .banner {
   position: fixed;
-  left: 10px;
-  right: 10px;
-  bottom: calc(var(--tabbar-bottom) + var(--tabbar-h) + 10px);
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-radius: 14px;
-  padding: 11px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 21;
-  font-size: 0.875rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  width: auto;
-  text-align: left;
-}
-.banner.other {
-  background: var(--surface-2);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(604px, calc(100% - 36px));
+  bottom: calc(var(--tabbar-bottom) + var(--tabbar-h) + 8px);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   color: var(--text);
   border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 21;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.banner-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+  text-align: left;
+  color: inherit;
+}
+.banner-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.banner-title b {
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.banner-sub {
+  padding-left: 16px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.banner .dot-live {
+  flex: none;
+  background: var(--done);
+}
+.banner.other .dot-live {
+  background: var(--accent);
+}
+.banner-discard {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--fail);
+}
+.banner-discard svg {
+  width: 20px;
+  height: 20px;
 }
 .scrim {
   position: fixed;
