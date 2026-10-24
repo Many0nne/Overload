@@ -9,12 +9,14 @@ import { useSyncStatus } from './status';
 const DEBOUNCE_MS = 2000;
 const PULL_INTERVAL_MS = 30_000;
 const CLOCK_CHECK_INTERVAL_MS = 10 * 60_000;
+const PHOTO_PURGE_INTERVAL_MS = 10 * 60_000;
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let running: Promise<void> | null = null;
 let again = false;
 let started = false;
 let lastClockCheckAt = 0;
+let lastPhotoPurgeAt = 0;
 
 // Cette méthode permet de lancer un cycle push puis pull, sans jamais en exécuter deux en même temps.
 export function syncNow(): Promise<void> {
@@ -53,6 +55,7 @@ async function runOnce(): Promise<void> {
     status.set({ lastCallFailed: false, lastSyncAt: Date.now() });
     void checkClockSkew();
     void refreshStorageUsage();
+    void purgePhotos();
   } catch (e) {
     status.set({ lastCallFailed: true });
     if (e instanceof SyncAuthError) {
@@ -76,6 +79,18 @@ async function checkClockSkew(): Promise<void> {
   const serverMs = Number(data);
   if (error || !Number.isFinite(serverMs)) return;
   useSyncStatus.getState().set({ clockSkewMs: estimateClockSkew(t0, t1, serverMs) });
+}
+
+// Cette méthode permet de libérer l'espace local des photos après une synchro réussie, au plus toutes les 10 min (#61).
+// Chargé à la demande pour rester hors du JS initial (budget §15).
+async function purgePhotos(): Promise<void> {
+  if (Date.now() - lastPhotoPurgeAt < PHOTO_PURGE_INTERVAL_MS) return;
+  lastPhotoPurgeAt = Date.now();
+  try {
+    await (await import('../photos')).purgeLocalPhotos();
+  } catch (e) {
+    void logError('photos', e);
+  }
 }
 
 // Cette méthode permet de déclencher un push 2 s après la dernière écriture locale (anti-rebond).

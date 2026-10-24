@@ -417,6 +417,10 @@ enabled = true
 verify_jwt = false
 
 # Inscription sans session (le code d'invitation fait office d'autorisation).
+# Appelée chaque nuit par pg_net (dispatch_photo_purge) avec l'en-tête x-push-secret, sans JWT (#61).
+[functions.purge-photos]
+verify_jwt = false
+
 [functions.signup-with-invite]
 verify_jwt = false
 

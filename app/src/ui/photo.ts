@@ -6,6 +6,17 @@ export function photoPath(userId: string, workoutId: string, id: string = uuidv7
   return `${userId}/${workoutId}-${id}.jpg`;
 }
 
+const PHOTO_PATH =
+  /^[^/]+\/([0-9a-f-]{36})-([0-9a-f]{8})-([0-9a-f]{4})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/i;
+
+// Cette méthode permet de retrouver la séance et l'heure de création d'une photo à partir de son chemin (#61).
+// L'heure vient des 48 premiers bits de l'UUID v7 du chemin ; undefined si le chemin n'a pas cette forme.
+export function parsePhotoPath(path: string): { workoutId: string; createdAt: number } | undefined {
+  const m = PHOTO_PATH.exec(path);
+  if (!m) return undefined;
+  return { workoutId: m[1]!, createdAt: Number.parseInt(m[2]! + m[3]!, 16) };
+}
+
 // Cette méthode permet de compresser une photo avant stockage : côté long limité, JPEG 0,8, métadonnées EXIF supprimées (§12).
 // Redessiner l'image sur un canevas retire l'EXIF ; createImageBitmap applique l'orientation de l'appareil photo.
 export async function compressImage(file: Blob, maxSide = 1600, quality = 0.8): Promise<Blob> {

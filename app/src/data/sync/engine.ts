@@ -3,6 +3,7 @@ import type { SyncTable, WorkoutRow } from '@/domain/types';
 import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
 import { logError } from '../errors';
+import { photosToUpload } from '../photos';
 import { photosBucket, supabase } from '../supabase';
 import { recordRejects, type SyncReject } from './rejects';
 
@@ -33,8 +34,9 @@ function check<T>(res: { data: T; error: { message: string; code?: string } | nu
 }
 
 // Cette méthode permet d'envoyer les photos en attente vers Storage avant le push des documents qui les référencent (§12).
+// Seules les photos encore référencées par leur séance partent : pas d'orphelin créé dans Storage (#61).
 async function uploadPendingBlobs(): Promise<void> {
-  const pending = await db.blobs.filter((b) => !b.uploaded).toArray();
+  const pending = await photosToUpload();
   for (const b of pending) {
     const { error } = await (await photosBucket()).upload(b.path, b.blob, {
       upsert: true,
