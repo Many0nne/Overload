@@ -41,4 +41,4 @@ Script idempotent, à relancer au début de chaque tâche (PowerShell, depuis la
 - Lancer les commandes `npx supabase …`, `npm run test:sync` et `npm run e2e` depuis le worktree concerné : elles visent alors sa stack.
 - Ne pas lire ni recopier le `.env` d'un worktree (ni `supabase/functions/.env`, copié du principal).
 - Nettoyage auto (registre `worktrees/.owners.json`) : `scripts/overload-worktree-cleanup.ps1` arrête la stack quand les threads T3
-  du worktree sont settled, supprime le worktree quand ils sont archivés ; tâche planifiée : `scripts/install-cleanup-task.ps1`.
+  du worktree sont settled, supprime le worktree quand ils sont archivés, ou settled avec la PR de la branche mergée ; tâche planifiée : `scripts/install-cleanup-task.ps1`.

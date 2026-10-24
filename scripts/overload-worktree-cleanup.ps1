@@ -3,12 +3,13 @@
   Libere les ressources des worktrees Overload dont le travail est termine cote T3, en deux paliers :
   - tous les threads settled (ou settled + archives) : arret de la stack (Vite + Supabase, donnees conservees) (reversible, relancer
     overload-worktree.ps1 <branche> pour reprendre) ;
-  - tous les threads archives ou supprimes : suppression (overload-worktree.ps1 -Remove).
+  - tous les threads archives ou supprimes, ou bien threads termines (settled) et PR de la branche mergee sans PR encore
+    ouverte : suppression (overload-worktree.ps1 -Remove, branche conservee).
   Un thread settled qui recoit un nouveau message redevient actif : rien n'est touche. Une session inscrite
   pas encore rattachee a un thread (premier tour en cours) et active depuis moins de 30 min bloque aussi l'entree.
   Le lien worktree -> threads vient du registre worktrees\.owners.json, rempli par overload-worktree.ps1.
   Garde-fous de suppression : rien n'est supprime s'il reste des modifications non commitees, ou des commits
-  absents d'origin (sauf PR mergee, cas du squash-merge avec branche distante supprimee).
+  absents d'origin (sauf ceux contenus dans une PR mergee, cas du squash-merge avec branche distante supprimee).
   Lance toutes les 10 minutes par la tache planifiee "Overload worktree cleanup" (install-cleanup-task.ps1) ;
   journal dans worktrees\.cleanup.log.
 
@@ -42,9 +43,18 @@ function Test-RecentSession([string]$SessionId) {
     Where-Object { $_.LastWriteTime -gt $limit })
 }
 
+# Cette methode permet de lister les PR d'une branche (etat, commit de tete) lorsqu'il faut savoir si son travail est merge ;
+# depot du compte Many0nne (le compte gh actif par defaut est un autre).
+function Get-BranchPrs([string]$Branch) {
+  $env:GH_TOKEN = gh auth token --user Many0nne 2>$null
+  $json = gh pr list --repo Many0nne/Overload --head $Branch --state all --json number,state,headRefOid 2>$null
+  if ($LASTEXITCODE -ne 0 -or -not $json) { return @() }
+  @($json | ConvertFrom-Json)
+}
+
 # Cette methode permet de dire pourquoi un worktree ne peut pas etre supprime sans perte lorsqu'il a du travail non pousse ;
-# renvoie $null s'il est sur.
-function Get-UnsafeReason([string]$Dir, [string]$Branch) {
+# renvoie $null s'il est sur. Les commits deja contenus dans une PR mergee (squash-merge, branche distante supprimee) sont surs.
+function Get-UnsafeReason([string]$Dir, [string]$Branch, $Prs) {
   if (@(git -C $Dir status --porcelain).Count -gt 0) { return 'modifications non commitees' }
   $local = @(git -C $Dir rev-list HEAD --not --remotes)
   # Branche rebasee et force-pushee : les anciennes versions des commits ont un equivalent (meme patch) sur origin.
@@ -52,13 +62,15 @@ function Get-UnsafeReason([string]$Dir, [string]$Branch) {
     $alreadyPushed = @(git -C $Dir cherry "origin/$Branch" HEAD | Where-Object { $_ -like '- *' } | ForEach-Object { $_.Substring(2) })
     $local = @($local | Where-Object { $_ -notin $alreadyPushed })
   }
-  $unpushed = $local.Count
-  if ($unpushed -eq 0) { return $null }
-  # Depot du compte Many0nne (le compte gh actif par defaut est un autre).
-  $env:GH_TOKEN = gh auth token --user Many0nne 2>$null
-  $merged = gh pr list --repo Many0nne/Overload --head $Branch --state merged --json number --jq 'length' 2>$null
-  if ([int]$merged -gt 0) { return $null }
-  return "$unpushed commit(s) absents d'origin"
+  foreach ($pr in @($Prs | Where-Object { $_.state -eq 'MERGED' })) {
+    if (-not $local) { break }
+    git -C $Dir cat-file -e "$($pr.headRefOid)^{commit}" 2>$null
+    if ($LASTEXITCODE -ne 0) { continue }
+    $inPr = @(git -C $Dir rev-list $pr.headRefOid)
+    $local = @($local | Where-Object { $_ -notin $inPr })
+  }
+  if ($local.Count -eq 0) { return $null }
+  return "$($local.Count) commit(s) absents d'origin"
 }
 
 if (-not (Test-Path $ownersFile)) { return }
@@ -86,8 +98,12 @@ try {
     $states = python -I $helper status @threads | ConvertFrom-Json
     if (@($threads | Where-Object { $states.$_ -eq 'active' })) { continue }
 
-    # Palier 1 : au moins un thread settled (pas encore archive) -> arret de la stack seulement.
-    if (@($threads | Where-Object { $states.$_ -eq 'settled' })) {
+    # Travail livre : PR mergee et aucune PR encore ouverte sur la branche -> suppression sans attendre l'archivage.
+    $prs = Get-BranchPrs $branch
+    $delivered = @($prs | Where-Object { $_.state -eq 'MERGED' }) -and -not @($prs | Where-Object { $_.state -eq 'OPEN' })
+
+    # Palier 1 : au moins un thread settled (pas encore archive), travail non livre -> arret de la stack seulement.
+    if (-not $delivered -and @($threads | Where-Object { $states.$_ -eq 'settled' })) {
       $project = Split-Path -Leaf $dir
       $supabaseUp = [bool](docker ps --filter "name=^supabase_db_$project$" --format '{{.Names}}' 2>$null)
       if (-not ((Test-Path (Join-Path $dir '.dev.pid')) -or $supabaseUp)) { continue }
@@ -97,14 +113,16 @@ try {
       continue
     }
 
-    if (Test-Path $dir) {
-      $reason = Get-UnsafeReason $dir $branch
+    # Dossier sans .git : reliquat vide d'un -Remove interrompu, git status y lirait le checkout principal.
+    if (Test-Path (Join-Path $dir '.git')) {
+      $reason = Get-UnsafeReason $dir $branch $prs
       if ($reason) { Write-Log "GARDE $branch (threads termines) : $reason" -Once; continue }
     }
-    if ($DryRun) { Write-Host "A SUPPRIMER $branch : overload-worktree.ps1 $branch -Remove"; continue }
+    $why = if ($delivered) { 'PR mergee, threads termines' } else { "threads archives/supprimes : $($threads.Count)" }
+    if ($DryRun) { Write-Host "A SUPPRIMER $branch ($why) : overload-worktree.ps1 $branch -Remove"; continue }
     try {
       & $worktreeScript $branch -Remove *>&1 | Out-Null
-      Write-Log "SUPPRIME $branch (threads archives/supprimes : $($threads.Count))"
+      Write-Log "SUPPRIME $branch ($why)"
     } catch {
       Write-Log "ECHEC $branch : $($_.Exception.Message)" -Once
     }
