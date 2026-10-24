@@ -490,7 +490,7 @@ Thème et tokens : variables CSS reprises de la maquette (`--bg`, `--surface`, `
 ## 12. Photos
 
 - Compression côté client avant stockage : côté long 1600 px max, JPEG qualité 0,8 (≈ 200-300 Ko), via `createImageBitmap` + `OffscreenCanvas` ; données EXIF supprimées.
-- Hors ligne : le blob est mis dans `blobs` et le document référence déjà `photoPath = <user_id>/<workout_id>.jpg`. L'envoi vers Storage se fait avant le push du document.
+- Hors ligne : le blob est mis dans `blobs` et le document référence déjà `photoPath = <user_id>/<workout_id>-<uuidv7>.jpg` (chemin neuf à chaque photo choisie : le cache par chemin reste valide quand on la remplace). L'envoi vers Storage se fait avant le push du document.
 - Affichage : URL signée (1 h) mise en cache par chemin dans le SW.
 - Avatars : même circuit, 512 px.
 - Budget : 1 Go ≈ 4 000 photos ; un compteur de stockage est visible par l'admin dans le tableau de bord Supabase.
