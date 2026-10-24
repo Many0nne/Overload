@@ -1,5 +1,6 @@
 // Envoi Web Push (VAPID) de la notification de fin de repos à un appareil (spec technique §8.2).
 // Appelée par dispatch_due_timers() via pg_net, authentifiée par l'en-tête x-push-secret.
+// Seul l'abonnement du compte qui a planifié le minuteur est visé (#63).
 import * as webpush from 'jsr:@negrel/webpush@0.5.0';
 import { json, serviceClient } from '../_shared/http.ts';
 
@@ -41,19 +42,20 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get('PUSH_SECRET');
   if (!secret || req.headers.get('x-push-secret') !== secret) return json({ error: 'forbidden' }, 403);
 
-  let body: { device_id?: string; title?: string; body?: string };
+  let body: { device_id?: string; user_id?: string; title?: string; body?: string };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'invalid_input' }, 400);
   }
-  if (!body.device_id) return json({ error: 'invalid_input' }, 400);
+  if (!body.device_id || !body.user_id) return json({ error: 'invalid_input' }, 400);
 
   const admin = serviceClient();
   const { data: sub, error } = await admin
     .from('push_subscriptions')
     .select('endpoint, p256dh, auth')
     .eq('device_id', body.device_id)
+    .eq('user_id', body.user_id)
     .maybeSingle();
   if (error) return json({ error: 'server_error' }, 500);
   if (!sub) return json({ sent: false, reason: 'no_subscription' });
@@ -76,7 +78,7 @@ Deno.serve(async (req) => {
     if (err instanceof webpush.PushMessageError) {
       const status = err.response.status;
       if (status === 404 || status === 410) {
-        await admin.from('push_subscriptions').delete().eq('device_id', body.device_id);
+        await admin.from('push_subscriptions').delete().eq('device_id', body.device_id).eq('user_id', body.user_id);
         return json({ sent: false, reason: 'gone' });
       }
       return json({ sent: false, reason: `push_${status}` }, 502);

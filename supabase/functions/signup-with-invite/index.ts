@@ -8,10 +8,13 @@ function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]/g, '');
 }
 
-// Cette méthode permet de lire l'IP de l'appelant lorsqu'on applique la limite de tentatives.
+// Cette méthode permet de lire l'IP de l'appelant lorsqu'on applique la limite de tentatives, sans croire le client :
+// l'IP posée par Cloudflare devant Supabase, sinon le dernier élément de X-Forwarded-For (ajouté par le proxy).
 function clientIp(req: Request): string {
-  const fwd = req.headers.get('x-forwarded-for');
-  return (fwd?.split(',')[0] ?? req.headers.get('x-real-ip') ?? 'unknown').trim();
+  const cf = req.headers.get('cf-connecting-ip')?.trim();
+  if (cf) return cf;
+  const last = req.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim();
+  return last || 'unknown';
 }
 
 Deno.serve(async (req) => {

@@ -5,7 +5,7 @@ import { db } from '@/data/db';
 import { deviceIdSync } from '@/data/device';
 import { useCompletedWorkouts, useExerciseMap, useSettings, useWorkout } from '@/data/queries';
 import { deleteWorkout, updateWorkout } from '@/data/repositories';
-import { takeOverWorkout } from '@/data/sync/engine';
+import { AppOutdatedError, takeOverWorkout } from '@/data/sync/engine';
 import { formatClock, formatKg } from '@/domain/format';
 import type { SetField } from '@/domain/measurement';
 import { plateSetFor } from '@/domain/plates';
@@ -436,8 +436,8 @@ export default function LiveWorkoutPage() {
                 await takeOverWorkout(row.id);
                 docRef.current = null;
                 toast('Séance reprise sur cet appareil');
-              } catch {
-                toast('Impossible hors ligne');
+              } catch (e) {
+                toast(e instanceof AppOutdatedError ? e.message : 'Impossible hors ligne');
               }
             },
           },
