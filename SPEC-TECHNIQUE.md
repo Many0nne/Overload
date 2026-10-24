@@ -167,8 +167,8 @@ exercise_prefs(
 )
 
 -- Non synchronisées (gérées par RPC/Edge Functions)
-push_subscriptions(id, user_id, device_id uuid unique, endpoint text, p256dh text, auth text, created_at)
-rest_timers(device_id uuid pk, user_id, ends_at timestamptz, title text, body text, sent_at timestamptz null)
+push_subscriptions(id, user_id, device_id uuid, endpoint text, p256dh text, auth text, created_at, unique (device_id, user_id))
+rest_timers(device_id uuid, user_id, ends_at timestamptz, title text, body text, sent_at timestamptz null, pk (device_id, user_id))
 ```
 
 Index : `(user_id, rev)` sur chaque table synchronisée ; `workouts(user_id, started_at desc)` ; GIN sur `workouts.exercise_ids` ; `rest_timers(ends_at) where sent_at is null`.
@@ -323,8 +323,8 @@ Le JWT Supabase expire au bout d'1 h. Hors ligne, l'app continue de fonctionner 
 Le lien de réinitialisation s'ouvre dans Safari, pas dans la PWA. La page `/reset` (web) permet de choisir un nouveau mot de passe, puis invite à revenir dans l'app installée pour se connecter.
 
 ### 7.3 Row Level Security
-- Tables synchronisées : `select/insert/update` autorisés si `user_id = auth.uid()`. Pas de `delete` (suppression logique), sauf via `delete-account`.
-- `exercises` : lecture si `user_id is null or user_id = auth.uid()`. Écriture du catalogue (`user_id is null`) si le profil appelant a `is_admin`. L'admin n'a **aucune** politique de contournement sur les autres tables.
+- Tables synchronisées : `select` autorisé si `user_id = auth.uid()`. Aucune écriture directe : `insert/update` passent par la RPC `sync_push` (dernier gagne, propriété de la séance en cours). Pas de `delete` (suppression logique), sauf via `delete-account`.
+- `exercises` : lecture si `user_id is null or user_id = auth.uid()`. Écriture du catalogue (`user_id is null`, via `sync_push`) si le profil appelant a `is_admin`. L'admin n'a **aucune** politique de contournement sur les autres tables.
 - `profiles.is_admin` et `invite_code` : `revoke update` au niveau colonne pour le rôle `authenticated`.
 - Storage, bucket privé `photos` : chemin `<user_id>/<objet>`, politique `(storage.foldername(name))[1] = auth.uid()::text`.
 - La clé `service_role` n'existe que dans les secrets des Edge Functions.

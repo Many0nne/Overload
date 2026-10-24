@@ -1,7 +1,7 @@
 -- Isolation entre comptes (admin compris), colonnes protégées du profil, catalogue réservé à l'admin.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(28);
 
 select tests.create_user('aaaaaaaa-0000-0000-0000-000000000001', 'a@test.local');
 select tests.create_user('bbbbbbbb-0000-0000-0000-000000000002', 'b@test.local');
@@ -32,13 +32,19 @@ select is((select count(*)::int from public.exercises
 select throws_ok($$insert into public.folders (id, user_id, name, client_updated_at, client_device_id)
   values (gen_random_uuid(), 'bbbbbbbb-0000-0000-0000-000000000002', 'pirate', 1, gen_random_uuid())$$,
   '42501', null, 'A ne peut pas écrire pour B');
-update public.folders set name = 'pirate' where id = 'bbbbbbbb-2222-0000-0000-000000000001';
+select throws_ok($$insert into public.folders (id, user_id, name, client_updated_at, client_device_id)
+  values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001', 'direct', 1, gen_random_uuid())$$,
+  '42501', null, 'pas d''insertion directe, même pour soi (sync_push seulement)');
+select throws_ok($$update public.folders set name = 'direct' where id = 'aaaaaaaa-2222-0000-0000-000000000001'$$,
+  '42501', null, 'pas de modification directe (sync_push seulement)');
+select throws_ok($$update public.workouts set status = 'completed'$$, '42501', null, 'séances en lecture seule en direct');
 select throws_ok($$update public.profiles set is_admin = true$$, '42501', null, 'is_admin non modifiable');
 select throws_ok($$update public.profiles set invite_code = 'AAAAAAAAAAAA'$$, '42501', null, 'invite_code non modifiable');
-select lives_ok($$update public.profiles set display_name = 'Paul'$$, 'display_name modifiable');
+select throws_ok($$update public.profiles set display_name = 'Paul'$$, '42501', null, 'profil en lecture seule en direct');
 select throws_ok($$insert into public.exercises (id, user_id, name, equipment, primary_muscle, measurement_type)
   values (gen_random_uuid(), null, 'Faux catalogue', 'other', 'abs', 'duration')$$, '42501', null, 'catalogue réservé à l''admin');
-update public.exercises set name = 'pirate' where id = 'cccccccc-0000-0000-0000-000000000001';
+select throws_ok($$update public.exercises set name = 'pirate' where id = 'cccccccc-0000-0000-0000-000000000001'$$,
+  '42501', null, 'catalogue non modifiable en direct');
 select throws_ok($$delete from public.folders$$, '42501', null, 'pas de suppression physique');
 select throws_ok($$select * from public.push_subscriptions$$, '42501', null, 'abonnements push inaccessibles en direct');
 select throws_ok($$select * from public.rest_timers$$, '42501', null, 'minuteurs inaccessibles en direct');
@@ -56,11 +62,9 @@ select tests.authenticate_as('adadadad-0000-0000-0000-000000000003');
 select is((select count(*)::int from public.folders), 0, 'l''admin ne voit pas les dossiers des autres');
 select is((select count(*)::int from public.workouts), 0, 'l''admin ne voit pas les séances des autres');
 select is((select count(*)::int from public.profiles), 1, 'l''admin ne voit que son profil');
-select lives_ok($$insert into public.exercises (id, user_id, name, equipment, primary_muscle, measurement_type, client_updated_at, client_device_id)
+select throws_ok($$insert into public.exercises (id, user_id, name, equipment, primary_muscle, measurement_type, client_updated_at, client_device_id)
   values ('cccccccc-0000-0000-0000-000000000002', null, 'Squat', 'barbell', 'quads', 'weight_reps', 1, gen_random_uuid())$$,
-  'l''admin écrit dans le catalogue');
-select throws_ok($$update public.exercises set measurement_type = 'duration' where id = 'cccccccc-0000-0000-0000-000000000001'$$,
-  '42501', null, 'type de mesure du catalogue figé');
+  '42501', null, 'l''admin écrit le catalogue via sync_push, pas en direct');
 
 -- ---------- Vérifications sans RLS ----------
 select tests.as_postgres();
