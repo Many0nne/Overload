@@ -24,7 +24,8 @@ import {
   formatWeight,
 } from '@/domain/format';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, setLabels } from '@/domain/labels';
-import { hasReps, hasTargets, isWorkingKind } from '@/domain/measurement';
+import { fieldsFor, hasReps, hasTargets, isWorkingKind } from '@/domain/measurement';
+import { plateSetFor } from '@/domain/plates';
 import { incrementFor, parseRepRange, targetsMet } from '@/domain/progression';
 import { bestRecords, criteriaFor, e1rm, REP_MILESTONES, type RecordCriterion } from '@/domain/records';
 import {
@@ -45,9 +46,10 @@ import type {
   Settings,
   WorkoutExercise,
 } from '@/domain/types';
-import { formatNumber, kgTo, parseDecimal, parseInteger, toKg } from '@/domain/units';
+import { formatNumber, kgTo, parseDecimal, parseInteger, toKg, weightIn } from '@/domain/units';
 import { formatWorkoutDate } from '@/features/history/HistoryCard';
 import { ExerciseForm } from '@/features/library/ExerciseForm';
+import { PlateSheet } from '@/features/plates/PlateSheet';
 import { buildWorkoutExercise, loadBuildContext } from '@/features/workout-live/start';
 import { BodyMap } from '@/ui/BodyMap';
 import { Chips, Seg, Sheet, SubHead, toast } from '@/ui/components';
@@ -238,7 +240,11 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   const [metric, setMetric] = useState<ChartMetric>(metrics[0]!);
   const [period, setPeriod] = useState<Period>('3m');
   const [next, setNext] = useState<WorkoutExercise | undefined>();
+  const [plateSheet, setPlateSheet] = useState(false);
   const now = Date.now();
+  const barbell = ex.equipment === 'barbell' && fieldsFor(type).includes('weight');
+  // Charge proposée au calculateur : celle de la prochaine série de travail visée, sinon la barre seule.
+  const nextWeight = next?.sets.find((s) => isWorkingKind(s.kind) && s.weight)?.weight;
 
   // Objectif de la prochaine séance, calculé comme au démarrage d'une séance vide (§F7.10).
   // biome-ignore lint/correctness/useExhaustiveDependencies: workouts et prefs déclenchent le recalcul (le contexte est relu dans Dexie)
@@ -289,6 +295,21 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   return (
     <div className="pane on">
       {next && <NextGoalCard next={next} units={units} />}
+      {barbell && (
+        <div className="section">
+          <button className="btn btn-soft btn-block btn-sm" onClick={() => setPlateSheet(true)}>
+            Calculer les disques
+          </button>
+          <PlateSheet
+            open={plateSheet}
+            subtitle={ex.name}
+            initial={nextWeight && weightIn(nextWeight, units.weight)}
+            unit={units.weight}
+            plateSet={plateSetFor(settings, units.weight)}
+            onClose={() => setPlateSheet(false)}
+          />
+        </div>
+      )}
       <div className="section">
         <div className="muted fs-13">{CHART_METRIC_LABELS[metric]} · dernière séance</div>
         <div className="flex items-baseline gap-10">

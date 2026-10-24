@@ -9,8 +9,10 @@ import { refreshStorageUsage, useStorageUsage } from '@/data/storageUsage';
 import { supabase } from '@/data/supabase';
 import { syncNow } from '@/data/sync/scheduler';
 import { TRAINING_AGE_LABELS } from '@/domain/labels';
+import { BAR_CHOICES, PLATE_CHOICES, plateSetFor } from '@/domain/plates';
 import { formatStorageUsage, isStorageNearQuota } from '@/domain/quota';
 import type { Settings, TrainingAgeBucket } from '@/domain/types';
+import { formatPlate } from '@/features/plates/PlateBar';
 import { Seg, Sheet, SubHead, Switch, toast } from '@/ui/components';
 import { formatInviteCode } from '@/ui/platform';
 import { formatRest } from '@/ui/time';
@@ -60,13 +62,25 @@ export default function SettingsPage() {
   const profile = useProfile();
   const email = useSession((s) => s.email);
   const [sheet, setSheet] = useState<
-    'rest' | 'age' | 'invite' | 'export' | 'delete' | 'logout' | 'logout-pending' | null
+    'rest' | 'bar' | 'plates' | 'age' | 'invite' | 'export' | 'delete' | 'logout' | 'logout-pending' | null
   >(null);
   const [pending, setPending] = useState<PendingSync | null>(null);
   const [checking, setChecking] = useState(false);
 
   const set = (patch: Partial<Settings>) => void updateSettings(patch);
   const units = settings.units;
+  const plateSet = plateSetFor(settings, units.weight);
+  // Cette méthode permet d'enregistrer la barre ou les disques de l'unité de poids courante (l'autre unité garde les siens).
+  const setPlates = (patch: Partial<typeof plateSet>) =>
+    set({ plates: { ...settings.plates, [units.weight]: { ...plateSet, ...patch } } });
+  // Cette méthode permet d'activer ou retirer un disque disponible, en gardant au moins un disque.
+  const togglePlate = (p: number) => {
+    const on = plateSet.plates.includes(p);
+    if (on && plateSet.plates.length === 1) return toast('Garde au moins un disque');
+    setPlates({
+      plates: on ? plateSet.plates.filter((q) => q !== p) : [...plateSet.plates, p].sort((a, b) => b - a),
+    });
+  };
   const inviteLink = profile ? `${location.origin}/i/${profile.invite_code}` : '';
 
   // Cette méthode permet de remplacer le code d'invitation, ce qui rend l'ancien lien inutilisable (§F7.1).
@@ -183,6 +197,23 @@ export default function SettingsPage() {
       </div>
 
       <div className="section">
+        <div className="section-title">Disques</div>
+        <button className="set-row" onClick={() => setSheet('bar')}>
+          Barre
+          <span className="t2">
+            {formatPlate(plateSet.bar)} {units.weight} ›
+          </span>
+        </button>
+        <button className="set-row" onClick={() => setSheet('plates')}>
+          <span>
+            Disques disponibles
+            <small className="muted d-block fs-12">calcul des disques pour les exercices à la barre</small>
+          </span>
+          <span className="t2">{plateSet.plates.length} ›</span>
+        </button>
+      </div>
+
+      <div className="section">
         <div className="section-title">Progression</div>
         <div className="set-row">
           <span>
@@ -286,6 +317,39 @@ export default function SettingsPage() {
               }}
             >
               {formatRest(s)}
+            </button>
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet === 'bar'} title="Poids de la barre" onClose={() => setSheet(null)}>
+        <div className="chips wrap mt-8">
+          {BAR_CHOICES[units.weight].map((b) => (
+            <button
+              key={b}
+              className={`chip${plateSet.bar === b ? ' on' : ''}`}
+              onClick={() => {
+                setPlates({ bar: b });
+                setSheet(null);
+              }}
+            >
+              {formatPlate(b)} {units.weight}
+            </button>
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet === 'plates'} title="Disques disponibles" onClose={() => setSheet(null)}>
+        <p>Touche un disque pour l'ajouter ou le retirer. Réglage propre aux charges en {units.weight}.</p>
+        <div className="chips wrap mt-12">
+          {PLATE_CHOICES[units.weight].map((p) => (
+            <button
+              key={p}
+              className={`chip${plateSet.plates.includes(p) ? ' on' : ''}`}
+              aria-pressed={plateSet.plates.includes(p)}
+              onClick={() => togglePlate(p)}
+            >
+              {formatPlate(p)}
             </button>
           ))}
         </div>

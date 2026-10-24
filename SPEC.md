@@ -67,7 +67,6 @@ L'app est un site web que l'on **ajoute à l'écran d'accueil** de l'iPhone (Saf
 ### Versions suivantes (hors V1)
 - Supersets et circuits.
 - Séries d'échauffement calculées automatiquement.
-- Calculateur de disques.
 - Import CSV générique, et import depuis Strong (l'import HEVY est disponible, voir §7.1).
 - Intégration Apple Santé / Health Connect.
 - Programmes multi-semaines avec périodisation (cycles, semaines de deload planifiées). La V1 ne propose que l'objectif de la séance suivante (§7.10).
@@ -227,6 +226,12 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
   - La mention « from Overload » (ou « de Overload ») sous la notification est ajoutée par iOS aux notifications web ; ni l'app ni le serveur ne l'envoient, elle ne peut pas être retirée.
 - Le minuteur reste juste même si l'app a été mise en arrière-plan.
 
+**Calculateur de disques** (exercices à la barre)
+- Pendant la saisie du poids d'une série, un bandeau sous la série dessine la barre chargée et indique les disques de chaque côté (« Par côté : 25 + 5 + 1,25 · barre 20 kg »). Il suit chaque chiffre tapé et disparaît à la sortie du champ.
+- Le calcul vise la charge exacte avec le moins de disques possible ; une charge inatteignable affiche le reste (« 2 kg impossibles »), une charge sous la barre est signalée.
+- Le menu de l'exercice (« Calculer les disques ») et sa fiche ouvrent le même calculateur, sur une charge libre réglable (− / + d'une paire du plus petit disque).
+- Disques aux couleurs de compétition (rouge 25, bleu 20, jaune 15, vert 10, blanc 5).
+
 **Fin de séance**
 - Terminer avec des séries non validées : l'app demande « Ignorer les séries non validées ? ». Une séance sans aucune série validée ne peut pas être enregistrée (proposer « Abandonner »).
 - L'écran de récapitulatif contient :
@@ -314,6 +319,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Notification de fin de repos : activée ou non.
 - Objectifs de progression : activés ou non (activés par défaut). Désactivés, les champs se pré-remplissent comme sans objectif et la tendance projetée est masquée.
 - Saisir l'effort ressenti (RPE) : désactivé par défaut (§7.4). Un RPE déjà enregistré (saisi ou importé de HEVY) reste affiché et pris en compte par les objectifs même si la saisie est désactivée.
+- Disques : poids de la barre (20 kg / 45 lb par défaut) et disques disponibles, réglés séparément pour le kg et le lb (§7.4).
 - Ancienneté en musculation, modifiable à tout moment : « Je débute », « Moins de 6 mois », « 6 mois à 1 an », « 1 à 2 ans », « 2 à 5 ans », « Plus de 5 ans », ou « Non renseignée ».
 - Compte : e-mail, mot de passe, lien d'invitation (copier, régénérer), export des données, import HEVY, suppression du compte, déconnexion.
 

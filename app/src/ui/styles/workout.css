@@ -136,7 +136,8 @@
 .sets tr.set.swipe-armed {
   background: color-mix(in srgb, var(--fail) 25%, transparent);
 }
-.sets tr.set:nth-child(even) {
+/* « of .set » : le bandeau de disques (tr.plate-strip) ne décale pas l'alternance des lignes. */
+.sets tr.set:nth-child(even of .set) {
   background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 .sets tr.set.done {
@@ -442,4 +443,85 @@ tr.done .rpe-btn {
 }
 .rest-panel .ctrls .btn {
   flex: 1;
+}
+
+/* ---------- Calculateur de disques (issue #76) ---------- */
+.sets tr.plate-strip > td {
+  width: auto;
+  height: auto;
+  padding: 2px 14px 10px 18px;
+  text-align: left;
+  background: var(--accent-soft);
+}
+.plate-strip-in {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plate-bar {
+  display: block;
+  flex-shrink: 0;
+  max-width: 100%;
+  height: auto;
+}
+.plate-strip-txt {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-2);
+}
+.plate-strip-txt b,
+.plate-side b {
+  color: var(--text);
+}
+.plate-sub {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.plate-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 6px 0 12px;
+}
+.plate-step {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 1.4rem;
+}
+.plate-input {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.plate-input input {
+  width: 120px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 4px 0;
+}
+.plate-input span {
+  color: var(--muted);
+  font-weight: 600;
+}
+.plate-drawing {
+  display: flex;
+  justify-content: center;
+}
+.plate-side {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-2);
 }

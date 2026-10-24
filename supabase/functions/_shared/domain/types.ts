@@ -134,6 +134,8 @@ export type Settings = {
   progressionEnabled: boolean;
   rpeEnabled: boolean;
   trainingAge?: { bucket: TrainingAgeBucket; declaredAt: number };
+  /** Barre et disques disponibles par unité (calculateur de disques) ; absent = valeurs par défaut. */
+  plates?: Partial<Record<WeightUnit, { bar: number; plates: number[] }>>;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
