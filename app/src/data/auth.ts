@@ -100,14 +100,24 @@ export async function signUpWithInvite(input: SignupInput): Promise<string | nul
   return signIn(input.email, input.password);
 }
 
-// Cette méthode permet de se déconnecter volontairement : la base locale est vidée (les éléments non synchronisés sont perdus).
+/** Éléments locaux pas encore acceptés par le serveur : lignes de l'outbox et photos non envoyées. */
+export type PendingSync = { changes: number; photos: number };
+
+// Cette méthode permet de tenter une dernière synchro avant la déconnexion, puis de compter ce qui reste à envoyer.
+export async function syncBeforeSignOut(): Promise<PendingSync> {
+  await syncNow();
+  const [changes, photos] = await Promise.all([
+    db.outbox.count(),
+    db.blobs.filter((b) => !b.uploaded).count(),
+  ]);
+  return { changes, photos };
+}
+
+// Cette méthode permet de se déconnecter volontairement : la base locale est vidée, y compris ce qui n'est pas synchronisé.
+// Hors ligne, la révocation serveur échoue : on ferme alors la session locale pour ne pas la retrouver au rechargement.
 export async function signOut(): Promise<void> {
-  try {
-    await syncNow();
-  } catch (e) {
-    void logError('signout', e);
-  }
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) await supabase.auth.signOut({ scope: 'local' });
   await wipeLocalData();
   useSession.getState().set({ status: 'signed_out', userId: null, email: null, needsReauth: false });
 }
