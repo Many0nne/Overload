@@ -115,8 +115,8 @@ export default function SettingsPage() {
           <span>
             Notification fin de repos
             <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
-              son système uniquement ; si muette, vérifier Réglages › Notifications › Overload › Sons et
-              couper toute Concentration
+              son système uniquement ; si muette : Réglages › Notifications › Overload › Sons, mode
+              silencieux, Concentration
             </small>
           </span>
           <Switch

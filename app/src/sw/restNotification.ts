@@ -30,11 +30,11 @@ export function parseRestPush(data: Pick<PushMessageData, 'json' | 'text'> | nul
   }
 }
 
-// Cette méthode permet de construire les options de la notification lorsqu'un repos se termine à l'instant `now`.
-export function restNotificationOptions(body: string, now: number): NotificationOptions {
+// Cette méthode permet de construire les options de la notification lorsqu'un repos se termine (`id` unique par push).
+export function restNotificationOptions(body: string, id: string): NotificationOptions {
   return {
     body,
-    tag: `${REST_TAG_PREFIX}-${now}`,
+    tag: `${REST_TAG_PREFIX}-${id}`,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
   };
@@ -45,15 +45,16 @@ export function restNotificationOptions(body: string, now: number): Notification
 export async function showRestNotification(
   registration: NotificationRegistration,
   payload: RestPayload,
-  now: number,
+  id: string,
 ): Promise<void> {
   try {
     const previous = await registration.getNotifications();
     for (const n of previous) {
       if (n.tag === REST_TAG_PREFIX || n.tag.startsWith(`${REST_TAG_PREFIX}-`)) n.close();
     }
-  } catch {
+  } catch (err) {
     // Fermeture impossible : la nouvelle notification s'ajoute simplement aux anciennes.
+    console.warn('Notifications de repos précédentes non fermées', err);
   }
-  await registration.showNotification(payload.title, restNotificationOptions(payload.body, now));
+  await registration.showNotification(payload.title, restNotificationOptions(payload.body, id));
 }

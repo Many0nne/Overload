@@ -45,19 +45,13 @@ describe('parseRestPush (§7.7)', () => {
     expect(parseRestPush(null)).toEqual({ title: 'Overload', body: '' });
     expect(parseRestPush({ json: () => ({}), text: () => '' })).toEqual({ title: 'Overload', body: '' });
   });
-
-  it('n’ajoute aucune mention au titre ni au texte (#27)', () => {
-    const data = { json: () => ({ title: 'Repos terminé', body: 'Squat' }), text: () => '' };
-    const { title, body } = parseRestPush(data);
-    expect(`${title} ${body}`).not.toMatch(/from|overload/i);
-  });
 });
 
 describe('restNotificationOptions (#44)', () => {
   it('donne un tag différent à chaque repos pour que chaque notification sonne', () => {
-    const a = restNotificationOptions('Série 1', 1000);
-    const b = restNotificationOptions('Série 2', 2000);
-    expect(a.tag).toBe('rest-1000');
+    const a = restNotificationOptions('Série 1', 'a1');
+    const b = restNotificationOptions('Série 2', 'b2');
+    expect(a.tag).toBe('rest-a1');
     expect(b.tag).not.toBe(a.tag);
     expect(a.silent).toBeUndefined();
     expect(a.body).toBe('Série 1');
@@ -66,25 +60,34 @@ describe('restNotificationOptions (#44)', () => {
 
 describe('showRestNotification (#44)', () => {
   it('ferme les notifications de repos précédentes puis affiche la nouvelle', async () => {
-    const { reg, shown } = fakeRegistration(['rest', 'rest-1000', 'autre']);
-    await showRestNotification(reg, { title: 'Repos terminé', body: 'Squat' }, 2000);
+    const { reg, shown } = fakeRegistration(['rest', 'rest-a1', 'autre']);
+    await showRestNotification(reg, { title: 'Repos terminé', body: 'Squat' }, 'b2');
 
     expect(reg.showNotification).toHaveBeenCalledWith(
       'Repos terminé',
-      expect.objectContaining({ tag: 'rest-2000', body: 'Squat' }),
+      expect.objectContaining({ tag: 'rest-b2', body: 'Squat' }),
     );
-    expect(shown.filter((n) => !n.closed).map((n) => n.tag)).toEqual(['autre', 'rest-2000']);
+    expect(shown.filter((n) => !n.closed).map((n) => n.tag)).toEqual(['autre', 'rest-b2']);
+  });
+
+  it('affiche le titre et le texte reçus tels quels, sans mention ajoutée (#27)', async () => {
+    const { reg } = fakeRegistration([]);
+    await showRestNotification(reg, { title: 'Repos terminé', body: 'Squat, série 2' }, 'c3');
+    const [title, options] = vi.mocked(reg.showNotification).mock.calls[0] ?? [];
+    expect(title).toBe('Repos terminé');
+    expect(options?.body).toBe('Squat, série 2');
   });
 
   it('ne ferme pas une notification dont le tag commence seulement par « rest »', async () => {
     const { reg, shown } = fakeRegistration(['restaurant']);
-    await showRestNotification(reg, { title: 'Repos terminé', body: '' }, 1);
+    await showRestNotification(reg, { title: 'Repos terminé', body: '' }, 'd4');
     expect(shown[0]?.closed).toBe(false);
   });
 
   it('affiche quand même la notification si la liste des précédentes est indisponible', async () => {
     const { reg } = fakeRegistration([], true);
-    await showRestNotification(reg, { title: 'Repos terminé', body: '' }, 1);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await showRestNotification(reg, { title: 'Repos terminé', body: '' }, 'e5');
     expect(reg.showNotification).toHaveBeenCalledOnce();
   });
 });

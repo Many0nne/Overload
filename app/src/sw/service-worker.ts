@@ -41,7 +41,7 @@ self.addEventListener('message', (event) => {
 
 // Cette méthode permet d'afficher la notification de fin de repos lorsqu'un push arrive (iOS exige un affichage).
 self.addEventListener('push', (event) => {
-  event.waitUntil(showRestNotification(self.registration, parseRestPush(event.data), Date.now()));
+  event.waitUntil(showRestNotification(self.registration, parseRestPush(event.data), crypto.randomUUID()));
 });
 
 // Cette méthode permet de ramener l'utilisateur dans l'app lorsqu'il touche la notification.
