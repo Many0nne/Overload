@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.118.0",
-    "supabase": "^2.121.0",
+    "supabase": "2.121.0",
     "tsx": "^4.23.15",
     "uuid": "^14.0.3"
   }

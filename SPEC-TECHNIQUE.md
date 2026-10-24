@@ -23,7 +23,7 @@
 | PWA / service worker | **vite-plugin-pwa** (Workbox, stratégie `injectManifest`) | SW personnalisé nécessaire pour les push. | SW écrit à la main. |
 | Base locale | **Dexie 4** (IndexedDB) + `useLiveQuery` | Requêtes indexées, réactivité, transactions. | RxDB (plus lourd, licence premium pour certaines fonctions). |
 | État UI | **Zustand** (état éphémère seulement) | Minimal. Les données métier vivent dans Dexie. | Redux. |
-| Routage | **React Router 7** (mode bibliothèque) | Simple, suffisant. | TanStack Router. |
+| Routage | **React Router 8** (mode bibliothèque) | Simple, suffisant. | TanStack Router. |
 | Backend | **Supabase** (offre Free) : Postgres, Auth, Storage, Edge Functions, pg_cron, pg_net | Auth e-mail clé en main, RLS, stockage photos, tâches planifiées à la seconde, un seul fournisseur. | Cloudflare Workers + D1 + Durable Objects : alarmes précises, mais auth à écrire soi-même et hachage de mot de passe incompatible avec la limite CPU de 10 ms de l'offre gratuite. |
 | Hébergement front | **Cloudflare Pages** | Gratuit, bande passante illimitée, HTTPS, déploiement par branche. | Vercel, Netlify. |
 | E-mails (mot de passe oublié) | **Brevo** en SMTP personnalisé de Supabase | 300 e-mails/jour gratuits, expéditeur vérifiable sans nom de domaine. Le SMTP par défaut de Supabase n'envoie qu'aux membres de l'équipe du projet. | Resend (exige un domaine). |
