@@ -206,7 +206,7 @@ function ExercisesIndex() {
   return (
     <>
       <SubHead title="Exercices et records" />
-      <ExerciseList onPick={(e) => navigate(`/exercise/${e.id}`)} />
+      <ExerciseList archivable onPick={(e) => navigate(`/exercise/${e.id}`)} />
     </>
   );
 }

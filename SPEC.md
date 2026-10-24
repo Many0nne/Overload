@@ -167,10 +167,11 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 
   - de courtes **consignes** d'exécution (texte).
 - **Pas d'illustration en V1** : les muscles ciblés sont affichés sous forme de texte (étiquettes). Les visuels existants ne conviennent pas. Des visuels propres à l'app sont prévus plus tard (voir §4, hors V1).
-- **Recherche** par nom (insensible aux accents) et **filtres** par muscle et par équipement. Les exercices récemment utilisés s'affichent en premier.
+- **Recherche** par nom (insensible aux accents) et **filtres** par muscle, par équipement et par statut (actifs ou archivés). Les exercices récemment utilisés s'affichent en premier.
 - **Exercices personnalisés** : l'utilisateur crée les siens (nom, équipement, muscles, type de mesure). Ils lui sont propres.
   - Nom, équipement, muscles et consignes restent modifiables. Le **type de mesure est figé** dès que l'exercice a été utilisé dans une séance.
   - Supprimer un exercice personnalisé déjà utilisé l'**archive** : il disparaît de la bibliothèque et des routines, mais les séances passées, les records et les graphiques restent visibles.
+  - Un exercice personnalisé archivé reste retrouvable : le filtre **Archivés** de la bibliothèque les liste, et le menu de sa fiche propose **Restaurer** pour le remettre dans la bibliothèque et les sélecteurs d'exercice.
 - Le catalogue est maintenu par l'administrateur (§7.1). Une modification du catalogue s'applique à tous les utilisateurs, sans toucher à leur historique.
   - Le **type de mesure d'un exercice du catalogue n'est pas modifiable** : l'administrateur ne voit pas les données des autres comptes et ne peut donc pas savoir si l'exercice a été utilisé. Pour changer de type, il crée un nouvel exercice et archive l'ancien. Les séances passées restent lisibles.
 - La **fiche exercice** a trois onglets :
