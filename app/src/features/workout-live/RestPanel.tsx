@@ -3,8 +3,9 @@ import { formatDuration } from '@/domain/format';
 import { useNow } from '@/ui/useNow';
 import { playRestEndSound, useRestTimer } from './restTimer';
 
-// Cette méthode permet d'afficher le minuteur de repos (−15 s, +15 s, Passer), recalculé sur l'heure réelle (§8.1).
-// À la fin, un son est joué si l'app est ouverte et l'option active ; la notification est gérée par le serveur.
+// Cette méthode permet d'afficher le minuteur de repos en pilule compacte (−15, +15, Passer), recalculé sur l'heure réelle (§8.1).
+// À la fin vécue à l'écran : « Terminé » en vert 3 s, −15/+15 désactivés, « Passer » devient « OK » ; un son est joué
+// si l'option est active, la notification est gérée par le serveur.
 // Un repos écoulé hors écran (app en arrière-plan, autre page) est clos sans « Terminé » ni son au retour.
 export function RestPanel(props: { sound: boolean; notify: boolean }) {
   const { timer, adjust, skip } = useRestTimer();
@@ -29,25 +30,39 @@ export function RestPanel(props: { sound: boolean; notify: boolean }) {
   }, [timer, left, endedOffscreen, props.sound]);
 
   if (!timer || endedOffscreen) return null;
-  const pct = Math.max(0, Math.min(100, (left / timer.totalS) * 100));
+  const ended = left <= 0;
+  const pct = ended ? 100 : Math.max(0, Math.min(100, (left / timer.totalS) * 100));
   return (
-    <div className="rest-panel show" role="timer" aria-live="off">
-      <div className="lbl">Repos · {timer.label}</div>
-      <div className="time">{left > 0 ? formatDuration(Math.ceil(left)) : 'Terminé'}</div>
-      <div className="bar">
-        <i style={{ width: `${pct}%` }} />
+    <div
+      className={`rest-panel show${ended ? ' end' : ''}`}
+      role="timer"
+      aria-live="off"
+      aria-label="Minuteur de repos"
+    >
+      <div className="fill" style={{ width: `${pct}%` }} />
+      <div className="txt">
+        <div className="time">{ended ? 'Terminé' : formatDuration(Math.ceil(left))}</div>
+        <div className="lbl">{timer.label}</div>
       </div>
-      <div className="ctrls">
-        <button className="btn btn-soft" onClick={() => void adjust(-15, props.notify)}>
-          −15 s
-        </button>
-        <button className="btn btn-soft" onClick={() => void adjust(15, props.notify)}>
-          +15 s
-        </button>
-        <button className="btn btn-primary" onClick={() => void skip()}>
-          Passer
-        </button>
-      </div>
+      <button
+        className="step"
+        aria-label="Retirer 15 secondes"
+        disabled={ended}
+        onClick={() => void adjust(-15, props.notify)}
+      >
+        −15
+      </button>
+      <button
+        className="step"
+        aria-label="Ajouter 15 secondes"
+        disabled={ended}
+        onClick={() => void adjust(15, props.notify)}
+      >
+        +15
+      </button>
+      <button className="btn btn-primary" onClick={() => void skip()}>
+        {ended ? 'OK' : 'Passer'}
+      </button>
     </div>
   );
 }

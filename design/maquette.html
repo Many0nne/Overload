@@ -60,6 +60,8 @@ input,textarea{font:inherit;color:inherit}
 .screen::-webkit-scrollbar{display:none}
 .screen.active{display:block}
 .screen.no-tab{padding-bottom:40px}
+/* Séance : place sous la liste pour le minuteur de repos (comme l'app : 100px + zone sûre de 34px). */
+.screen[data-screen=live]{padding-bottom:134px}
 
 /* ---------- Barre d'onglets + bandeau séance ---------- */
 .tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;background:color-mix(in srgb,var(--bg) 92%,transparent);
@@ -188,16 +190,26 @@ tr.done .check{background:var(--done);color:#fff}
 .trophy{display:none;font-size:13px;margin-left:2px}
 tr.pr .trophy{display:inline}
 .add-set{margin:8px 18px 10px;width:calc(100% - 36px)}
-.rest-panel{position:absolute;left:10px;right:10px;bottom:16px;background:var(--surface-2);border-radius:20px;padding:14px 16px 16px;
-  z-index:22;box-shadow:0 10px 40px rgba(0,0,0,.45);display:none;border:1px solid var(--line)}
-.rest-panel.show{display:block;animation:up .25s ease}
+/* Minuteur de repos (issue #101) : pilule compacte façon bandeau de séance ; fond et liseré se vident avec le temps. */
+.rest-panel{position:absolute;left:18px;right:18px;bottom:42px;height:64px;padding:0 9px 0 14px;align-items:center;gap:6px;
+  border-radius:16px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--line);
+  box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:22;display:none}
+.rest-panel.show{display:flex;animation:up .25s ease}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
-.rest-panel .lbl{font-size:13px;color:var(--text-2)}
-.rest-panel .time{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1}
-.rest-panel .bar{height:6px;border-radius:3px;background:var(--line);margin:10px 0 14px;overflow:hidden}
-.rest-panel .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .3s linear}
-.rest-panel .ctrls{display:flex;gap:8px}
-.rest-panel .ctrls .btn{flex:1}
+.rest-panel .fill{position:absolute;left:0;top:0;bottom:0;z-index:-1;background:var(--accent-soft);border-bottom:3px solid var(--accent);transition:width .3s linear}
+.rest-panel .txt{flex:1;min-width:0}
+.rest-panel .time{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-panel .lbl{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-panel .step{flex:none;width:44px;height:44px;border-radius:22px;background:var(--surface-2);color:var(--text-2);font-size:13px;font-weight:700}
+.rest-panel .btn{flex:none;margin-left:2px;padding:0 14px}
+.rest-panel.end{border-color:color-mix(in srgb,var(--done) 55%,transparent);animation:rest-end 1s ease-in-out infinite}
+.rest-panel.end .fill{background:var(--done-soft);border-bottom-color:var(--done)}
+.rest-panel.end .time{color:color-mix(in srgb,var(--done) 75%,var(--text))}
+.rest-panel.end .step{opacity:.35;pointer-events:none}
+.rest-panel.end .btn-primary{background:var(--done);color:#fff}
+@keyframes rest-end{50%{box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 4px color-mix(in srgb,var(--done) 25%,transparent)}}
+@media (prefers-reduced-motion:reduce){.rest-panel.show,.rest-panel.end{animation:none}.rest-panel .fill{transition:none}}
 
 /* ---------- Fiche exercice / graphiques ---------- */
 .subtabs{display:flex;border-bottom:1px solid var(--line);margin:0 18px}
@@ -838,10 +850,9 @@ body.board .boardview{display:flex}
       </section>
 
       <div class="rest-panel" id="restPanel">
-        <div class="lbl" id="restLbl">Repos · Développé couché, série 2</div>
-        <div class="time" id="restTime">2:00</div>
-        <div class="bar"><i id="restBar" style="width:100%"></i></div>
-        <div class="ctrls"><button class="btn btn-soft" data-rest="-15">−15 s</button><button class="btn btn-soft" data-rest="15">+15 s</button><button class="btn btn-primary" data-rest="skip">Passer</button></div>
+        <div class="fill" id="restBar" style="width:100%"></div>
+        <div class="txt"><div class="time" id="restTime">2:00</div><div class="lbl" id="restLbl">Développé couché, série 2</div></div>
+        <button class="step" data-rest="-15" aria-label="Retirer 15 secondes">−15</button><button class="step" data-rest="15" aria-label="Ajouter 15 secondes">+15</button><button class="btn btn-primary" data-rest="skip" id="restSkip">Passer</button>
       </div>
       <div class="menu" id="exMenu">
         <button data-menu="replace">Remplacer l'exercice</button>
@@ -1082,14 +1093,18 @@ function toggleSet(ei, si) {
 function startRest(ex, si) {
   const n = ex.sets.slice(0, si + 1).filter(s => s.t !== 'W').length;
   state.rest = {end: Date.now() + ex.rest * 1000, total: ex.rest, label: `${ex.name}, ${ex.sets[si].t === 'W' ? 'échauffement' : 'série ' + n}`};
-  $('#restLbl').textContent = 'Repos · ' + state.rest.label;
+  $('#restLbl').textContent = state.rest.label;
+  $('#restPanel').classList.remove('end'); $('#restSkip').textContent = 'Passer';
   $('#restPanel').classList.add('show');
   tickRest();
 }
 function tickRest() {
   const r = state.rest; if (!r) return;
   const left = r.end - Date.now();
-  if (left <= 0) { state.rest = null; $('#restPanel').classList.remove('show'); toast('🔔 Repos terminé – ' + r.label); return; }
+  // Fin à l'écran : « Terminé » en vert pendant 3 s (halo pulsé), « Passer » devient « OK », puis le panneau se ferme.
+  if (left <= 0) { if (r.ended) return; r.ended = true; $('#restPanel').classList.add('end'); $('#restTime').textContent = 'Terminé';
+    $('#restSkip').textContent = 'OK'; $('#restBar').style.width = '100%';
+    setTimeout(() => { if (state.rest === r) { state.rest = null; $('#restPanel').classList.remove('show', 'end'); } }, 3000); return; }
   $('#restTime').textContent = fmtClock(left + 999);
   $('#restBar').style.width = Math.min(100, left / (r.total * 1000) * 100) + '%';
 }
@@ -1322,7 +1337,7 @@ function buildBoard() {
     const clone = s.cloneNode(true); clone.removeAttribute('id'); clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
     vp.appendChild(clone);
     if (s.dataset.screen === 'live') { const rp = $('#restPanel').cloneNode(true); rp.removeAttribute('id'); rp.classList.add('show');
-      rp.querySelector('.time').textContent = '1:47'; rp.querySelector('.bar i').style.width = '89%'; vp.appendChild(rp); }
+      rp.querySelector('.time').textContent = '1:47'; rp.querySelector('.fill').style.width = '89%'; vp.appendChild(rp); }
     ph.appendChild(vp);
     if (s.dataset.tab) { const tb = $('#tabbar').cloneNode(true); tb.removeAttribute('id'); tb.style.display = 'flex';
       tb.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === s.dataset.tab)); ph.appendChild(tb); }
@@ -1371,7 +1386,8 @@ document.addEventListener('click', e => {
   if (ds.theme) return setTheme(ds.theme === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : ds.theme, ds.theme);
   if (ds.mode) { $$('#modeSeg button').forEach(b => b.classList.toggle('on', b === t)); document.body.classList.toggle('board', ds.mode === 'board'); if (ds.mode === 'board') buildBoard(); return; }
   if (t.closest('.set-row .seg')) { [...t.parentElement.children].forEach(b => b.classList.toggle('on', b === t)); return; }
-  if (ds.rest) { const r = state.rest; if (!r) return; if (ds.rest === 'skip') { state.rest = null; $('#restPanel').classList.remove('show'); return; }
+  if (ds.rest) { const r = state.rest; if (!r) return; if (ds.rest === 'skip') { state.rest = null; $('#restPanel').classList.remove('show', 'end'); return; }
+    if (r.ended) return;
     r.end += +ds.rest * 1000; r.total = Math.max(r.total, (r.end - Date.now()) / 1000); return tickRest(); }
   if (ds.addset !== undefined) { const ex = workout[+ds.addset], l = ex.sets[ex.sets.length - 1];
     ex.sets.push({t: 'N', v: l ? [...l.v] : (ex.type === 'dur' ? [''] : ['', ''])}); return renderLive(); }
