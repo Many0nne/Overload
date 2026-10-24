@@ -1,15 +1,17 @@
 import { useNavigate } from 'react-router';
 import { useOutboxCount } from '@/data/queries';
+import { useAbandonedPhotoCount } from '@/data/sync/photos';
 import { useRejectCount } from '@/data/sync/rejects';
 import { syncNow } from '@/data/sync/scheduler';
 import { useSyncStatus } from '@/data/sync/status';
 
 // Cette méthode permet d'afficher l'indicateur discret de synchronisation : rien, « n en attente », « hors ligne » (§6.5)
-// ou « n refusées » (modifications rejetées par le serveur, détaillées dans le journal, #58).
+// « n refusées » (modifications rejetées par le serveur, #58) ou « n photos non envoyées » (#59), détaillées dans le journal.
 export function SyncPill() {
   const navigate = useNavigate();
   const pending = useOutboxCount();
   const refused = useRejectCount();
+  const photos = useAbandonedPhotoCount();
   const { online, lastCallFailed } = useSyncStatus();
   if (!online || lastCallFailed) {
     return (
@@ -26,6 +28,17 @@ export function SyncPill() {
         title="Voir les modifications refusées par le serveur"
       >
         ⚠ {refused} refusée{refused > 1 ? 's' : ''}
+      </button>
+    );
+  }
+  if (photos > 0) {
+    return (
+      <button
+        className="sync-pill off"
+        onClick={() => navigate('/profile/settings/errors')}
+        title="Voir les photos que le serveur a refusées"
+      >
+        ⚠ {photos} photo{photos > 1 ? 's' : ''} non envoyée{photos > 1 ? 's' : ''}
       </button>
     );
   }

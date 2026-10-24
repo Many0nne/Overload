@@ -4,6 +4,7 @@ import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
 import { logError } from '../errors';
 import { photosBucket, supabase } from '../supabase';
+import { MAX_PHOTO_ATTEMPTS } from './photos';
 import { recordRejects, type SyncReject } from './rejects';
 
 export const PUSH_BATCH = 100;
@@ -21,27 +22,45 @@ type PullResponse = {
 
 export class SyncAuthError extends Error {}
 
+const AUTH_ERROR = /jwt|token|not authenticated|401/i;
+
 // Cette méthode permet de transformer une erreur Supabase en exception, en distinguant les erreurs de session.
 function check<T>(res: { data: T; error: { message: string; code?: string } | null }): T {
   if (res.error) {
     const msg = res.error.message ?? '';
-    if (/jwt|token|not authenticated|401/i.test(msg) || res.error.code === 'PGRST301')
-      throw new SyncAuthError(msg);
+    if (AUTH_ERROR.test(msg) || res.error.code === 'PGRST301') throw new SyncAuthError(msg);
     throw new Error(msg);
   }
   return res.data;
 }
 
 // Cette méthode permet d'envoyer les photos en attente vers Storage avant le push des documents qui les référencent (§12).
+// Un échec n'empêche pas le push (#59) : un refus du serveur compte une tentative, et la photo est abandonnée
+// au bout de MAX_PHOTO_ATTEMPTS (signalée dans le journal) ; une coupure réseau remet les envois au cycle suivant.
 async function uploadPendingBlobs(): Promise<void> {
-  const pending = await db.blobs.filter((b) => !b.uploaded).toArray();
+  const pending = await db.blobs.filter((b) => !b.uploaded && !b.abandoned).toArray();
   for (const b of pending) {
     const { error } = await (await photosBucket()).upload(b.path, b.blob, {
       upsert: true,
       contentType: 'image/jpeg',
     });
-    if (error) throw new Error(error.message);
-    await db.blobs.update(b.path, { uploaded: true });
+    if (!error) {
+      await db.blobs.update(b.path, { uploaded: true, attempts: 0, lastError: undefined });
+      continue;
+    }
+    const status = (error as { status?: unknown }).status;
+    if (status === 401 || AUTH_ERROR.test(error.message)) throw new SyncAuthError(error.message);
+    if (typeof status !== 'number') {
+      void logError('sync', `Photo non envoyée (réseau) : ${b.path} (${error.message})`);
+      return;
+    }
+    const attempts = (b.attempts ?? 0) + 1;
+    const abandoned = attempts >= MAX_PHOTO_ATTEMPTS;
+    void logError(
+      'sync',
+      `Photo refusée (${attempts}/${MAX_PHOTO_ATTEMPTS}${abandoned ? ', abandonnée' : ''}) : ${b.path} (${status} ${error.message})`,
+    );
+    await db.blobs.update(b.path, { attempts, abandoned, lastError: error.message, failedAt: Date.now() });
   }
 }
 

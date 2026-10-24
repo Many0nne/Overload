@@ -18,7 +18,17 @@ export type OutboxEntry = {
   client_updated_at: number;
 };
 
-export type BlobEntry = { path: string; blob: Blob; kind: 'photo' | 'avatar'; uploaded: boolean };
+/** Fichier local à envoyer vers Storage ; attempts compte les refus du serveur, abandoned arrête les envois (#59). */
+export type BlobEntry = {
+  path: string;
+  blob: Blob;
+  kind: 'photo' | 'avatar';
+  uploaded: boolean;
+  attempts?: number;
+  abandoned?: boolean;
+  lastError?: string;
+  failedAt?: number;
+};
 export type MetaEntry = { key: string; value: unknown };
 
 export class OverloadDb extends Dexie {
