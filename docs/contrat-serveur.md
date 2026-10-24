@@ -19,13 +19,20 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
   - Sinon : statut `forbidden`.
 - « Dernier gagne » : écriture si la ligne n'existe pas, ou si `(client_updated_at, client_device_id)` entrant > existant (comparaison lexicographique, `client_device_id` comparé en texte). Sinon `stale`.
 - Séance en cours : si la ligne `workouts` existante a `status = 'in_progress'` et `owner_device_id <> p_device_id` → `rejected_not_owner`, quel que soit l'horodatage.
-- Sortie : `[{ "table", "id", "status": "accepted" | "stale" | "rejected_not_owner" | "forbidden" }]`.
+- Ligne mal formée (id, horodatage ou appareil absents, conversion impossible, contrainte violée) ou table inconnue : statut `invalid`.
+- Sortie : `[{ "table", "id", "status": "accepted" | "stale" | "rejected_not_owner" | "forbidden" | "invalid" }]`.
+- Le client journalise chaque `invalid` / `forbidden`, le garde dans `meta.sync_rejects` (pastille « n refusées », Paramètres › Journal d'erreurs) et se réaligne avec `sync_fetch`.
 - Verrou `pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0))`.
 
 ### `sync_pull(p_cursors jsonb) returns jsonb`
 - Entrée : `{ "profiles": rev, "exercises": rev, "catalog": rev, "folders": rev, "routines": rev, "workouts": rev, "body_measurements": rev, "exercise_prefs": rev }` (clé absente = 0).
 - `exercises` = exercices perso du compte ; `catalog` = exercices `user_id is null` (curseur global).
 - Sortie : `{ "changes": { "<clé>": [rows...] }, "cursors": { "<clé>": rev max renvoyé }, "has_more": bool }`, 500 lignes au plus par clé, triées par `rev`. Les tombstones (`deleted_at` non nul) sont renvoyés.
+
+### `sync_fetch(p_keys jsonb) returns jsonb`
+- Entrée : `[{ "table": SyncTable, "id": uuid }, ...]` (100 au plus). Relecture ciblée après un refus de `sync_push` : le curseur de pull a déjà dépassé la `rev` de la ligne.
+- Mêmes règles de lecture que `sync_pull` (profil du compte, exercices du compte et catalogue, autres tables du compte), même format de ligne.
+- Sortie : `[{ "table", "id", "row": {...} | null }]` ; `null` si la ligne est absente, illisible, ou la clé invalide. Le client remplace sa ligne locale par `row`, ou la supprime si `null` (sauf modification locale en attente).
 
 ### `rev`
 - Table `public.sync_revs(scope uuid primary key, rev bigint)` : un compteur par compte, plus le scope `00000000-0000-0000-0000-000000000000` pour le catalogue.
