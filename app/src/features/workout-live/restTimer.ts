@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { getMeta, setMeta } from '@/data/db';
-import { cancelRestNotification, scheduleRestNotification } from '@/data/push';
+import { cancelRestNotification, scheduleRestNotification } from '@/data/restPush';
 
 // État du minuteur de repos, stocké dans meta (local, non synchronisé, §8.1). L'affichage vaut endsAt − Date.now().
 export type RestTimerState = {
@@ -37,7 +37,7 @@ export const useRestTimer = create<Store>((set, get) => ({
   start: async (t, notify) => {
     set({ timer: t });
     await setMeta(KEY, t);
-    if (notify) void scheduleRestNotification(t.endsAt, 'Repos terminé', t.label);
+    if (notify) void scheduleRestNotification(t.endsAt, 'Repos terminé', t.label, t.workoutId);
   },
   adjust: async (deltaS, notify) => {
     const t = get().timer;
@@ -46,7 +46,7 @@ export const useRestTimer = create<Store>((set, get) => ({
     const next = { ...t, endsAt, totalS: Math.max(1, t.totalS + deltaS) };
     set({ timer: next });
     await setMeta(KEY, next);
-    if (notify) void scheduleRestNotification(next.endsAt, 'Repos terminé', next.label);
+    if (notify) void scheduleRestNotification(next.endsAt, 'Repos terminé', next.label, next.workoutId);
   },
   skip: async () => {
     set({ timer: null });

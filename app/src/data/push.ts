@@ -77,30 +77,12 @@ export async function disablePush(): Promise<void> {
   if (error) void logError('push', error.message);
 }
 
-// Cette méthode permet de planifier la notification de fin de repos côté serveur (remplace la précédente, §8.2).
-export async function scheduleRestNotification(endsAt: number, title: string, body: string): Promise<void> {
-  if (!pushSupported() || Notification.permission !== 'granted' || !navigator.onLine) return;
-  const { error } = await supabase.rpc('schedule_rest_timer', {
-    p_device_id: deviceIdSync(),
-    p_ends_at_ms: Math.round(endsAt),
-    p_title: title,
-    p_body: body,
-  });
-  if (error) void logError('push', error.message);
-}
-
-// Cette méthode permet d'annuler la notification de repos planifiée (« Passer » ou fin de séance).
-export async function cancelRestNotification(): Promise<void> {
-  if (!supabaseConfigured || !navigator.onLine) return;
-  const { error } = await supabase.rpc('cancel_rest_timer', { p_device_id: deviceIdSync() });
-  if (error) void logError('push', error.message);
-}
-
 // Cette méthode permet de tester toute la chaîne Web Push : notification dans 10 s (Paramètres › À propos, lot L0).
 export async function sendTestNotification(): Promise<string> {
   const state = await enablePush();
   if (state !== 'granted')
     return state === 'unsupported' ? 'Notifications non disponibles ici.' : 'Permission refusée.';
+  const { scheduleRestNotification } = await import('./restPush');
   await scheduleRestNotification(
     Date.now() + 10_000,
     'Test Overload',

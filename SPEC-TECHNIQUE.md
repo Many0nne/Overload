@@ -339,7 +339,7 @@ Le lien de réinitialisation s'ouvre dans Safari, pas dans la PWA. La page `/res
 - Fin, app ouverte : son via Web Audio (contexte débloqué par le toucher de validation).
 
 ### 8.2 Notification de fin de repos (serveur)
-1. À la validation d'une série (et à chaque ±15 s), si les notifications sont activées et le réseau disponible : RPC `schedule_rest_timer(device_id, ends_at, title, body)` (upsert sur `device_id`). « Passer » ou une nouvelle validation remplace ou supprime la ligne.
+1. À la validation d'une série (et à chaque ±15 s), si les notifications sont activées : RPC `schedule_rest_timer(device_id, ends_at, title, body)` (upsert sur `device_id`). « Passer » ou une nouvelle validation remplace ou supprime la ligne. La dernière intention (planifier ou annuler) est gardée dans `meta` et rejouée au cycle de synchro suivant si le réseau manque ou si l'appel échoue ; une planification échue, ou dont la séance est terminée ou reprise ailleurs, devient une annulation. `take_over_workout` supprime les minuteurs des autres appareils du compte.
 2. `pg_cron` exécute **chaque seconde** `dispatch_due_timers()` : une requête indexée sur `rest_timers` échus et non envoyés. S'il y en a, elle les marque `sent_at = now()` et appelle `send-push` via `pg_net` (en-tête secret partagé). Coût : un appel d'Edge Function par notification réelle, pas par seconde.
 3. `send-push` (Deno, bibliothèque `@negrel/webpush`) signe en VAPID et envoie à l'abonnement de **cet appareil** uniquement. Si le service push répond 404 ou 410, l'abonnement est supprimé.
 4. Le service worker affiche la notification (`tag = 'rest'`, qui remplace la précédente). iOS exige d'afficher toute notification reçue, y compris quand l'app est ouverte.
