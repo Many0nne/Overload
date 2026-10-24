@@ -1111,8 +1111,9 @@ tr.pr .trophy {
 }
 .cal {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
+  min-width: 0;
   text-align: center;
 }
 .cal .h {
@@ -1122,6 +1123,7 @@ tr.pr .trophy {
 }
 .cal .c {
   aspect-ratio: 1;
+  min-width: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
