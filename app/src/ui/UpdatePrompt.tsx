@@ -1,8 +1,11 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useEffect } from 'react';
 import { deviceIdSync } from '@/data/device';
+import { logError } from '@/data/errors';
 import { ensureSubscription } from '@/data/push';
-import { useInProgressWorkouts } from '@/data/queries';
+import { useInProgressWorkouts, useProfile } from '@/data/queries';
+import { useSession } from '@/data/session';
+import { DEFAULT_SETTINGS } from '@/domain/types';
 
 // Cette méthode permet d'enregistrer le service worker et de proposer une nouvelle version, jamais pendant une séance (§9).
 export function UpdatePrompt() {
@@ -17,9 +20,13 @@ export function UpdatePrompt() {
   const workouts = useInProgressWorkouts();
   const inWorkout = Boolean(workouts?.some((w) => w.owner_device_id === deviceIdSync()));
 
+  // Abonnement réenregistré à chaque connexion (ou changement de compte), une fois le profil chargé pour respecter le réglage.
+  const userId = useSession((s) => (s.status === 'signed_in' && !s.needsReauth ? s.userId : null));
+  const profile = useProfile();
+  const notify = profile ? (profile.settings?.restNotification ?? DEFAULT_SETTINGS.restNotification) : null;
   useEffect(() => {
-    void ensureSubscription().catch(() => {});
-  }, []);
+    if (userId && notify) void ensureSubscription().catch((e) => logError('push', e));
+  }, [userId, notify]);
 
   if (!needRefresh || inWorkout) return null;
   return (

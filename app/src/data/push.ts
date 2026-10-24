@@ -1,8 +1,11 @@
 import { deviceIdSync } from './device';
 import { logError } from './errors';
+import { useSession } from './session';
 import { supabase, supabaseConfigured } from './supabase';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+/** Dernier abonnement accepté par le serveur, sous la forme « userId endpoint » : lié au compte, pas seulement à l'appareil. */
+const CACHE_KEY = 'push-endpoint';
 
 // Cette méthode permet de savoir si les notifications push sont utilisables ici (iOS : uniquement en app installée, ≥ 16.4).
 export function pushSupported(): boolean {
@@ -38,9 +41,12 @@ export async function enablePush(): Promise<'granted' | 'denied' | 'unsupported'
   }
 }
 
-// Cette méthode permet de (ré)enregistrer l'abonnement push de cet appareil côté serveur, au démarrage si l'endpoint a changé.
+// Cette méthode permet de (ré)enregistrer l'abonnement push de cet appareil au nom du compte connecté,
+// lorsque l'endpoint ou le compte a changé depuis le dernier enregistrement (démarrage, connexion, réactivation).
 export async function ensureSubscription(): Promise<void> {
   if (!pushSupported() || Notification.permission !== 'granted' || !supabaseConfigured) return;
+  const { status, userId, needsReauth } = useSession.getState();
+  if (status !== 'signed_in' || !userId || needsReauth) return;
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
   if (!sub) {
@@ -50,7 +56,8 @@ export async function ensureSubscription(): Promise<void> {
     });
   }
   const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-  if (localStorage.getItem('push-endpoint') === json.endpoint) return;
+  const cached = `${userId} ${json.endpoint}`;
+  if (localStorage.getItem(CACHE_KEY) === cached) return;
   const { error } = await supabase.rpc('register_push_subscription', {
     p_device_id: deviceIdSync(),
     p_endpoint: json.endpoint,
@@ -58,7 +65,16 @@ export async function ensureSubscription(): Promise<void> {
     p_auth: json.keys.auth,
   });
   if (error) throw new Error(error.message);
-  localStorage.setItem('push-endpoint', json.endpoint);
+  localStorage.setItem(CACHE_KEY, cached);
+}
+
+// Cette méthode permet de couper les notifications de cet appareil côté serveur, lorsque l'utilisateur désactive
+// « Notification fin de repos » ou se déconnecte (à appeler tant que la session est encore ouverte).
+export async function disablePush(): Promise<void> {
+  localStorage.removeItem(CACHE_KEY);
+  if (!supabaseConfigured || !navigator.onLine || !useSession.getState().userId) return;
+  const { error } = await supabase.rpc('unregister_push_subscription', { p_device_id: deviceIdSync() });
+  if (error) void logError('push', error.message);
 }
 
 // Cette méthode permet de planifier la notification de fin de repos côté serveur (remplace la précédente, §8.2).
