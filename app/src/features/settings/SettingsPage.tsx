@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { signOut } from '@/data/auth';
+import { type PendingSync, signOut, syncBeforeSignOut } from '@/data/auth';
 import { enablePush, sendTestNotification } from '@/data/push';
 import { useProfile, useSettings } from '@/data/queries';
 import { updateSettings } from '@/data/repositories';
@@ -18,6 +18,14 @@ import { DeleteAccountSheet } from './DeleteAccountSheet';
 import { exportData } from './exportData';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
+
+// Cette méthode permet de décrire en toutes lettres ce qui reste à synchroniser, ex. « 2 modifications et 1 photo ».
+function describePending({ changes, photos }: PendingSync): string {
+  const parts = [];
+  if (changes > 0) parts.push(`${changes} modification${changes > 1 ? 's' : ''}`);
+  if (photos > 0) parts.push(`${photos} photo${photos > 1 ? 's' : ''}`);
+  return `${parts.join(' et ')} ${changes + photos > 1 ? 'ne sont' : "n'est"}`;
+}
 
 // Cette méthode permet d'afficher et de modifier tous les paramètres de l'utilisateur (§F7.8).
 // Cette méthode permet d'afficher à l'admin l'occupation de Storage, relue à l'ouverture, en alerte au-delà de 80 % (§19).
@@ -51,7 +59,11 @@ export default function SettingsPage() {
   const settings = useSettings();
   const profile = useProfile();
   const email = useSession((s) => s.email);
-  const [sheet, setSheet] = useState<'rest' | 'age' | 'invite' | 'export' | 'delete' | 'logout' | null>(null);
+  const [sheet, setSheet] = useState<
+    'rest' | 'age' | 'invite' | 'export' | 'delete' | 'logout' | 'logout-pending' | null
+  >(null);
+  const [pending, setPending] = useState<PendingSync | null>(null);
+  const [checking, setChecking] = useState(false);
 
   const set = (patch: Partial<Settings>) => void updateSettings(patch);
   const units = settings.units;
@@ -64,6 +76,27 @@ export default function SettingsPage() {
     await syncNow();
     toast('Nouveau lien créé');
     setSheet(null);
+  };
+
+  // Cette méthode permet de se déconnecter après une dernière synchro lorsque tout est envoyé,
+  // sinon d'ouvrir l'avertissement listant ce qui serait perdu (outbox ou photos en attente).
+  const requestSignOut = async () => {
+    if (checking) return;
+    setChecking(true);
+    const left = await syncBeforeSignOut().finally(() => setChecking(false));
+    if (left.changes === 0 && left.photos === 0) return signOut();
+    setPending(left);
+    setSheet('logout-pending');
+  };
+
+  // Cette méthode permet d'exporter les données locales puis de se déconnecter, sauf si l'export échoue ou est annulé.
+  const exportThenSignOut = async () => {
+    try {
+      await exportData();
+    } catch (e) {
+      return toast(e instanceof Error ? e.message : 'Export impossible');
+    }
+    await signOut();
   };
 
   return (
@@ -357,13 +390,38 @@ export default function SettingsPage() {
         title="Se déconnecter ?"
         onClose={() => setSheet(null)}
         actions={[
-          { label: 'Se déconnecter', kind: 'danger', onClick: () => void signOut() },
+          {
+            label: checking ? 'Synchronisation…' : 'Se déconnecter',
+            kind: 'danger',
+            onClick: requestSignOut,
+          },
           { label: 'Annuler', onClick: () => setSheet(null) },
         ]}
       >
         <p>
           Les données locales de cet appareil seront effacées. Elles restent sur ton compte une fois
           synchronisées.
+        </p>
+      </Sheet>
+
+      <Sheet
+        open={sheet === 'logout-pending'}
+        title="Données non synchronisées"
+        onClose={() => setSheet(null)}
+        actions={[
+          {
+            label: checking ? 'Synchronisation…' : 'Réessayer la synchro',
+            kind: 'primary',
+            onClick: requestSignOut,
+          },
+          { label: 'Exporter puis se déconnecter', onClick: exportThenSignOut },
+          { label: 'Se déconnecter quand même', kind: 'danger', onClick: () => signOut() },
+          { label: 'Annuler', kind: 'ghost', onClick: () => setSheet(null) },
+        ]}
+      >
+        <p>
+          {pending && describePending(pending)} pas encore sur ton compte (hors ligne ou serveur injoignable).
+          Te déconnecter maintenant les effacera définitivement de cet appareil.
         </p>
       </Sheet>
 
