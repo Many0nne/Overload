@@ -3,8 +3,6 @@ import { uuidv7 } from '@/domain/ids';
 import { pickValues } from '@/domain/measurement';
 import type { SetKind, WorkoutDoc, WorkoutExercise, WorkoutSet } from '@/domain/types';
 
-const KIND_CYCLE: SetKind[] = ['normal', 'warmup', 'drop', 'failure'];
-
 // Cette méthode permet de remplacer un exercice de la séance par sa version modifiée.
 export function mapExercise(
   doc: WorkoutDoc,
@@ -39,12 +37,9 @@ export function removeSet(doc: WorkoutDoc, entryId: string, setId: string): Work
   return mapExercise(doc, entryId, (e) => ({ ...e, sets: e.sets.filter((s) => s.id !== setId) }));
 }
 
-// Cette méthode permet de faire défiler le type de série : numéro → É → D → X → numéro.
-export function cycleKind(doc: WorkoutDoc, entryId: string, setId: string): WorkoutDoc {
-  return mapSet(doc, entryId, setId, (s) => ({
-    ...s,
-    kind: KIND_CYCLE[(KIND_CYCLE.indexOf(s.kind) + 1) % KIND_CYCLE.length]!,
-  }));
+// Cette méthode permet de changer la nature d'une série (choisie dans la feuille ouverte depuis son numéro).
+export function setKind(doc: WorkoutDoc, entryId: string, setId: string, kind: SetKind): WorkoutDoc {
+  return mapSet(doc, entryId, setId, (s) => (s.kind === kind ? s : { ...s, kind }));
 }
 
 // Cette méthode permet de déplacer un exercice d'un cran vers le haut (-1) ou le bas (+1).

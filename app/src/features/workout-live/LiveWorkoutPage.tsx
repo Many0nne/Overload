@@ -22,13 +22,13 @@ import { useWakeLock } from '@/ui/wakeLock';
 import { type ExerciseActions, ExerciseBlock } from './ExerciseBlock';
 import {
   addSet,
-  cycleKind,
   insertExercise,
   mapExercise,
   mapSet,
   moveExercise,
   removeExercise,
   removeSet,
+  setKind,
 } from './editor';
 import { RestPanel } from './RestPanel';
 import { listenAudioUnlock, useRestTimer } from './restTimer';
@@ -172,7 +172,7 @@ export default function LiveWorkoutPage() {
           );
         }
       },
-      onCycleKind: (entryId, setId) => commit((d) => cycleKind(d, entryId, setId)),
+      onSetKind: (entryId, setId, kind) => commit((d) => setKind(d, entryId, setId, kind)),
       onCopyPrevious: (entryId, setId) => {
         const entry = docRef.current?.exercises.find((e) => e.id === entryId);
         if (!entry) return;
