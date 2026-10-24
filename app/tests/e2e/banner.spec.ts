@@ -29,3 +29,27 @@ test('bandeau de séance : exercice en cours, reprise, et abandon sans revenir d
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(async () => (await serverWorkouts(seeded)).length).toBe(0);
 });
+
+test('feuille modale : nommée par son titre, prend le focus, isole la page et le rend à la fermeture', async ({
+  page,
+  seeded,
+}) => {
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+  await page.goto('/');
+  const trigger = page.locator('.banner').getByRole('button', { name: 'Abandonner la séance' });
+  await trigger.focus();
+  await trigger.press('Enter');
+
+  const dialog = page.getByRole('dialog', { name: 'Abandonner la séance ?' });
+  await expect(dialog).toBeFocused();
+  // Le reste de l'app est inerte (hors d'atteinte du lecteur d'écran), sauf le toast qui doit rester annoncé.
+  await expect(page.locator('.banner')).toHaveJSProperty('inert', true);
+  await expect(page.locator('main')).toHaveJSProperty('inert', true);
+  await expect(page.locator('.toast')).toHaveJSProperty('inert', false);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(page.locator('.banner')).toHaveJSProperty('inert', false);
+});

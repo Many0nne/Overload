@@ -334,3 +334,14 @@ a {
   gap: 10px;
   margin-top: 12px;
 }
+/* Feuille modale : elle reçoit le focus à l'ouverture (lecteur d'écran), sans contour visible. */
+.sheet:focus {
+  outline: none;
+}
+/* Ligne d'historique cliquable (mesures) : un vrai bouton, à la mise en page de la ligne. */
+.rec-row {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+}

@@ -134,11 +134,13 @@ export default function MeasurementsPage() {
           <div className="card">
             <ul className="rec-list">
               {entries.map((r) => (
-                <li key={r.id} onClick={() => setEditing(r)} style={{ cursor: 'pointer' }}>
-                  <span>{dateFmt.format(parseDayKey(r.measured_on))}</span>
-                  <b>
-                    {fieldText(r.values, key, units)} {unitOf(key, units)}
-                  </b>
+                <li key={r.id}>
+                  <button className="rec-row" onClick={() => setEditing(r)}>
+                    <span>{dateFmt.format(parseDayKey(r.measured_on))}</span>
+                    <b>
+                      {fieldText(r.values, key, units)} {unitOf(key, units)}
+                    </b>
+                  </button>
                 </li>
               ))}
             </ul>
