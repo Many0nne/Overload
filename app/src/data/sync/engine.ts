@@ -2,13 +2,16 @@ import type Dexie from 'dexie';
 import type { SyncTable, WorkoutRow } from '@/domain/types';
 import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
+import { logError } from '../errors';
 import { supabase } from '../supabase';
+import { recordRejects, type SyncReject } from './rejects';
 
 export const PUSH_BATCH = 100;
 export const NIL_DEVICE = '00000000-0000-0000-0000-000000000000';
 
-type PushStatus = 'accepted' | 'stale' | 'rejected_not_owner' | 'forbidden';
+type PushStatus = 'accepted' | 'stale' | 'rejected_not_owner' | 'forbidden' | 'invalid';
 type PushResult = { table: SyncTable; id: string; status: PushStatus };
+type FetchResult = { table: SyncTable; id: string; row: Record<string, unknown> | null };
 type PullKey = SyncTable | 'catalog';
 type PullResponse = {
   changes: Partial<Record<PullKey, Record<string, unknown>[]>>;
@@ -71,6 +74,7 @@ export async function push(): Promise<{ rejected: string[] }> {
         await supabase.rpc('sync_push', { p_device_id: deviceIdSync(), p_changes: changes }),
       ) as PushResult[];
       const byKey = new Map(results.map((r) => [`${r.table}:${r.id}`, r.status]));
+      const refused: SyncReject[] = [];
       await db.transaction('rw', db.outbox, db.workouts, async () => {
         for (const { entry, ts } of sent) {
           const status = byKey.get(`${entry.table}:${entry.row_id}`);
@@ -83,12 +87,34 @@ export async function push(): Promise<{ rejected: string[] }> {
             // Appareil dépossédé : la séance passe en lecture seule jusqu'à la réception de la version serveur.
             await db.workouts.update(entry.row_id, { owner_device_id: NIL_DEVICE });
           }
+          if (status === 'invalid' || status === 'forbidden')
+            refused.push({ at: Date.now(), table: entry.table, id: entry.row_id, status });
         }
       });
+      if (refused.length > 0) await realignRefused(refused);
     }
     if (entries.length < PUSH_BATCH) break;
   }
   return { rejected };
+}
+
+// Cette méthode permet de réaligner la base locale sur le serveur lorsqu'il a refusé des lignes (invalid, forbidden, #58) :
+// la version serveur remplace la ligne locale, ou la ligne locale est supprimée si le serveur n'en a aucune.
+async function realignRefused(refused: SyncReject[]): Promise<void> {
+  for (const r of refused) void logError('sync', `Refus du serveur : ${r.table} ${r.id} (${r.status})`);
+  await recordRejects(refused);
+  const results = check(
+    await supabase.rpc('sync_fetch', { p_keys: refused.map((r) => ({ table: r.table, id: r.id })) }),
+  ) as FetchResult[];
+  const tables = [...new Set(refused.map((r) => r.table))];
+  await db.transaction('rw', [db.outbox, ...tables.map((t) => db.table(t))], async () => {
+    for (const { table, id, row } of results) {
+      // Modifiée de nouveau entre-temps : le prochain push la soumettra au serveur.
+      if (await db.outbox.where('[table+row_id]').equals([table, id]).count()) continue;
+      if (row) await db.table(table).put(row);
+      else await db.table(table).delete(id);
+    }
+  });
 }
 
 // Cette méthode permet de décider si une ligne reçue remplace la ligne locale (outbox plus récente = on garde le local, §6.3).
