@@ -1,7 +1,7 @@
 -- sync_push (dernier gagne, appartenance, séance en cours) et sync_pull (curseurs, pagination, catalogue).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(31);
 
 select tests.create_user('aaaaaaaa-0000-0000-0000-000000000001', 'a@test.local');
 select tests.create_user('bbbbbbbb-0000-0000-0000-000000000002', 'b@test.local');
@@ -80,8 +80,16 @@ select is(pg_temp.push1('11111111-0000-0000-0000-000000000000', jsonb_build_obje
   'exercise_ids', '["aaaaaaaa-4444-0000-0000-000000000001"]'::jsonb, 'doc', '{"title":"Push"}'::jsonb,
   'client_updated_at', 1000, 'client_device_id', '11111111-0000-0000-0000-000000000000', 'deleted_at', null))),
   'accepted', 'séance en cours créée par D1');
+select public.schedule_rest_timer('11111111-0000-0000-0000-000000000000', 4102444800000, 'Repos terminé', 'D1');
+select public.schedule_rest_timer('22222222-0000-0000-0000-000000000000', 4102444800000, 'Repos terminé', 'D2');
 select is(public.take_over_workout('aaaaaaaa-3333-0000-0000-000000000001', '22222222-0000-0000-0000-000000000000') ->> 'owner_device_id',
   '22222222-0000-0000-0000-000000000000', 'reprise par D2');
+select tests.as_postgres();
+select is((select count(*)::int from public.rest_timers where device_id = '11111111-0000-0000-0000-000000000000'), 0,
+  'reprise : le minuteur de l''appareil dépossédé est annulé');
+select is((select count(*)::int from public.rest_timers where device_id = '22222222-0000-0000-0000-000000000000'), 1,
+  'reprise : le minuteur de l''appareil qui reprend est gardé');
+select tests.authenticate_as('aaaaaaaa-0000-0000-0000-000000000001');
 select is(pg_temp.push1('11111111-0000-0000-0000-000000000000', jsonb_build_object('table', 'workouts', 'row', jsonb_build_object(
   'id', 'aaaaaaaa-3333-0000-0000-000000000001', 'user_id', 'aaaaaaaa-0000-0000-0000-000000000001', 'status', 'in_progress',
   'owner_device_id', '11111111-0000-0000-0000-000000000000', 'started_at', 1760000000123, 'exercise_ids', '[]'::jsonb,

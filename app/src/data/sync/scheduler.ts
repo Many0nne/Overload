@@ -47,6 +47,9 @@ async function runOnce(): Promise<void> {
   try {
     await push();
     await pull();
+    // Après le pull : une séance reprise ailleurs ou terminée entre-temps ne replanifie pas de notification (#66).
+    // Chargé à la demande pour rester hors du JS initial (budget §15).
+    await (await import('../restPush')).flushRestNotification();
     status.set({ lastCallFailed: false, lastSyncAt: Date.now() });
     void checkClockSkew();
     void refreshStorageUsage();

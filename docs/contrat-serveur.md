@@ -39,7 +39,7 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - Trigger `before insert or update` sur chaque table synchronisée : `new.rev = next_rev(coalesce(new.user_id, nil))` (pour `profiles` : `new.id`).
 
 ### Autres RPC
-- `take_over_workout(p_id uuid, p_device_id uuid) returns jsonb` : passe `owner_device_id` à `p_device_id` (séance du compte, `in_progress`), met à jour `client_updated_at = now_ms`, `client_device_id = p_device_id`, renvoie la ligne.
+- `take_over_workout(p_id uuid, p_device_id uuid) returns jsonb` : passe `owner_device_id` à `p_device_id` (séance du compte, `in_progress`), met à jour `client_updated_at = now_ms`, `client_device_id = p_device_id`, supprime les `rest_timers` des autres appareils du compte, renvoie la ligne.
 - `regenerate_invite() returns text` : nouveau code (12 caractères parmi `ABCDEFGHJKMNPQRSTVWXYZ23456789`, sans tirets), renvoyé sans tirets.
 - `register_push_subscription(p_device_id uuid, p_endpoint text, p_p256dh text, p_auth text) returns void` : upsert sur `device_id`.
 - `unregister_push_subscription(p_device_id uuid) returns void`.

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/data/db', () => ({ getMeta: vi.fn(), setMeta: vi.fn() }));
-vi.mock('@/data/push', () => ({ cancelRestNotification: vi.fn(), scheduleRestNotification: vi.fn() }));
+vi.mock('@/data/restPush', () => ({ cancelRestNotification: vi.fn(), scheduleRestNotification: vi.fn() }));
 
 // Faux AudioContext : compte les oscillateurs démarrés et simule la suspension d'iOS (veille, arrière-plan).
 class FakeAudioContext {

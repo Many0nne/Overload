@@ -3,7 +3,6 @@ import { seedCatalogIfEmpty } from './bootstrap';
 import { db, getMeta, setMeta, wipeLocalData } from './db';
 import { getDeviceId } from './device';
 import { logError } from './errors';
-import { disablePush } from './push';
 import { useSession } from './session';
 import { supabase, supabaseConfigured } from './supabase';
 import { startSyncScheduler, syncNow } from './sync/scheduler';
@@ -116,9 +115,10 @@ export async function syncBeforeSignOut(): Promise<PendingSync> {
 
 // Cette méthode permet de se déconnecter volontairement : la base locale est vidée, y compris ce qui n'est pas synchronisé.
 // Hors ligne, la révocation serveur échoue : on ferme alors la session locale pour ne pas la retrouver au rechargement.
-// L'abonnement push est retiré avant, tant que la session autorise l'appel, pour ne pas notifier le compte suivant.
+// L'abonnement push est retiré avant, tant que la session autorise l'appel, pour ne pas notifier le compte suivant
+// (module chargé à la demande pour rester hors du JS initial, budget §15).
 export async function signOut(): Promise<void> {
-  await disablePush();
+  await (await import('./push')).disablePush();
   const { error } = await supabase.auth.signOut();
   if (error) await supabase.auth.signOut({ scope: 'local' });
   await wipeLocalData();

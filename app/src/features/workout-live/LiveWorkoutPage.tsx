@@ -65,6 +65,12 @@ export default function LiveWorkoutPage() {
     void timer.load();
   }, [timer.load]);
 
+  // Séance reprise sur un autre appareil : le repos en cours ici s'arrête, notification comprise (#66).
+  const timerWorkoutId = timer.timer?.workoutId;
+  useEffect(() => {
+    if (readOnly && timerWorkoutId === id) void timer.skip();
+  }, [readOnly, timerWorkoutId, id, timer.skip]);
+
   // Chaque toucher pendant la séance garde le son débloqué pour le bip de fin de repos (iOS, §F7.4).
   useEffect(() => listenAudioUnlock(), []);
 
