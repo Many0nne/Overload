@@ -3,7 +3,12 @@ import type { SyncTable } from '@/domain/types';
 import { db, getMeta, setMeta } from '../db';
 
 /** Modification refusée par le serveur (#58) : la ligne locale a été réalignée sur la version serveur. */
-export type SyncReject = { at: number; table: SyncTable; id: string; status: 'invalid' | 'forbidden' };
+export type SyncReject = {
+  at: number;
+  table: SyncTable;
+  id: string;
+  status: 'invalid' | 'forbidden' | 'outdated';
+};
 
 const KEY = 'sync_rejects';
 

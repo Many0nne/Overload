@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { DOC_VERSIONS, type DocTable, upgradeRow } from '@/domain/schema';
 import type {
   BodyMeasurementRow,
   ExercisePrefsRow,
@@ -57,7 +58,29 @@ export class OverloadDb extends Dexie {
       blobs: 'path',
       meta: 'key',
     });
+    this.on('ready', (vip) => upgradeLocalDocs(vip as OverloadDb), true);
   }
+}
+
+const DOC_VERSIONS_KEY = 'doc_versions';
+
+// Cette méthode permet de mettre à la version de l'app les documents stockés localement, à l'ouverture de la base (#71).
+// Ne parcourt les tables que si les versions ont changé depuis le dernier passage ; aucune lecture ne voit l'ancien format.
+export async function upgradeLocalDocs(vip: OverloadDb): Promise<void> {
+  const done = (await vip.meta.get(DOC_VERSIONS_KEY))?.value as Partial<Record<DocTable, number>> | undefined;
+  const tables = (Object.keys(DOC_VERSIONS) as DocTable[]).filter((t) => done?.[t] !== DOC_VERSIONS[t]);
+  if (tables.length === 0) return;
+  await vip.transaction('rw', [vip.meta, ...tables.map((t) => vip.table(t))], async () => {
+    for (const t of tables)
+      await vip
+        .table(t)
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          const res = upgradeRow(t, row);
+          if (res.ok && res.changed) row.doc = res.row.doc;
+        });
+    await vip.meta.put({ key: DOC_VERSIONS_KEY, value: DOC_VERSIONS });
+  });
 }
 
 export const db = new OverloadDb();

@@ -20,8 +20,9 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - « Dernier gagne » : écriture si la ligne n'existe pas, ou si `(client_updated_at, client_device_id)` entrant > existant (comparaison lexicographique, `client_device_id` comparé en texte). Sinon `stale`.
 - Séance en cours : si la ligne `workouts` existante a `status = 'in_progress'` et `owner_device_id <> p_device_id` → `rejected_not_owner`, quel que soit l'horodatage.
 - Ligne mal formée (id, horodatage ou appareil absents, conversion impossible, contrainte violée) ou table inconnue : statut `invalid`.
-- Sortie : `[{ "table", "id", "status": "accepted" | "stale" | "rejected_not_owner" | "forbidden" | "invalid" }]`.
-- Le client journalise chaque `invalid` / `forbidden`, le garde dans `meta.sync_rejects` (pastille « n refusées », Paramètres › Journal d'erreurs) et se réaligne avec `sync_fetch`.
+- Document (`routines`, `workouts`, `exercise_prefs`) d'un `schemaVersion` inférieur à celui stocké (absent = 1, #71) : statut `outdated`, la ligne n'est pas écrite.
+- Sortie : `[{ "table", "id", "status": "accepted" | "stale" | "rejected_not_owner" | "forbidden" | "invalid" | "outdated" }]`.
+- Le client journalise chaque `invalid` / `forbidden` / `outdated`, le garde dans `meta.sync_rejects` (pastille « n refusées », Paramètres › Journal d'erreurs) et se réaligne avec `sync_fetch`.
 - Verrou `pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0))`.
 
 ### `sync_pull(p_cursors jsonb) returns jsonb`

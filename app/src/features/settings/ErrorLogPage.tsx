@@ -16,6 +16,12 @@ const TABLE_LABELS: Record<SyncReject['table'], string> = {
   exercise_prefs: "Réglages d'exercice",
 };
 
+const REJECT_LABELS: Record<SyncReject['status'], string> = {
+  forbidden: 'non autorisée',
+  invalid: 'invalide',
+  outdated: 'format plus récent sur le serveur',
+};
+
 // Cette méthode permet de consulter et copier le journal d'erreurs local (§16),
 // de prendre connaissance des modifications refusées par le serveur (#58) et de relancer les photos abandonnées (#59).
 export default function ErrorLogPage() {
@@ -54,7 +60,7 @@ export default function ErrorLogPage() {
             {rejects.map((r) => (
               <div key={`${r.at}-${r.table}-${r.id}`}>
                 {new Date(r.at).toLocaleString('fr-FR')} · {TABLE_LABELS[r.table] ?? r.table} ·{' '}
-                {r.status === 'forbidden' ? 'non autorisée' : 'invalide'}
+                {REJECT_LABELS[r.status]}
                 <span className="t2"> ({r.id})</span>
               </div>
             ))}
