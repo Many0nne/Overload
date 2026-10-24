@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/data/db';
-import { supabase } from '@/data/supabase';
+import { photosBucket } from '@/data/supabase';
 
 const urlCache = new Map<string, string>();
 
@@ -15,7 +15,7 @@ export async function photoUrl(path: string): Promise<string | undefined> {
     urlCache.set(path, url);
     return url;
   }
-  const { data } = await supabase.storage.from('photos').createSignedUrl(path, 3600);
+  const { data } = await (await photosBucket()).createSignedUrl(path, 3600);
   if (!data?.signedUrl) return undefined;
   const url = `${data.signedUrl}&p=${encodeURIComponent(path)}`;
   urlCache.set(path, url);

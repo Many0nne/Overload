@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { wipeLocalData } from '@/data/db';
 import { useSession } from '@/data/session';
-import { supabase } from '@/data/supabase';
+import { invokeFunction, supabase } from '@/data/supabase';
 import { Sheet, toast } from '@/ui/components';
 
 // Cette méthode permet de supprimer définitivement le compte après saisie de « SUPPRIMER » (§14).
@@ -14,7 +14,7 @@ export function DeleteAccountSheet(props: { open: boolean; onClose: () => void }
   const confirm = async () => {
     if (text.trim() !== 'SUPPRIMER') return toast('Saisis SUPPRIMER pour confirmer');
     setBusy(true);
-    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    const { error } = await invokeFunction('delete-account', { method: 'POST' });
     if (error) {
       setBusy(false);
       return toast('Suppression impossible (réseau ?)');

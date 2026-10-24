@@ -4,7 +4,7 @@ import { db, getMeta, setMeta, wipeLocalData } from './db';
 import { getDeviceId } from './device';
 import { logError } from './errors';
 import { useSession } from './session';
-import { supabase, supabaseConfigured } from './supabase';
+import { invokeFunction, supabase, supabaseConfigured } from './supabase';
 import { startSyncScheduler, syncNow } from './sync/scheduler';
 
 // Cette méthode permet de préparer la session au démarrage : session locale d'abord (hors ligne), puis écoute des changements.
@@ -78,7 +78,7 @@ const SIGNUP_ERRORS: Record<string, string> = {
 
 // Cette méthode permet de créer un compte avec un code d'invitation via l'Edge Function, puis d'ouvrir la session.
 export async function signUpWithInvite(input: SignupInput): Promise<string | null> {
-  const { data, error } = await supabase.functions.invoke('signup-with-invite', {
+  const { data, error } = await invokeFunction('signup-with-invite', {
     body: {
       code: input.code,
       email: input.email.trim(),

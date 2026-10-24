@@ -3,7 +3,7 @@ import type { SyncTable, WorkoutRow } from '@/domain/types';
 import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
 import { logError } from '../errors';
-import { supabase } from '../supabase';
+import { photosBucket, supabase } from '../supabase';
 import { recordRejects, type SyncReject } from './rejects';
 
 export const PUSH_BATCH = 100;
@@ -36,7 +36,7 @@ function check<T>(res: { data: T; error: { message: string; code?: string } | nu
 async function uploadPendingBlobs(): Promise<void> {
   const pending = await db.blobs.filter((b) => !b.uploaded).toArray();
   for (const b of pending) {
-    const { error } = await supabase.storage.from('photos').upload(b.path, b.blob, {
+    const { error } = await (await photosBucket()).upload(b.path, b.blob, {
       upsert: true,
       contentType: 'image/jpeg',
     });
