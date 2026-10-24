@@ -4,7 +4,13 @@ import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
 import { useHistoryWithBadges } from '@/data/derived';
 import { useExercise, useProfile, useSettings } from '@/data/queries';
-import { isExerciseUsed, removeExercise, saveExercisePrefs, updateExercise } from '@/data/repositories';
+import {
+  isExerciseUsed,
+  removeExercise,
+  restoreExercise,
+  saveExercisePrefs,
+  updateExercise,
+} from '@/data/repositories';
 import {
   CHART_METRIC_LABELS,
   CHART_METRIC_UNITS,
@@ -172,6 +178,18 @@ export default function ExercisePage() {
               setEditing(true);
             },
           },
+          ...(exercise.archived_at != null && exercise.user_id !== null
+            ? [
+                {
+                  label: 'Restaurer',
+                  onClick: async () => {
+                    setMenu(false);
+                    await restoreExercise(exercise.id);
+                    toast('Exercice restauré');
+                  },
+                },
+              ]
+            : []),
           ...(exercise.archived_at == null
             ? [
                 {

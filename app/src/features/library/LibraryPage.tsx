@@ -27,7 +27,7 @@ function LibraryHome() {
           </button>
         }
       />
-      <ExerciseList onPick={(e) => navigate(`/exercise/${e.id}`)} />
+      <ExerciseList archivable onPick={(e) => navigate(`/exercise/${e.id}`)} />
     </>
   );
 }

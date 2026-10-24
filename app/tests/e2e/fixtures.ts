@@ -229,9 +229,10 @@ export async function checkSet(page: Page, exerciseName: string, index: number):
   await expect(row).toHaveClass(/\bdone\b/);
 }
 
-// Cette méthode permet de fermer le minuteur de repos lorsqu'il est affiché, pour libérer le bas de l'écran.
+// Cette méthode permet de fermer le minuteur de repos lorsqu'il est affiché (« Passer », ou « OK » une fois terminé),
+// pour libérer le bas de l'écran.
 export async function skipRest(page: Page): Promise<void> {
-  const skip = page.locator('.rest-panel').getByRole('button', { name: 'Passer' });
+  const skip = page.locator('.rest-panel').getByRole('button', { name: /^(Passer|OK)$/ });
   if (await skip.isVisible()) await skip.click();
 }
 

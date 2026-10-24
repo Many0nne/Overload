@@ -41,37 +41,44 @@ function useLastUsed(): Map<string, number> {
 
 // Cette méthode permet de lister, rechercher (sans accents) et filtrer les exercices, récents d'abord (§F7.2).
 // En mode sélection, toucher un exercice le choisit ; sinon il ouvre sa fiche.
-export function ExerciseList(props: { onPick: (e: ExerciseRow) => void; exclude?: Set<string> }) {
+// Avec `archivable`, un filtre « Archivés » permet de retrouver les exercices archivés (bibliothèque seulement).
+export function ExerciseList(props: {
+  onPick: (e: ExerciseRow) => void;
+  exclude?: Set<string>;
+  archivable?: boolean;
+}) {
   const all = useAllExercises();
   const lastUsed = useLastUsed();
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<Muscle | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [archived, setArchived] = useState<'archived' | null>(null);
 
   const { recent, groups } = useMemo(() => {
     const q = normalizeSearch(query);
     const list = (all ?? []).filter(
       (e) =>
-        e.archived_at == null &&
+        (archived ? e.archived_at != null && e.user_id !== null : e.archived_at == null) &&
         !props.exclude?.has(e.id) &&
         (!q || matchesSearch(e.name_search, q)) &&
         (!muscle || e.primary_muscle === muscle || e.secondary_muscles.includes(muscle)) &&
         (!equipment || e.equipment === equipment),
     );
     list.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    const recent = q
-      ? []
-      : list
-          .filter((e) => lastUsed.has(e.id))
-          .sort((a, b) => lastUsed.get(b.id)! - lastUsed.get(a.id)!)
-          .slice(0, 8);
+    const recent =
+      q || archived
+        ? []
+        : list
+            .filter((e) => lastUsed.has(e.id))
+            .sort((a, b) => lastUsed.get(b.id)! - lastUsed.get(a.id)!)
+            .slice(0, 8);
     const groups = new Map<string, ExerciseRow[]>();
     for (const e of list) {
       const letter = normalizeSearch(e.name).charAt(0).toUpperCase() || '#';
       groups.set(letter, [...(groups.get(letter) ?? []), e]);
     }
     return { recent, groups };
-  }, [all, query, muscle, equipment, lastUsed, props.exclude]);
+  }, [all, query, muscle, equipment, archived, lastUsed, props.exclude]);
 
   const item = (e: ExerciseRow) => (
     <button key={e.id} className="lib-item" onClick={() => props.onPick(e)}>
@@ -112,6 +119,16 @@ export function ExerciseList(props: { onPick: (e: ExerciseRow) => void; exclude?
           options={EQUIPMENTS.map((m) => ({ value: m, label: EQUIPMENT_LABELS[m] }))}
         />
       </div>
+      {props.archivable && (
+        <div className="mt-8">
+          <Chips
+            value={archived}
+            onChange={setArchived}
+            allLabel="Actifs"
+            options={[{ value: 'archived' as const, label: 'Archivés' }]}
+          />
+        </div>
+      )}
       <div className="mt-6">
         {recent.length > 0 && (
           <>

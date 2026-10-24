@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Overload : minuteur de repos (issue #101)</title>
+<style>
+  /* Couleurs de l'app (app/src/ui/styles/tokens.css), thèmes sombre et clair */
+  .app {
+    --radius: 14px; --white: #fff;
+    --shadow-float: 0 8px 24px rgba(0,0,0,.35); --shadow-panel: 0 10px 40px rgba(0,0,0,.45);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+  }
+  .app[data-theme="dark"] {
+    --bg: #000; --surface: #1c1c1e; --surface-2: #2c2c2e; --line: #38383a; --text: #f5f5f7; --text-2: #aeaeb2;
+    --muted: #8e8e93; --accent: #4c8dff; --accent-fill: #2a6ae0; --accent-ink: #fff; --accent-soft: rgba(76,141,255,.15);
+    --done: #22c55e; --done-soft: rgba(34,197,94,.15); --warm: #f5a524; --fail: #f87171;
+  }
+  .app[data-theme="light"] {
+    --bg: #fff; --surface: #f4f6f9; --surface-2: #eaedf2; --line: #e2e6ed; --text: #101318; --text-2: #4b5563;
+    --muted: #626a77; --accent: #1f6fe5; --accent-fill: #1f6fe5; --accent-ink: #fff; --accent-soft: rgba(31,111,229,.1);
+    --done: #16a34a; --done-soft: #dcf7e6; --warm: #d98a00; --fail: #dc2626;
+    --shadow-float: 0 8px 24px rgba(20,30,50,.16); --shadow-panel: 0 10px 40px rgba(20,30,50,.2);
+  }
+
+  /* Habillage de la page de propositions */
+  body { margin: 0; padding: 20px; }
+  .opt { margin-bottom: 34px; }
+  .opt h3 { margin: 0 0 4px; font-size: 15px; font-family: var(--font-sans); color: var(--foreground, #f5f5f7); }
+  .opt h3 .k { display: inline-block; min-width: 22px; padding: 1px 6px; margin-right: 6px; border-radius: 6px;
+    background: var(--accent-surface, #2a6ae0); color: var(--accent-surface-foreground, #fff); text-align: center; }
+  .opt p { margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--muted-foreground, #aeaeb2); font-family: var(--font-sans); max-width: 900px; }
+  .opt ul { margin: 10px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; color: var(--muted-foreground, #aeaeb2); font-family: var(--font-sans); max-width: 900px; }
+  .opt ul li.plus::marker { content: "+  "; color: var(--success, #22c55e); }
+  .opt ul li.moins::marker { content: "−  "; color: var(--destructive, #f87171); }
+  .opt .reco { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--success, #22c55e); }
+  h2 { font-family: var(--font-sans); font-size: 16px; margin: 26px 0 4px; color: var(--foreground, #f5f5f7); }
+  h2:first-child { margin-top: 0; }
+  .lead, .note { font-family: var(--font-sans); font-size: 13px; color: var(--muted-foreground, #aeaeb2); margin: 0 0 12px; line-height: 1.5; max-width: 900px; }
+  .note { font-size: 12.5px; }
+  .shots { display: flex; flex-wrap: wrap; gap: 18px; }
+  .shot .cap { font-family: var(--font-sans); font-size: 12px; color: var(--muted-foreground, #aeaeb2); margin: 0 0 6px; }
+
+  /* Écran simulé : bas de l'écran de séance, défilé jusqu'en bas (viewport iPhone 375 px) */
+  .phone { background: var(--bg); border-radius: 28px; width: 375px; height: 560px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 0 0 1px var(--line); }
+  .scroll { padding-bottom: var(--reserve, 112px); }
+  .home { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; border-radius: 3px; transform: translateX(-50%);
+    background: var(--text); opacity: .85; z-index: 40; }
+  .safe { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; z-index: 39; pointer-events: none;
+    background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--fail) 12%, transparent) 6px 8px); }
+  .ex { padding: 16px 0 6px; border-bottom: 8px solid var(--surface); }
+  .ex-top { display: flex; align-items: center; gap: 12px; padding: 0 18px; }
+  .ex-top .name { flex: 1; font-weight: 700; font-size: 16px; color: var(--accent); }
+  .dots { width: 30px; height: 30px; display: grid; place-items: center; color: var(--text-2); font-size: 18px; }
+  .rest-link { display: inline-block; margin: 6px 18px 8px; font-size: 14px; color: var(--accent); font-weight: 600; }
+  table.sets { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; table-layout: fixed; }
+  .sets th { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 6px 4px; text-align: center; }
+  .sets td { text-align: center; padding: 5px 4px; height: 48px; box-sizing: border-box; }
+  .sets th.c-type, .sets td.c-type { width: 58px; padding-left: 18px; }
+  .sets th.c-chk, .sets td.c-chk { width: 56px; padding-right: 14px; }
+  .sets th.c-val { width: 72px; }
+  tr.set:nth-child(even of .set) { background: color-mix(in srgb, var(--surface) 55%, transparent); }
+  tr.set.done { background: var(--done-soft); }
+  .type { font-weight: 800; font-size: 15px; }
+  .prev { font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .val { width: 64px; height: 36px; border-radius: 9px; background: var(--surface-2); display: inline-grid; place-items: center;
+    font-size: 17px; font-weight: 700; }
+  .val.ph { color: var(--muted); font-weight: 600; }
+  tr.done .val { background: transparent; }
+  .check { width: 38px; height: 34px; border-radius: 9px; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); margin: auto; }
+  .check svg { width: 20px; height: 20px; }
+  tr.done .check { background: var(--done); color: var(--white); }
+  .btn { height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 650; font-size: 15px; display: inline-flex;
+    align-items: center; justify-content: center; box-sizing: border-box; border: 0; font-family: inherit; }
+  .btn-soft { background: var(--surface-2); color: var(--text); }
+  .btn-primary { background: var(--accent-fill); color: var(--accent-ink); }
+  .btn-block { width: 100%; }
+  .add-set { margin: 8px 18px 10px; width: calc(100% - 36px); }
+  .section { padding: 0 18px; margin-top: 16px; }
+  .c-accent { color: var(--accent); } .c-fail { color: var(--fail); }
+  .mt-8 { margin-top: 8px; }
+
+  /* Actuel */
+  .rp-now { position: absolute; left: 10px; right: 10px; bottom: 50px; background: var(--surface-2); border-radius: 20px;
+    padding: 14px 16px 16px; box-shadow: var(--shadow-panel); border: 1px solid var(--line); z-index: 22; }
+  .rp-now .lbl { font-size: 13px; color: var(--text-2); }
+  .rp-now .time { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1.1; }
+  .rp-now .bar { height: 6px; border-radius: 3px; background: var(--line); margin: 10px 0 14px; overflow: hidden; }
+  .rp-now .bar i { display: block; height: 100%; background: var(--accent); }
+  .rp-now .ctrls { display: flex; gap: 8px; } .rp-now .ctrls .btn { flex: 1; }
+
+  /* Commun aux variantes : carte flottante façon bandeau « Séance en cours » (verre dépoli, rayon 16, ombre légère) */
+  .float { position: absolute; left: 12px; right: 12px; bottom: 42px; z-index: 22; border-radius: 16px; overflow: hidden;
+    background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%); border: 1px solid var(--line); box-shadow: var(--shadow-float); }
+  .float.end { border-color: color-mix(in srgb, var(--done) 55%, transparent); animation: endpulse 1s ease-in-out infinite; }
+  @keyframes endpulse { 50% { box-shadow: var(--shadow-float), 0 0 0 4px color-mix(in srgb, var(--done) 25%, transparent); } }
+  .pill { width: 44px; height: 44px; border-radius: 22px; flex: none; background: var(--surface-2); color: var(--text-2);
+    display: grid; place-items: center; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; border: 0; font-family: inherit; }
+  .t-big { font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1.05; }
+  .sub { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .end .t-big { color: var(--done); }
+
+  /* A : pilule compacte, remplissage du fond */
+  .rp-a { height: 64px; display: flex; align-items: center; gap: 6px; padding: 0 9px 0 14px; }
+  .rp-a .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-soft); z-index: -1; }
+  .rp-a.end .fill { background: var(--done-soft); }
+  .rp-a .txt { flex: 1; min-width: 0; }
+  .rp-a .t-big { font-size: 26px; }
+  .rp-a .btn { height: 44px; padding: 0 14px; margin-left: 2px; }
+  .rp-a.end .btn-primary { background: var(--done); color: var(--white); }
+
+  /* B : carte à anneau */
+  .rp-b { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px; }
+  .ring { position: relative; width: 76px; height: 76px; flex: none; }
+  .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ring .t-big { position: absolute; inset: 0; display: grid; place-items: center; font-size: 19px; }
+  .end .ring .t-big { font-size: 13px; }
+  .rp-b .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .rp-b .head { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rp-b .head span { font-weight: 500; color: var(--muted); }
+  .rp-b .row { display: flex; gap: 6px; }
+  .rp-b .row .btn { flex: 1; padding: 0 10px; }
+  .rp-b.end .btn-primary { background: var(--done); color: var(--white); }
+
+  /* C : ligne dans la liste + rappel dans l'en-tête */
+  .live-head { position: absolute; top: 0; left: 0; right: 0; z-index: 30; display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px 10px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(20px); }
+  .live-head .ttl { flex: 1; font-size: 17px; font-weight: 700; }
+  .live-head .chip { height: 32px; padding: 0 12px; border-radius: 16px; background: var(--accent-soft); color: var(--accent);
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .live-head .fin { height: 32px; padding: 0 14px; border-radius: 10px; background: var(--done); color: var(--white);
+    font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; }
+  tr.rest-row td { height: auto; padding: 8px 14px 10px 18px; text-align: left; background: var(--accent-soft); }
+  tr.rest-row.end td { background: var(--done-soft); }
+  .rr { display: flex; align-items: center; gap: 6px; }
+  .rr .txt { flex: 1; min-width: 0; }
+  .rr .t-big { font-size: 22px; }
+  .rr .bar { height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--accent) 22%, transparent); margin-top: 6px; overflow: hidden; }
+  .rr .bar i { display: block; height: 100%; background: var(--accent); }
+  .end .rr .bar i { background: var(--done); }
+  .rr .btn { height: 44px; padding: 0 12px; }
+  .rr .pill { background: var(--bg); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const TOTAL = 90; // repos prévu (s)
+const LEFT = 52;  // temps restant affiché (s)
+const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+const sets = [
+  { n: 1, prev: '22 × 10', w: '24', r: '10', done: true },
+  { n: 2, prev: '22 × 9', w: '24', r: '9', done: true },
+  { n: 3, prev: '22 × 8', w: '', r: '' },
+];
+
+// Cette méthode permet de construire une ligne de série (validée ou à saisir) de l'écran de séance.
+function setRow(s) {
+  const v = (x, ph) => (x ? `<span class="val">${x}</span>` : `<span class="val ph">${ph}</span>`);
+  return `<tr class="set${s.done ? ' done' : ''}"><td class="c-type"><span class="type">${s.n}</span></td>
+    <td><span class="prev">${s.prev}</span></td><td>${v(s.w, '22')}</td><td>${v(s.r, '8')}</td>
+    <td class="c-chk"><span class="check">${CHECK}</span></td></tr>`;
+}
+
+// Cette méthode permet de rendre le bas de l'écran de séance (dernier exercice et boutons de fin), défilé jusqu'en bas ;
+// la variante C insère la ligne de repos sous la série validée et le rappel dans l'en-tête.
+function screen(variant, end) {
+  const rows = sets.map((s, i) => setRow(s) + (variant === 'C' && i === 1 ? restRow(end) : '')).join('');
+  return `<div class="ex"><div class="ex-top"><span class="name">Élévations latérales (haltères)</span><span class="dots">⋯</span></div>
+    <span class="rest-link">⏱ Repos : 1:00</span>
+    <table class="sets"><thead><tr><th class="c-type">Série</th><th>Précédent</th><th class="c-val">kg</th><th class="c-val">Reps</th><th class="c-chk">✓</th></tr></thead>
+    <tbody>${setRow({ n: 1, prev: '10 × 12', w: '10', r: '12', done: true })}${setRow({ n: 2, prev: '10 × 12', w: '10', r: '11', done: true })}</tbody></table></div>
+    <div class="ex"><div class="ex-top"><span class="name">Développé militaire (haltères)</span><span class="dots">⋯</span></div>
+    <span class="rest-link">⏱ Repos : 1:30</span>
+    <table class="sets"><thead><tr><th class="c-type">Série</th><th>Précédent</th><th class="c-val">kg</th><th class="c-val">Reps</th><th class="c-chk">✓</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <button class="btn btn-soft add-set">+ Ajouter une série</button></div>
+    <div class="section"><button class="btn btn-soft btn-block c-accent">+ Ajouter un exercice</button>
+    <button class="btn btn-soft btn-block c-fail mt-8">Abandonner</button></div>`;
+}
+
+// Cette méthode permet de dessiner le panneau de repos de la variante demandée, en cours ou à l'état « Terminé ».
+function panel(variant, end) {
+  const left = end ? 0 : LEFT;
+  const pct = (left / TOTAL) * 100;
+  const time = end ? 'Terminé' : fmt(left);
+  const label = 'Développé militaire · série 2';
+  if (variant === 'now') {
+    return `<div class="rp-now"><div class="lbl">Repos · Développé militaire (haltères), série 2</div><div class="time">${time}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="ctrls"><button class="btn btn-soft">−15 s</button><button class="btn btn-soft">+15 s</button><button class="btn btn-primary">Passer</button></div></div>`;
+  }
+  if (variant === 'A') {
+    return `<div class="float rp-a${end ? ' end' : ''}" style="isolation:isolate"><div class="fill" style="width:${end ? 100 : pct}%"></div>
+      <div class="txt"><div class="t-big">${time}</div><div class="sub">${end ? 'Série 3 · à toi' : label}</div></div>
+      <button class="pill">−15</button><button class="pill">+15</button><button class="btn btn-primary">${end ? 'OK' : 'Passer'}</button></div>`;
+  }
+  if (variant === 'B') {
+    const r = 33, c = 2 * Math.PI * r;
+    const stroke = end ? 'var(--done)' : 'var(--accent)';
+    const dash = end ? c : (c * pct) / 100;
+    return `<div class="float rp-b${end ? ' end' : ''}"><div class="ring"><svg viewBox="0 0 76 76" width="76" height="76">
+      <circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/>
+      <circle cx="38" cy="38" r="${r}" fill="none" stroke="${stroke}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${dash} ${c}"/></svg>
+      <div class="t-big">${time}</div></div>
+      <div class="col"><div class="head">Repos <span>· ${label}</span></div>
+      <div class="row"><button class="btn btn-soft">−15 s</button><button class="btn btn-soft">+15 s</button><button class="btn btn-primary">${end ? 'OK' : 'Passer'}</button></div></div></div>`;
+  }
+  return '';
+}
+
+// Cette méthode permet de rendre la ligne de repos intégrée au tableau des séries (variante C).
+function restRow(end) {
+  const left = end ? 0 : LEFT;
+  return `<tr class="rest-row${end ? ' end' : ''}"><td colspan="5"><div class="rr"><div class="txt">
+    <div class="t-big" style="${end ? 'color:var(--done)' : ''}">${end ? 'Terminé' : fmt(left)}</div>
+    <div class="bar"><i style="width:${end ? 100 : (left / TOTAL) * 100}%"></i></div></div>
+    <button class="pill">−15</button><button class="pill">+15</button><button class="btn btn-primary">${end ? 'OK' : 'Passer'}</button></div></td></tr>`;
+}
+
+// Cette méthode permet d'assembler un téléphone : thème, écran de séance, panneau, zone de sécurité (hachurée).
+function phone(variant, theme, end, cap) {
+  const reserve = { now: 200, A: 112, B: 136, C: 24 }[variant];
+  const head = variant === 'C'
+    ? `<div class="live-head"><span class="ttl">Séance · 42:13</span>${end ? '<span class="chip" style="background:var(--done-soft);color:var(--done)">✓ Repos</span>' : `<span class="chip">⏱ ${fmt(LEFT)}</span>`}<span class="fin">Terminer</span></div>`
+    : '';
+  return `<div class="shot"><div class="cap">${cap}</div><div class="app" data-theme="${theme}"><div class="phone">${head}
+    <div class="scroll" style="--reserve:${reserve}px">${screen(variant, end)}</div>${panel(variant, end)}
+    <div class="safe"></div><div class="home"></div></div></div></div>`;
+}
+
+// Cette méthode permet d'assembler une option : titre, explication, écrans (sombre, clair, « Terminé ») et avantages/limites.
+function opt(key, title, desc, variant, plus, moins, reco) {
+  return `<div class="opt"><h3><span class="k">${key}</span>${title}${reco ? '<span class="reco">recommandé</span>' : ''}</h3><p>${desc}</p>
+    <div class="shots">${phone(variant, 'dark', false, 'Sombre · en cours')}${phone(variant, 'light', false, 'Clair · en cours')}
+    ${phone(variant, 'dark', true, 'Sombre · « Terminé » (3 s)')}${phone(variant, 'light', true, 'Clair · « Terminé » (3 s)')}</div>
+    <ul>${plus.map((t) => `<li class="plus">${t}</li>`).join('')}${moins.map((t) => `<li class="moins">${t}</li>`).join('')}</ul></div>`;
+}
+
+document.getElementById('root').innerHTML = `
+<h2>Minuteur de repos : harmonisation (issue #101)</h2>
+<p class="lead">Écran de séance défilé jusqu'en bas, 52 s restantes sur 1:30, viewport iPhone 375 px. La bande hachurée est la zone de sécurité de
+l'indicateur d'accueil (34 px) : aucun contrôle n'y est posé. Comportement inchangé dans toutes les variantes : −15 s / +15 s / Passer, son et
+« Terminé » 3 s si la fin a lieu à l'écran, repos écoulé hors écran clos sans « Terminé ».</p>
+
+<div class="opt"><h3><span class="k">0</span>Actuel</h3><p>Carte <code>--surface-2</code> opaque, rayon 20, grosse ombre ; libellé petit et gris, chiffre à 40 px, barre de 6 px, trois boutons égaux.
+Environ 150 px de haut : il faut 200 px de marge sous la liste pour ne pas masquer la dernière série.</p>
+<div class="shots">${phone('now', 'dark', false, 'Sombre')}${phone('now', 'light', false, 'Clair')}</div></div>
+
+${opt('A', 'Pilule compacte, fond qui se vide',
+  'Une seule ligne de 64 px, même habillage que le bandeau « Séance en cours » (verre dépoli <code>--surface</code>, rayon 16, bordure <code>--line</code>, ombre légère). Le fond (<code>--accent-soft</code>) se rétracte vers la gauche à mesure que le temps passe : la progression se lit sur toute la largeur. Temps à 26 px + exercice et série en dessous. −15 / +15 en pastilles rondes 44 px, « Passer » reste le seul bouton plein. À la fin : fond vert plein, texte « Terminé » vert, halo qui pulse, « Passer » devient « OK ».',
+  'A',
+  ['Le plus discret : 64 px au lieu de ~150, la marge sous la liste passe de 200 à ~112 px', 'Même famille visuelle que le bandeau de séance et les lignes validées (vert <code>--done-soft</code>)', 'Progression lisible de loin (toute la largeur), sans élément en plus', 'Pouce : tous les contrôles sur une ligne, en bas'],
+  ['Chiffre plus petit qu\'aujourd\'hui (26 px au lieu de 40)', 'Le fond <code>--accent-soft</code> est léger en thème clair : la progression se lit moins qu\'un anneau', '−15 / +15 sans unité (« s » implicite)'],
+  true)}
+
+${opt('B', 'Carte à anneau',
+  'Carte de 96 px même habillage que A. Un anneau de 76 px autour du temps porte la progression ; à droite, « Repos · exercice, série » en titre de carte (16 px gras, comme le nom d\'exercice) et les trois boutons sur une ligne (−15 s / +15 s en <code>btn-soft</code>, « Passer » plein). À la fin : anneau plein vert, « Terminé » vert, halo qui pulse.',
+  'B',
+  ['Progression la plus lisible d\'un coup d\'œil (anneau, forme de minuteur connue)', 'Libellé mieux hiérarchisé que l\'actuel', 'Garde les boutons texte « −15 s / +15 s » actuels'],
+  ['Plus haut que A (96 px, marge ~136 px sous la liste)', 'Le temps dans l\'anneau est moins gros (19 px)', 'Trois boutons serrés à droite (zone ~250 px)']
+  )}
+
+${opt('C', 'Ligne dans la liste + rappel dans l\'en-tête',
+  'Plus de panneau flottant : le repos s\'insère comme une ligne du tableau, sous la série qui vient d\'être validée, à la manière du bandeau du calculateur de disques (fond <code>--accent-soft</code>, pleine largeur, barre fine qui se vide). Quand cette ligne sort de l\'écran, une pastille « ⏱ 0:52 » dans l\'en-tête collant garde le temps visible et ramène à la ligne au toucher.',
+  'C',
+  ['Rien ne masque la liste, aucune marge à réserver', 'Intégration maximale : le repos appartient visuellement à la série qui l\'a déclenché'],
+  ['Deux affichages à maintenir (ligne + pastille d\'en-tête) : touche à <code>LiveWorkoutPage</code> et <code>ExerciseBlock</code>, hors du périmètre prévu', 'Contrôles −15/+15 inaccessibles quand la ligne est hors écran (il faut y revenir)', 'Décale les séries suivantes d\'une ligne pendant le repos', 'Contrôles en haut de l\'écran une fois défilé : loin du pouce']
+  )}
+
+<h2>Recommandation</h2>
+<p class="lead"><b>A, la pilule compacte.</b> Elle répond aux trois reproches de l'issue (encombrement, hiérarchie des boutons, aspect « collé ») en reprenant
+un composant déjà présent (le bandeau de séance) et reste dans le périmètre (<code>RestPanel.tsx</code> + bloc <code>.rest-panel</code>). Si la lisibilité de la
+progression en thème clair paraît trop faible, deux ajustements possibles : un fond un peu plus dense (<code>--accent</code> à 18 %) ou un fin liseré
+<code>--accent</code> de 3 px en bas de la pilule qui se vide avec le fond.</p>
+<p class="note">Communs à toutes les variantes : bas du panneau à <code>safe-area-inset-bottom + 8 px</code>, marge sous la liste calée sur la hauteur du panneau
+(la dernière série et « Abandonner » restent visibles), cibles tactiles de 44 px, <code>role="timer"</code> et libellés accessibles conservés (« Retirer 15 secondes »,
+« Ajouter 15 secondes »), animation coupée si <code>prefers-reduced-motion</code>.</p>
+`;
+</script>
+</body>
+</html>

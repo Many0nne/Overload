@@ -83,3 +83,50 @@ test('minuteur écoulé app fermée : pas restauré au relancement', async ({ pa
   await page.clock.runFor(300);
   await expect(page.locator('.rest-panel')).toHaveCount(0);
 });
+
+test('minuteur de repos : −15 s / +15 s, puis « Terminé » à l’écran fermé par « OK »', async ({
+  page,
+  seeded,
+}) => {
+  await page.clock.install();
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+
+  await checkSet(page, BENCH.name, 0);
+  const panel = page.locator('.rest-panel');
+  const time = panel.locator('.time');
+  await expect(time).toHaveText(/^1:(30|29|28)$/);
+
+  await panel.getByRole('button', { name: 'Ajouter 15 secondes' }).click();
+  await expect(time).toHaveText(/^1:(45|44|43)$/);
+  await panel.getByRole('button', { name: 'Retirer 15 secondes' }).click();
+  await panel.getByRole('button', { name: 'Retirer 15 secondes' }).click();
+  await expect(time).toHaveText(/^1:(15|14|13)$/);
+
+  // Fin vécue à l'écran : état « Terminé » (vert), « Passer » devient « OK » et ferme tout de suite.
+  await jumpClock(page, 80_000);
+  await expect(time).toHaveText('Terminé');
+  await expect(panel).toHaveClass(/\bend\b/);
+  await expect(panel.getByRole('button', { name: 'Ajouter 15 secondes' })).toBeDisabled();
+  await panel.getByRole('button', { name: 'OK' }).click();
+  await expect(panel).toHaveCount(0);
+});
+
+test('minuteur de repos : la pilule ne masque pas le bas de la séance', async ({ page, seeded }) => {
+  await login(page, seeded.account);
+  await startRoutine(page, seeded.routineName);
+
+  await checkSet(page, BENCH.name, 0);
+  const panel = page.locator('.rest-panel');
+  await expect(panel).toBeVisible();
+
+  // Défilement tout en bas : le dernier bouton de la page reste entièrement au-dessus de la pilule.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const last = page.getByRole('button', { name: 'Abandonner' });
+  await expect(last).toBeInViewport();
+  const lastBox = await last.boundingBox();
+  const panelBox = await panel.boundingBox();
+  if (!lastBox || !panelBox) throw new Error('boîtes introuvables');
+  expect(lastBox.y + lastBox.height).toBeLessThanOrEqual(panelBox.y);
+  expect(panelBox.height).toBeLessThanOrEqual(70);
+});
