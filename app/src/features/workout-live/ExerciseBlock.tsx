@@ -2,11 +2,14 @@ import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { formatReason, formatSetValues, formatTargets } from '@/domain/format';
 import { setLabels } from '@/domain/labels';
-import { columnLabels, type SetField } from '@/domain/measurement';
+import { columnLabels, fieldsFor, type SetField } from '@/domain/measurement';
+import type { PlateSet } from '@/domain/plates';
 import { previousSets } from '@/domain/previous';
 import { activeTarget } from '@/domain/progression';
 import type { ExerciseRow, SetKind, Settings, WorkoutExercise } from '@/domain/types';
+import { weightIn } from '@/domain/units';
 import { initials } from '@/features/library/ExerciseList';
+import { PlateSheet } from '@/features/plates/PlateSheet';
 import { MuscleThumb } from '@/ui/BodyMap';
 import { NoteField, Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
@@ -38,6 +41,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   exercise: ExerciseRow | undefined;
   previous: WorkoutExercise | undefined;
   units: Settings['units'];
+  /** Barre et disques de l'utilisateur dans son unité de poids (calculateur de disques). */
+  plateSet: PlateSet;
   setBadges: Record<string, string[]>;
   entryRecord: boolean;
   goalSetId: string | undefined;
@@ -52,6 +57,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const { entry, actions: a } = props;
   const [menu, setMenu] = useState(false);
   const [restSheet, setRestSheet] = useState(false);
+  const [plateSheet, setPlateSheet] = useState(false);
   // Série dont la feuille de RPE est ouverte (en touchant sa case RPE).
   const [rpeFor, setRpeFor] = useState<string | null>(null);
   // Série dont la feuille de nature est ouverte (en touchant son numéro).
@@ -73,6 +79,14 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const rpeSet = entry.sets[rpeIndex];
   const kindIndex = entry.sets.findIndex((s) => s.id === kindFor);
   const kindSet = entry.sets[kindIndex];
+  // Calculateur de disques : exercices à la barre avec un poids saisi (issue #76).
+  const plates =
+    props.exercise?.equipment === 'barbell' && fieldsFor(entry.measurementType).includes('weight')
+      ? props.plateSet
+      : null;
+  // Charge proposée à l'ouverture du calculateur : la prochaine série à faire, sinon la dernière.
+  const nextWeight = (entry.sets.find((s) => !s.done && s.weight) ?? entry.sets.findLast((s) => s.weight))
+    ?.weight;
 
   return (
     <div className="ex">
@@ -148,6 +162,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               readOnly={props.readOnly}
               onPatch={(id, patch) => a.onPatchSet(entry.id, id, patch)}
               showRpe={showRpe}
+              plates={plates}
               onCheck={(id) => a.onCheck(entry.id, id)}
               onOpenRpe={setRpeFor}
               onOpenKind={setKindFor}
@@ -175,6 +190,17 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               a.onReplace(entry.id);
             },
           },
+          ...(plates
+            ? [
+                {
+                  label: 'Calculer les disques',
+                  onClick: () => {
+                    setMenu(false);
+                    setPlateSheet(true);
+                  },
+                },
+              ]
+            : []),
           ...(!props.isFirst
             ? [
                 {
@@ -241,6 +267,16 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         }}
         onClose={() => setKindFor(null)}
       />
+      {plates && (
+        <PlateSheet
+          open={plateSheet}
+          subtitle={name}
+          initial={nextWeight && weightIn(nextWeight, props.units.weight)}
+          unit={props.units.weight}
+          plateSet={plates}
+          onClose={() => setPlateSheet(false)}
+        />
+      )}
       <Sheet open={restSheet} title={`Repos · ${name}`} onClose={() => setRestSheet(false)}>
         <div className="chips wrap mt-8">
           {REST_CHOICES.map((r) => (

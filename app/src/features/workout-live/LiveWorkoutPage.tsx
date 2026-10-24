@@ -8,6 +8,7 @@ import { deleteWorkout, updateWorkout } from '@/data/repositories';
 import { takeOverWorkout } from '@/data/sync/engine';
 import { formatClock, formatKg } from '@/domain/format';
 import type { SetField } from '@/domain/measurement';
+import { plateSetFor } from '@/domain/plates';
 import { checkSet, exerciseInWorkout, lastTime, previousSets } from '@/domain/previous';
 import { workoutBadges } from '@/domain/records';
 import { doneSetCount, unvalidatedCount } from '@/domain/summary';
@@ -100,6 +101,13 @@ export default function LiveWorkoutPage() {
   const prefs = useMemo(
     () => new Map<string, ExercisePrefsDoc>((prefsRows ?? []).map((p) => [p.exercise_id, p.doc])),
     [prefsRows],
+  );
+
+  // Barre et disques de l'utilisateur dans son unité, pour le calculateur des exercices à la barre (issue #76).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seuls les disques et l'unité comptent
+  const plateSet = useMemo(
+    () => plateSetFor(settings, settings.units.weight),
+    [settings.plates, settings.units.weight],
   );
 
   // « La dernière fois » de chaque exercice, pour la colonne Précédent (§10.4).
@@ -327,6 +335,7 @@ export default function LiveWorkoutPage() {
           exercise={exercises.get(e.exerciseId)}
           previous={previousByEntry.get(e.id)}
           units={settings.units}
+          plateSet={plateSet}
           setBadges={badges?.sets ?? {}}
           entryRecord={Boolean(badges?.entries[e.id]?.length)}
           goalSetId={goalSets.get(e.id)}

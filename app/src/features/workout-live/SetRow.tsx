@@ -1,9 +1,18 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { formatDuration, formatRpe, formatSetValues, parseDuration } from '@/domain/format';
 import { fieldsFor, type SetField } from '@/domain/measurement';
+import { loadBar, type PlateSet } from '@/domain/plates';
 import { activeTarget } from '@/domain/progression';
 import type { MeasurementType, Settings, WorkoutSet } from '@/domain/types';
-import { displayDistanceNumber, displayWeightNumber, parseDecimal, parseInteger } from '@/domain/units';
+import {
+  displayDistanceNumber,
+  displayWeightNumber,
+  formatNumber,
+  parseDecimal,
+  parseInteger,
+  weightIn,
+} from '@/domain/units';
+import { PlateBar, plateText } from '@/features/plates/PlateBar';
 import { CheckIcon, GaugeIcon } from '@/ui/icons';
 import { KIND_CLASS } from '@/ui/setKind';
 
@@ -81,6 +90,7 @@ function ValueInput(props: {
   error: boolean;
   disabled: boolean;
   onCommit: (patch: SetPatch) => void;
+  onFocusChange?: (focused: boolean) => void;
 }) {
   const external = fieldText(props.set, props.field, props.units);
   const [text, setText] = useState(external);
@@ -101,6 +111,7 @@ function ValueInput(props: {
       onFocus={(e) => {
         focused.current = true;
         justFocused.current = true;
+        props.onFocusChange?.(true);
         selectAll(e.currentTarget);
       }}
       onMouseUp={(e) => {
@@ -110,6 +121,7 @@ function ValueInput(props: {
       }}
       onBlur={() => {
         focused.current = false;
+        props.onFocusChange?.(false);
         const p = parseField(text, props.field, props.units);
         if (!p) return setText(external);
         if (props.field === 'duration') {
@@ -249,6 +261,8 @@ export type SetRowProps = {
   errors: SetField[];
   readOnly: boolean;
   showRpe: boolean;
+  /** Barre et disques si l'exercice se fait à la barre : le bandeau de disques suit alors la saisie du poids. */
+  plates: PlateSet | null;
   onPatch: (setId: string, patch: SetPatch) => void;
   onCheck: (setId: string) => void;
   onOpenRpe: (setId: string) => void;
@@ -263,77 +277,123 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
   const fields = fieldsFor(p.type);
   const rowRef = useSwipeToDelete(p.readOnly, () => p.onDelete(p.set.id));
   const kindClass = KIND_CLASS[p.set.kind];
+  const [weightFocused, setWeightFocused] = useState(false);
+  const cols = fields.length + 3 + (p.showRpe ? 1 : 0);
 
   return (
-    <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>
-      <td>
-        <span className="type-wrap">
-          <button
-            className={`type ${kindClass}`}
-            disabled={p.readOnly}
-            aria-label="Changer la nature de la série"
-            aria-haspopup="dialog"
-            onClick={() => p.onOpenKind(p.set.id)}
-          >
-            {p.label}
-          </button>
-          {p.record && (
-            <span className="pastille pr" role="img" aria-label="Record">
-              🏆
-            </span>
-          )}
-          {p.goal && (
-            <span className="pastille goal" role="img" aria-label="Objectif atteint">
-              🎯
-            </span>
-          )}
-        </span>
-      </td>
-      <td>
-        <button
-          className="prev"
-          disabled={p.readOnly || !p.previous}
-          onClick={() => p.onCopyPrevious(p.set.id)}
-        >
-          {p.previous ? formatSetValues(p.previous, p.type, p.units) : '—'}
-        </button>
-      </td>
-      {fields.map((f) => (
-        <td key={f}>
-          <ValueInput
-            field={f}
-            set={p.set}
-            units={p.units}
-            placeholder={p.previous ? fieldText(p.previous, f, p.units) : ''}
-            target={!p.set.done && isTargetValue(p.set, f)}
-            error={p.errors.includes(f)}
-            disabled={p.readOnly}
-            onCommit={(patch) => p.onPatch(p.set.id, patch)}
-          />
+    <>
+      <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>
+        <td>
+          <span className="type-wrap">
+            <button
+              className={`type ${kindClass}`}
+              disabled={p.readOnly}
+              aria-label="Changer la nature de la série"
+              aria-haspopup="dialog"
+              onClick={() => p.onOpenKind(p.set.id)}
+            >
+              {p.label}
+            </button>
+            {p.record && (
+              <span className="pastille pr" role="img" aria-label="Record">
+                🏆
+              </span>
+            )}
+            {p.goal && (
+              <span className="pastille goal" role="img" aria-label="Objectif atteint">
+                🎯
+              </span>
+            )}
+          </span>
         </td>
-      ))}
-      {p.showRpe && (
         <td>
           <button
-            className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
-            disabled={p.readOnly || !p.set.done}
-            aria-label={p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'}
-            onClick={() => p.onOpenRpe(p.set.id)}
+            className="prev"
+            disabled={p.readOnly || !p.previous}
+            onClick={() => p.onCopyPrevious(p.set.id)}
           >
-            {p.set.rpe !== undefined ? formatRpe(p.set.rpe) : <GaugeIcon />}
+            {p.previous ? formatSetValues(p.previous, p.type, p.units) : '—'}
           </button>
         </td>
+        {fields.map((f) => (
+          <td key={f}>
+            <ValueInput
+              field={f}
+              set={p.set}
+              units={p.units}
+              placeholder={p.previous ? fieldText(p.previous, f, p.units) : ''}
+              target={!p.set.done && isTargetValue(p.set, f)}
+              error={p.errors.includes(f)}
+              disabled={p.readOnly}
+              onCommit={(patch) => p.onPatch(p.set.id, patch)}
+              onFocusChange={f === 'weight' && p.plates ? setWeightFocused : undefined}
+            />
+          </td>
+        ))}
+        {p.showRpe && (
+          <td>
+            <button
+              className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
+              disabled={p.readOnly || !p.set.done}
+              aria-label={p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'}
+              onClick={() => p.onOpenRpe(p.set.id)}
+            >
+              {p.set.rpe !== undefined ? formatRpe(p.set.rpe) : <GaugeIcon />}
+            </button>
+          </td>
+        )}
+        <td>
+          <button
+            className="check"
+            disabled={p.readOnly}
+            aria-label={p.set.done ? 'Annuler la validation' : 'Valider la série'}
+            onClick={() => p.onCheck(p.set.id)}
+          >
+            <CheckIcon />
+          </button>
+        </td>
+      </tr>
+      {weightFocused && p.plates && p.set.weight && p.set.weight.v > 0 && (
+        <PlateStrip
+          total={weightIn(p.set.weight, p.units.weight)}
+          unit={p.units.weight}
+          plates={p.plates}
+          cols={cols}
+        />
       )}
-      <td>
-        <button
-          className="check"
-          disabled={p.readOnly}
-          aria-label={p.set.done ? 'Annuler la validation' : 'Valider la série'}
-          onClick={() => p.onCheck(p.set.id)}
-        >
-          <CheckIcon />
-        </button>
+    </>
+  );
+});
+
+// Cette méthode permet d'afficher, sous la série dont le poids est en cours de saisie, les disques à mettre de chaque côté
+// (issue #76) ; le bandeau suit chaque chiffre tapé et signale une charge inatteignable.
+function PlateStrip(props: { total: number; unit: Units['weight']; plates: PlateSet; cols: number }) {
+  const load = loadBar(props.total, props.plates);
+  const bar = `barre ${formatNumber(props.plates.bar, 2)} ${props.unit}`;
+  return (
+    <tr className="plate-strip" aria-live="polite">
+      <td colSpan={props.cols}>
+        <div className="plate-strip-in">
+          <PlateBar perSide={load.perSide} unit={props.unit} height={38} />
+          <div className="plate-strip-txt">
+            {load.belowBar ? (
+              <span className="c-warm">Sous le poids de la barre</span>
+            ) : (
+              <>
+                Par côté : <b>{plateText(load.perSide)}</b>
+              </>
+            )}
+            <br />
+            {bar}
+            {load.rest > 0 && (
+              <span className="c-warm">
+                {' '}
+                · {formatNumber(load.rest, 2)} {props.unit} impossibles
+              </span>
+            )}
+          </div>
+        </div>
       </td>
     </tr>
   );
-});
+}
