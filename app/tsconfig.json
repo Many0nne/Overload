@@ -16,8 +16,7 @@
     "allowImportingTsExtensions": false,
     "noEmit": true,
     "types": ["vite/client", "vite-plugin-pwa/client", "node"],
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "tests", "vite.config.ts", "vitest.sync.config.ts", "playwright.config.ts"]
 }
