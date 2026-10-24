@@ -251,7 +251,7 @@ export type SetRowProps = {
   onPatch: (setId: string, patch: SetPatch) => void;
   onCheck: (setId: string) => void;
   onOpenRpe: (setId: string) => void;
-  onCycleKind: (setId: string) => void;
+  onOpenKind: (setId: string) => void;
   onCopyPrevious: (setId: string) => void;
   onDelete: (setId: string) => void;
 };
@@ -270,8 +270,9 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
           <button
             className={`type ${kindClass}`}
             disabled={p.readOnly}
-            aria-label="Changer le type de série"
-            onClick={() => p.onCycleKind(p.set.id)}
+            aria-label="Changer la nature de la série"
+            aria-haspopup="dialog"
+            onClick={() => p.onOpenKind(p.set.id)}
           >
             {p.label}
           </button>

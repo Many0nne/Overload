@@ -5,13 +5,14 @@ import { setLabels } from '@/domain/labels';
 import { columnLabels, type SetField } from '@/domain/measurement';
 import { previousSets } from '@/domain/previous';
 import { activeTarget } from '@/domain/progression';
-import type { ExerciseRow, Settings, WorkoutExercise } from '@/domain/types';
+import type { ExerciseRow, SetKind, Settings, WorkoutExercise } from '@/domain/types';
 import { initials } from '@/features/library/ExerciseList';
 import { MuscleThumb } from '@/ui/BodyMap';
 import { NoteField, Sheet } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { EXERCISE_NOTE_MAX } from '@/ui/note';
 import { formatRest } from '@/ui/time';
+import { KindSheet } from './KindSheet';
 import { RpeSheet } from './RpeSheet';
 import { type SetPatch, SetRow } from './SetRow';
 
@@ -20,7 +21,7 @@ const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180
 export type ExerciseActions = {
   onPatchSet: (entryId: string, setId: string, patch: SetPatch) => void;
   onCheck: (entryId: string, setId: string) => void;
-  onCycleKind: (entryId: string, setId: string) => void;
+  onSetKind: (entryId: string, setId: string, kind: SetKind) => void;
   onCopyPrevious: (entryId: string, setId: string) => void;
   onDeleteSet: (entryId: string, setId: string) => void;
   onAddSet: (entryId: string) => void;
@@ -53,6 +54,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const [restSheet, setRestSheet] = useState(false);
   // Série dont la feuille de RPE est ouverte (en touchant sa case RPE).
   const [rpeFor, setRpeFor] = useState<string | null>(null);
+  // Série dont la feuille de nature est ouverte (en touchant son numéro).
+  const [kindFor, setKindFor] = useState<string | null>(null);
   const name = props.exercise?.name ?? 'Exercice supprimé';
   const kinds = entry.sets.map((s) => s.kind);
   const labels = setLabels(kinds);
@@ -68,6 +71,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const showRpe = props.rpeEnabled || entry.sets.some((s) => s.rpe !== undefined);
   const rpeIndex = entry.sets.findIndex((s) => s.id === rpeFor);
   const rpeSet = entry.sets[rpeIndex];
+  const kindIndex = entry.sets.findIndex((s) => s.id === kindFor);
+  const kindSet = entry.sets[kindIndex];
 
   return (
     <div className="ex">
@@ -145,7 +150,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               showRpe={showRpe}
               onCheck={(id) => a.onCheck(entry.id, id)}
               onOpenRpe={setRpeFor}
-              onCycleKind={(id) => a.onCycleKind(entry.id, id)}
+              onOpenKind={setKindFor}
               onCopyPrevious={(id) => a.onCopyPrevious(entry.id, id)}
               onDelete={(id) => a.onDeleteSet(entry.id, id)}
             />
@@ -223,6 +228,18 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         value={rpeSet?.rpe}
         onPick={(rpe) => rpeSet && a.onPatchSet(entry.id, rpeSet.id, { rpe })}
         onClose={() => setRpeFor(null)}
+      />
+      <KindSheet
+        open={Boolean(kindSet) && !props.readOnly}
+        value={kindSet?.kind ?? 'normal'}
+        normalLabel={
+          kindSet ? (setLabels(kinds.map((k, j) => (j === kindIndex ? 'normal' : k)))[kindIndex] ?? '') : ''
+        }
+        onPick={(kind) => {
+          if (kindSet) a.onSetKind(entry.id, kindSet.id, kind);
+          setKindFor(null);
+        }}
+        onClose={() => setKindFor(null)}
       />
       <Sheet open={restSheet} title={`Repos · ${name}`} onClose={() => setRestSheet(false)}>
         <div className="chips wrap" style={{ marginTop: 8 }}>
