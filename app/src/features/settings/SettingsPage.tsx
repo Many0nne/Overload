@@ -112,7 +112,13 @@ export default function SettingsPage() {
           Repos par défaut<span className="t2">{formatRest(settings.defaultRestS)} ›</span>
         </button>
         <div className="set-row">
-          Notification fin de repos
+          <span>
+            Notification fin de repos
+            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+              son système uniquement ; si muette, vérifier Réglages › Notifications › Overload › Sons et
+              couper toute Concentration
+            </small>
+          </span>
           <Switch
             label="Notification fin de repos"
             on={settings.restNotification}
