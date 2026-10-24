@@ -1,0 +1,58 @@
+name: Navigateurs Playwright
+description: >
+  Installe Chromium, WebKit et leurs dépendances système avec cache. Les paquets .deb sont mis en cache car le
+  miroir apt d'Azure tombe parfois à ~40 Ko/s (116 Mo téléchargés en 20 à 50 min au lieu de quelques secondes).
+  Prérequis : npm ci déjà fait dans app/.
+
+runs:
+  using: composite
+  steps:
+    - id: keys
+      shell: bash
+      run: |
+        version=$(node -p "require('./app/node_modules/@playwright/test/package.json').version")
+        echo "browsers=pw-browsers-$ImageOS-$version" >> "$GITHUB_OUTPUT"
+        echo "apt-prefix=pw-apt-$ImageOS-$version-" >> "$GITHUB_OUTPUT"
+        echo "apt=pw-apt-$ImageOS-$version-$ImageVersion" >> "$GITHUB_OUTPUT"
+
+    # Paquets .deb : la clé suit l'image du runner (mise à jour chaque semaine) ; une image plus récente repart
+    # des paquets de la précédente et apt ne télécharge que ceux qui ont changé.
+    - id: apt-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/apt-cache
+        key: ${{ steps.keys.outputs.apt }}
+        restore-keys: ${{ steps.keys.outputs.apt-prefix }}
+
+    - shell: bash
+      working-directory: app
+      run: |
+        echo 'APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99-keep-debs > /dev/null
+        if compgen -G "$HOME/apt-cache/*.deb" > /dev/null; then sudo cp "$HOME"/apt-cache/*.deb /var/cache/apt/archives/; fi
+        npx playwright install-deps chromium webkit
+        mkdir -p "$HOME/apt-cache"
+        cp /var/cache/apt/archives/*.deb "$HOME/apt-cache/" 2>/dev/null || true
+        echo "Paquets en cache : $(ls "$HOME"/apt-cache/*.deb 2>/dev/null | wc -l)"
+
+    - if: steps.apt-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/apt-cache
+        key: ${{ steps.keys.outputs.apt }}
+
+    - id: browsers-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.keys.outputs.browsers }}
+
+    - if: steps.browsers-cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: app
+      run: npx playwright install chromium webkit
+
+    - if: steps.browsers-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.keys.outputs.browsers }}

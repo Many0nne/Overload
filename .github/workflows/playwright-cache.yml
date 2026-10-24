@@ -1,0 +1,28 @@
+name: Cache Playwright
+
+# Les caches créés par une PR ne servent qu'à cette PR : on les remplit depuis dev (base des PR) et main
+# (branche par défaut, visible de toutes), et chaque semaine pour suivre l'image du runner et éviter l'éviction à 7 jours.
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - app/package-lock.json
+      - .github/actions/playwright/**
+      - .github/workflows/playwright-cache.yml
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+        working-directory: app
+      - uses: ./.github/actions/playwright
