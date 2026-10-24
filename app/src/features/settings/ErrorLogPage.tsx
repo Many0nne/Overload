@@ -46,11 +46,11 @@ export default function ErrorLogPage() {
       {rejects.length > 0 && (
         <div className="section" data-testid="sync-rejects">
           <div className="section-title">Modifications refusées</div>
-          <p className="t2" style={{ fontSize: '.8125rem' }}>
+          <p className="t2 fs-13">
             Le serveur a refusé ces modifications : l'appareil a repris la version enregistrée sur le serveur
             (ou retiré l'élément s'il n'y existe pas).
           </p>
-          <div className="card" style={{ fontSize: '.8125rem', wordBreak: 'break-word' }}>
+          <div className="card log-card">
             {rejects.map((r) => (
               <div key={`${r.at}-${r.table}-${r.id}`}>
                 {new Date(r.at).toLocaleString('fr-FR')} · {TABLE_LABELS[r.table] ?? r.table} ·{' '}
@@ -73,11 +73,11 @@ export default function ErrorLogPage() {
       {photos.length > 0 && (
         <div className="section" data-testid="abandoned-photos">
           <div className="section-title">Photos non envoyées</div>
-          <p className="t2" style={{ fontSize: '.8125rem' }}>
+          <p className="t2 fs-13">
             Le serveur a refusé ces photos plusieurs fois : elles restent sur cet appareil, mais ne sont plus
             envoyées automatiquement. Les séances, elles, sont bien synchronisées.
           </p>
-          <div className="card" style={{ fontSize: '.8125rem', wordBreak: 'break-word' }}>
+          <div className="card log-card">
             {photos.map((p) => (
               <div key={p.path}>
                 {p.failedAt ? new Date(p.failedAt).toLocaleString('fr-FR') : ''} · {p.lastError ?? 'refusée'}
@@ -102,12 +102,7 @@ export default function ErrorLogPage() {
         <p className="empty">Aucune erreur enregistrée.</p>
       ) : (
         <div className="section">
-          <div
-            className="card"
-            style={{ fontSize: '.8125rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-          >
-            {text}
-          </div>
+          <div className="card log-card pre-wrap">{text}</div>
         </div>
       )}
     </>

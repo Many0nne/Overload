@@ -1,0 +1,127 @@
+/* ---------- Dialogues / menu / toast ---------- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 40;
+  display: none;
+  align-items: flex-end;
+}
+.scrim.show {
+  display: flex;
+}
+.sheet {
+  background: var(--bg);
+  width: 100%;
+  border-radius: 24px 24px 0 0;
+  padding: 10px 18px 34px;
+  animation: up 0.25s ease;
+}
+.sheet .grab {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  margin: 0 auto 14px;
+}
+.sheet h3 {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.sheet p,
+.sheet li {
+  font-size: 0.9375rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.sheet ul {
+  margin: 10px 0 0 18px;
+}
+.sheet .acts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+/* Texte secondaire plus petit dans une feuille. */
+.sheet p.fine {
+  font-size: 0.8125rem;
+}
+/* Feuille plein écran (choix d'un exercice) : en-tête collant sous la zone sûre, liste bord à bord. */
+.scrim.full {
+  align-items: stretch;
+}
+.sheet.full {
+  height: 100%;
+  overflow-y: auto;
+  border-radius: 0;
+}
+.sheet-head {
+  padding: calc(var(--safe-top) + 8px) 0 12px;
+}
+.head-spacer {
+  width: 60px;
+}
+.bleed {
+  margin: 0 -18px;
+}
+/* Contenu d'une feuille qui défile au-delà de la moitié de l'écran. */
+.sheet-scroll {
+  max-height: 55vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.menu {
+  position: fixed;
+  right: 16px;
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 6px;
+  z-index: 30;
+  min-width: 210px;
+  box-shadow: var(--shadow-menu);
+  display: none;
+  border: 1px solid var(--line);
+}
+.menu.show {
+  display: block;
+}
+.menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 0.9375rem;
+}
+.menu button:hover {
+  background: var(--surface);
+}
+.menu .danger {
+  color: var(--fail);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  top: calc(12px + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 9px 14px;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  z-index: 60;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+}
+/* Feuille modale : elle reçoit le focus à l'ouverture (lecteur d'écran), sans contour visible. */
+.sheet:focus {
+  outline: none;
+}

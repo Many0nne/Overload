@@ -29,8 +29,8 @@ export default function PastWorkoutPage() {
   return (
     <>
       <SubHead title="Séance passée" />
-      <div className="section" style={{ marginTop: 0 }}>
-        <p className="t2" style={{ fontSize: '.875rem', lineHeight: 1.5 }}>
+      <div className="section mt-0">
+        <p className="t2 fs-14 lh-15">
           Enregistre une séance faite sans l'app. Ajoute ensuite les exercices et coche les séries réalisées.
         </p>
         <label className="field">
@@ -47,11 +47,7 @@ export default function PastWorkoutPage() {
             <input value={duration} inputMode="numeric" onChange={(e) => setDuration(e.target.value)} />
           </label>
         </div>
-        <button
-          className="btn btn-primary btn-block"
-          style={{ marginTop: 20, height: 52 }}
-          onClick={() => void create()}
-        >
+        <button className="btn btn-primary btn-block mt-20 btn-lg" onClick={() => void create()}>
           Continuer
         </button>
       </div>

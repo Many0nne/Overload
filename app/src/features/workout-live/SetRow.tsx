@@ -5,6 +5,7 @@ import { activeTarget } from '@/domain/progression';
 import type { MeasurementType, Settings, WorkoutSet } from '@/domain/types';
 import { displayDistanceNumber, displayWeightNumber, parseDecimal, parseInteger } from '@/domain/units';
 import { CheckIcon, GaugeIcon } from '@/ui/icons';
+import { KIND_CLASS } from '@/ui/setKind';
 
 type Units = Settings['units'];
 export type SetPatch = Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'durationS' | 'distance' | 'rpe'>>;
@@ -261,7 +262,7 @@ export type SetRowProps = {
 export const SetRow = memo(function SetRow(p: SetRowProps) {
   const fields = fieldsFor(p.type);
   const rowRef = useSwipeToDelete(p.readOnly, () => p.onDelete(p.set.id));
-  const kindClass = { normal: '', warmup: 'W', drop: 'D', failure: 'X' }[p.set.kind];
+  const kindClass = KIND_CLASS[p.set.kind];
 
   return (
     <tr ref={rowRef} className={`set${p.set.done ? ' done' : ''}${p.record ? ' pr' : ''}`}>

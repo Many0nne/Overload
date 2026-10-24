@@ -82,9 +82,9 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         ) : (
           <div className="ex-av">{initials(name)}</div>
         )}
-        <Link className="name" to={`/exercise/${entry.exerciseId}`} style={{ textDecoration: 'none' }}>
+        <Link className="name no-underline" to={`/exercise/${entry.exerciseId}`}>
           {name}
-          {props.entryRecord && <span style={{ marginLeft: 6 }}>🏆</span>}
+          {props.entryRecord && <span className="ml-6">🏆</span>}
         </Link>
         {!props.readOnly && (
           <button className="icon-btn" aria-label="Actions de l'exercice" onClick={() => setMenu(true)}>
@@ -242,7 +242,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         onClose={() => setKindFor(null)}
       />
       <Sheet open={restSheet} title={`Repos · ${name}`} onClose={() => setRestSheet(false)}>
-        <div className="chips wrap" style={{ marginTop: 8 }}>
+        <div className="chips wrap mt-8">
           {REST_CHOICES.map((r) => (
             <button
               key={String(r)}

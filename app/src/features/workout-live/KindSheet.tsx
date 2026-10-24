@@ -2,6 +2,7 @@ import { SET_KIND_LABELS, SET_KIND_SHORT } from '@/domain/labels';
 import type { SetKind } from '@/domain/types';
 import { Sheet } from '@/ui/components';
 import { CheckIcon } from '@/ui/icons';
+import { KIND_CLASS } from '@/ui/setKind';
 
 const KINDS: SetKind[] = ['normal', 'warmup', 'drop', 'failure'];
 
@@ -12,9 +13,6 @@ const KIND_HINTS: Record<SetKind, string> = {
   drop: 'Charge baissée juste après la série précédente',
   failure: "Menée volontairement jusqu'à l'échec",
 };
-
-// Classe de couleur du badge, partagée avec le numéro de série du tableau.
-const KIND_CLASS: Record<SetKind, string> = { normal: '', warmup: 'W', drop: 'D', failure: 'X' };
 
 // Cette méthode permet de choisir la nature d'une série dans une feuille (§F7.4) : un toucher enregistre et referme.
 // normalLabel est le numéro que prendrait la série si elle était normale.

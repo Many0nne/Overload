@@ -102,19 +102,15 @@ function ProfileHome() {
         <div className="avatar">{(name || '?').charAt(0).toUpperCase()}</div>
         <div>
           <h3>{name}</h3>
-          <div className="muted" style={{ fontSize: '.875rem', marginTop: 2 }}>
-            <b style={{ color: 'var(--text)' }}>{count}</b> séance{count > 1 ? 's' : ''}
+          <div className="muted fs-14 mt-2">
+            <b className="c-text">{count}</b> séance{count > 1 ? 's' : ''}
           </div>
         </div>
       </div>
       <div className="section">
         <div className="card">
-          <div className="muted" style={{ fontSize: '.8125rem' }}>
-            {CHART[metric].label} · cette semaine
-          </div>
-          <div className="hero" style={{ fontSize: '1.5rem' }}>
-            {format(values.at(-1) ?? 0)}
-          </div>
+          <div className="muted fs-13">{CHART[metric].label} · cette semaine</div>
+          <div className="hero compact">{format(values.at(-1) ?? 0)}</div>
           <BarChart
             values={values}
             labels={weeks.map((w) => `sem. du ${weekFmt.format(w.weekStart)}`)}
@@ -123,7 +119,7 @@ function ProfileHome() {
             lastLabel="cette semaine"
             ariaLabel={`${CHART[metric].label} par semaine`}
           />
-          <div style={{ marginTop: 10 }}>
+          <div className="mt-10">
             <Seg
               stretch
               value={metric}

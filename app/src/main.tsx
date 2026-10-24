@@ -4,8 +4,7 @@ import { App } from './App';
 import { installGlobalErrorHandlers } from './data/errors';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { reloadOnceForChunk } from './ui/errorRecovery';
-import './ui/maquette.css';
-import './ui/app.css';
+import './ui/styles/index.css';
 
 installGlobalErrorHandlers(reloadOnceForChunk);
 

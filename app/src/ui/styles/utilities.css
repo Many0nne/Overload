@@ -1,0 +1,240 @@
+/* ---------- Utilitaires ---------- */
+/* Petits ajustements ponctuels à la place des styles inline. Chargés en dernier : à spécificité égale, ils priment
+   sur les composants. Les tailles de police sont nommées d'après leur équivalent en px (1rem = 16px). */
+
+/* Marges */
+.mt-0 {
+  margin-top: 0;
+}
+.mt-2 {
+  margin-top: 2px;
+}
+.mt-4 {
+  margin-top: 4px;
+}
+.mt-6 {
+  margin-top: 6px;
+}
+.mt-8 {
+  margin-top: 8px;
+}
+.mt-10 {
+  margin-top: 10px;
+}
+.mt-12 {
+  margin-top: 12px;
+}
+.mt-14 {
+  margin-top: 14px;
+}
+.mt-16 {
+  margin-top: 16px;
+}
+.mt-18 {
+  margin-top: 18px;
+}
+.mt-20 {
+  margin-top: 20px;
+}
+.mt-22 {
+  margin-top: 22px;
+}
+.my-12 {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+.mb-6 {
+  margin-bottom: 6px;
+}
+.mb-12 {
+  margin-bottom: 12px;
+}
+.ml-6 {
+  margin-left: 6px;
+}
+.ml-18 {
+  margin-left: 18px;
+}
+
+/* Marges internes */
+.p-16 {
+  padding: 16px;
+}
+.px-16 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.pb-8 {
+  padding-bottom: 8px;
+}
+.pb-10 {
+  padding-bottom: 10px;
+}
+.pb-12 {
+  padding-bottom: 12px;
+}
+
+/* Typographie */
+.fs-12 {
+  font-size: 0.75rem;
+}
+.fs-13 {
+  font-size: 0.8125rem;
+}
+.fs-14 {
+  font-size: 0.875rem;
+}
+.fs-15 {
+  font-size: 0.9375rem;
+}
+.fs-16 {
+  font-size: 1rem;
+}
+.fw-500 {
+  font-weight: 500;
+}
+.fw-600 {
+  font-weight: 600;
+}
+.fw-650 {
+  font-weight: 650;
+}
+.fw-700 {
+  font-weight: 700;
+}
+.lh-145 {
+  line-height: 1.45;
+}
+.lh-15 {
+  line-height: 1.5;
+}
+.lh-16 {
+  line-height: 1.6;
+}
+.ta-left {
+  text-align: left;
+}
+.ta-center {
+  text-align: center;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.pre-wrap {
+  white-space: pre-wrap;
+}
+.break-all {
+  word-break: break-all;
+}
+.break-word {
+  word-break: break-word;
+}
+.capitalize {
+  text-transform: capitalize;
+}
+/* Annule les majuscules espacées d'un titre de section pour un élément qu'il contient. */
+.normal-case {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.no-underline {
+  text-decoration: none;
+}
+
+/* Couleurs (tokens du thème) */
+.c-text {
+  color: var(--text);
+}
+.c-text-2 {
+  color: var(--text-2);
+}
+.c-accent {
+  color: var(--accent);
+}
+.c-warm {
+  color: var(--warm);
+}
+.c-fail {
+  color: var(--fail);
+}
+.c-done {
+  color: var(--done);
+}
+.c-gold {
+  color: var(--gold);
+}
+
+/* Mise en page */
+.d-block {
+  display: block;
+}
+.flex {
+  display: flex;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.flex-1 {
+  flex: 1;
+}
+.shrink-0 {
+  flex-shrink: 0;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-center {
+  align-items: center;
+}
+.items-baseline {
+  align-items: baseline;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.gap-4 {
+  gap: 4px;
+}
+.gap-6 {
+  gap: 6px;
+}
+.gap-8 {
+  gap: 8px;
+}
+.gap-10 {
+  gap: 10px;
+}
+.gap-12 {
+  gap: 12px;
+}
+.gap-14 {
+  gap: 14px;
+}
+.gap-18 {
+  gap: 18px;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.w-full {
+  width: 100%;
+}
+.min-w-0 {
+  min-width: 0;
+}
+.relative {
+  position: relative;
+}
+.pointer {
+  cursor: pointer;
+}
+/* Bouton sans aucun habillage (contenu cliquable affiché tel quel). */
+.bare {
+  all: unset;
+  cursor: pointer;
+}

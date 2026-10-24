@@ -170,24 +170,16 @@ export default function ConsentPage() {
 
   return (
     <div className="page no-tab center-page" data-testid="consent-page">
-      <div className="brand" style={{ paddingTop: 40 }}>
+      <div className="brand loose">
         <span className="logo">O</span>
         <h2>Connecter Claude</h2>
         <p>Autoriser un assistant à accéder à ton compte Overload.</p>
       </div>
 
-      {state.step === 'loading' && (
-        <p className="t2" style={{ textAlign: 'center' }}>
-          Chargement…
-        </p>
-      )}
-      {state.step === 'redirecting' && (
-        <p className="t2" style={{ textAlign: 'center' }}>
-          Retour vers Claude…
-        </p>
-      )}
+      {state.step === 'loading' && <p className="t2 ta-center">Chargement…</p>}
+      {state.step === 'redirecting' && <p className="t2 ta-center">Retour vers Claude…</p>}
       {state.step === 'error' && (
-        <p className="error-text" role="alert" style={{ textAlign: 'center', padding: '0 16px' }}>
+        <p className="error-text ta-center px-16" role="alert">
           {state.message}
         </p>
       )}
@@ -200,9 +192,7 @@ export default function ConsentPage() {
             void signIn();
           }}
         >
-          <p className="t2" style={{ padding: '0 0 12px', fontSize: '.875rem' }}>
-            Connecte-toi avec ton compte Overload pour continuer.
-          </p>
+          <p className="t2 pb-12 fs-14">Connecte-toi avec ton compte Overload pour continuer.</p>
           <label className="field">
             <span>E-mail</span>
             <input
@@ -222,12 +212,7 @@ export default function ConsentPage() {
             />
           </label>
           {state.error && <p className="error-text">{state.error}</p>}
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 20, height: 52 }}
-            disabled={busy}
-          >
+          <button type="submit" className="btn btn-primary btn-block mt-20 btn-lg" disabled={busy}>
             {busy ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
@@ -263,27 +248,22 @@ function ConsentForm(props: {
   const loopback = LOOPBACK.has(host);
   return (
     <div className="section">
-      <div className="card" style={{ padding: 16 }}>
-        <p style={{ fontSize: '1rem', lineHeight: 1.5 }}>
+      <div className="card p-16">
+        <p className="fs-16 lh-15">
           <b>{details.client.name || 'Une application'}</b> demande l'accès à ton compte Overload.
         </p>
-        <p className="t2" style={{ marginTop: 6, fontSize: '.875rem' }}>
+        <p className="t2 mt-6 fs-14">
           Retour vers <b data-testid="consent-host">{host}</b>
         </p>
         {loopback && (
-          <p
-            role="alert"
-            style={{ marginTop: 10, color: 'var(--warm)', fontSize: '.875rem', lineHeight: 1.45 }}
-          >
+          <p role="alert" className="mt-10 c-warm fs-14 lh-145">
             Ne continue que si tu viens de lancer Claude Code sur cet ordinateur.
           </p>
         )}
       </div>
 
-      <div className="section-title" style={{ marginTop: 16 }}>
-        Ce que Claude pourra faire
-      </div>
-      <ul className="t2" style={{ margin: '0 0 0 18px', fontSize: '.875rem', lineHeight: 1.6 }}>
+      <div className="section-title mt-16">Ce que Claude pourra faire</div>
+      <ul className="t2 ml-18 fs-14 lh-16">
         <li>Lire tes séances, routines, records, statistiques et mesures.</li>
         <li>
           Si tu l'autorises : créer ou modifier des routines, des séances passées, des mesures et des
@@ -292,35 +272,29 @@ function ConsentForm(props: {
         <li>Jamais tes photos, ton e-mail ni tes séances en cours.</li>
       </ul>
 
-      <label className="set-row" style={{ marginTop: 12, cursor: 'pointer' }}>
+      <label className="set-row mt-12">
         Autoriser Claude à modifier mes données
         <input
           type="checkbox"
           checked={props.canWrite}
           onChange={(e) => props.onCanWrite(e.target.checked)}
-          style={{ width: 22, height: 22 }}
+          className="consent-check"
         />
       </label>
 
-      <p className="t2" style={{ marginTop: 12, fontSize: '.8125rem', lineHeight: 1.5 }}>
+      <p className="t2 mt-12 fs-13 lh-15">
         Les données lues par Claude sont transmises à Anthropic, dans le cadre de ton compte Claude. Tu
         pourras déconnecter Claude à tout moment dans Paramètres › Claude.
       </p>
 
       <button
-        className="btn btn-primary btn-block"
-        style={{ marginTop: 20, height: 52 }}
+        className="btn btn-primary btn-block mt-20 btn-lg"
         disabled={props.busy}
         onClick={props.onApprove}
       >
         Autoriser
       </button>
-      <button
-        className="btn btn-block"
-        style={{ marginTop: 10, height: 48 }}
-        disabled={props.busy}
-        onClick={props.onDeny}
-      >
+      <button className="btn btn-block mt-10 btn-md" disabled={props.busy} onClick={props.onDeny}>
         Refuser
       </button>
       <button type="button" className="link-c" onClick={props.onSwitchAccount}>

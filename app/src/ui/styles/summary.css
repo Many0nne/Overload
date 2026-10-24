@@ -1,0 +1,53 @@
+/* ---------- Récap ---------- */
+.recap-hero {
+  text-align: center;
+  padding: 10px 18px 6px;
+}
+.recap-hero .big {
+  font-size: 2.75rem;
+}
+.recap-hero h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-top: 6px;
+}
+.recap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 14px 18px 0;
+}
+.recap-grid .card {
+  padding: 12px 4px;
+  text-align: center;
+}
+.recap-grid .card + .card {
+  margin-top: 0;
+}
+.recap-grid .v {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.recap-grid .k {
+  font-size: 0.6563rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.photo-add {
+  height: 96px;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin-top: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+.photo-remove {
+  position: absolute;
+  top: 18px;
+  right: 8px;
+}

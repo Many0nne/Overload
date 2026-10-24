@@ -1,0 +1,85 @@
+/* ---------- Démarrage (invitation, inscription, connexion) ---------- */
+.logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 1.0625rem;
+  letter-spacing: -0.04em;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px 6px;
+  text-align: center;
+}
+.brand .logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  font-size: 2.125rem;
+}
+.brand h2 {
+  font-size: 1.625rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+.brand p {
+  font-size: 0.9375rem;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.brand.compact {
+  padding-top: 8px;
+}
+.brand.loose {
+  padding-top: 40px;
+}
+.code-big {
+  font-size: 1.625rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--mono);
+}
+.link-c {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 0.875rem;
+  color: var(--accent);
+  font-weight: 600;
+  width: 100%;
+}
+.code-card {
+  text-align: center;
+  padding: 18px 16px;
+}
+.code-input {
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+}
+/* Confirmation (mot de passe changé). */
+.done-card {
+  text-align: center;
+  padding: 22px 16px;
+}
+.done-card .icon {
+  font-size: 2.25rem;
+}
+.done-card b {
+  display: block;
+  font-size: 1.0625rem;
+  margin-top: 6px;
+}
+.consent-check {
+  width: 22px;
+  height: 22px;
+}

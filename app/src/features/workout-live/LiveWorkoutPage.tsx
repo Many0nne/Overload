@@ -258,9 +258,9 @@ export default function LiveWorkoutPage() {
   const excluded = new Set<string>();
 
   return (
-    <div className="page no-tab live-wrap" style={{ paddingBottom: 200 }}>
+    <div className="page no-tab live-wrap">
       <div className="live-head">
-        <div className="head" style={{ position: 'static', paddingBottom: 6 }}>
+        <div className="head">
           <button
             className="icon-btn"
             aria-label="Réduire"
@@ -268,9 +268,7 @@ export default function LiveWorkoutPage() {
           >
             <ChevronDownIcon />
           </button>
-          <span style={{ fontSize: '1.0625rem', fontWeight: 700 }}>
-            {doc.title || (live ? 'Séance' : 'Modifier la séance')}
-          </span>
+          <span className="live-title">{doc.title || (live ? 'Séance' : 'Modifier la séance')}</span>
           <div className="right">
             {live && settings.keepAwake && (
               <span className="icon-btn" title="Écran maintenu allumé">
@@ -309,17 +307,13 @@ export default function LiveWorkoutPage() {
 
       {readOnly && (
         <div className="section">
-          <div className="card" style={{ border: '1px solid var(--line)' }}>
+          <div className="card outline">
             <b>Séance en cours sur un autre appareil</b>
-            <p className="t2" style={{ fontSize: '.875rem', marginTop: 6, lineHeight: 1.5 }}>
+            <p className="t2 fs-14 mt-6 lh-15">
               Tu peux la reprendre ici. Les saisies pas encore synchronisées sur l'autre appareil seront
               perdues.
             </p>
-            <button
-              className="btn btn-primary btn-block"
-              style={{ marginTop: 12 }}
-              onClick={() => setDialog('takeover')}
-            >
+            <button className="btn btn-primary btn-block mt-12" onClick={() => setDialog('takeover')}>
               Reprendre ici
             </button>
           </div>
@@ -346,28 +340,18 @@ export default function LiveWorkoutPage() {
         />
       ))}
       {doc.exercises.length === 0 && (
-        <div className="section" style={{ textAlign: 'center', padding: '40px 18px' }}>
-          <div style={{ fontSize: '2.5rem' }}>🏋️</div>
-          <p className="t2" style={{ marginTop: 8 }}>
-            Séance vide. Ajoute ton premier exercice.
-          </p>
+        <div className="section live-empty">
+          <div className="icon">🏋️</div>
+          <p className="t2 mt-8">Séance vide. Ajoute ton premier exercice.</p>
         </div>
       )}
 
       {!readOnly && (
-        <div className="section" style={{ marginTop: 16 }}>
-          <button
-            className="btn btn-soft btn-block"
-            style={{ color: 'var(--accent)' }}
-            onClick={() => setPicker({})}
-          >
+        <div className="section mt-16">
+          <button className="btn btn-soft btn-block c-accent" onClick={() => setPicker({})}>
             + Ajouter un exercice
           </button>
-          <button
-            className="btn btn-soft btn-danger btn-block"
-            style={{ marginTop: 8 }}
-            onClick={() => setDialog('discard')}
-          >
+          <button className="btn btn-soft btn-danger btn-block mt-8" onClick={() => setDialog('discard')}>
             {live ? 'Abandonner' : 'Supprimer la séance'}
           </button>
         </div>
@@ -376,26 +360,16 @@ export default function LiveWorkoutPage() {
       {live && !readOnly && <RestPanel sound={settings.timerSound} notify={settings.restNotification} />}
 
       {picker && (
-        <div className="scrim show" style={{ alignItems: 'stretch' }}>
-          <div
-            className="sheet"
-            style={{
-              height: '100%',
-              overflowY: 'auto',
-              borderRadius: 0,
-            }}
-          >
-            <div
-              className="head"
-              style={{ padding: '8px 0 12px', paddingTop: 'calc(var(--safe-top) + 8px)', top: 0 }}
-            >
+        <div className="scrim show full">
+          <div className="sheet full">
+            <div className="head sheet-head">
               <button className="btn-ghost" onClick={() => setPicker(null)}>
                 Annuler
               </button>
               <span className="title-sm">{picker.replace ? 'Remplacer par…' : 'Ajouter un exercice'}</span>
-              <span style={{ width: 60 }} />
+              <span className="head-spacer" />
             </div>
-            <div style={{ margin: '0 -18px' }}>
+            <div className="bleed">
               <ExerciseList onPick={(ex) => void pick(ex)} exclude={excluded} />
             </div>
           </div>

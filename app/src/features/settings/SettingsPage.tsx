@@ -40,12 +40,12 @@ function AdminSection() {
       <div className="section-title">Administration</div>
       <div className="set-row">
         Stockage photos
-        <span className={near ? undefined : 't2'} style={near ? { color: 'var(--warm)' } : undefined}>
+        <span className={near ? 'c-warm' : 't2'}>
           {usedBytes === null ? '—' : formatStorageUsage(usedBytes, quotaBytes)}
         </span>
       </div>
       {near && (
-        <p className="t2" style={{ padding: '0 16px 12px' }}>
+        <p className="t2 px-16 pb-12">
           Le quota de 1 Go approche : au-delà, l'envoi des photos échouera. Supprimer d'anciennes photos ou
           passer à une offre Supabase supérieure.
         </p>
@@ -102,7 +102,7 @@ export default function SettingsPage() {
   return (
     <>
       <SubHead title="Paramètres" />
-      <div className="section" style={{ marginTop: 4 }}>
+      <div className="section mt-4">
         <div className="section-title">Unités</div>
         <div className="set-row">
           Poids
@@ -141,13 +141,13 @@ export default function SettingsPage() {
 
       <div className="section">
         <div className="section-title">Séance</div>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('rest')}>
+        <button className="set-row" onClick={() => setSheet('rest')}>
           Repos par défaut<span className="t2">{formatRest(settings.defaultRestS)} ›</span>
         </button>
         <div className="set-row">
           <span>
             Notification fin de repos
-            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+            <small className="muted d-block fs-12">
               son système uniquement ; si muette : Réglages › Notifications › Overload › Sons, mode
               silencieux, Concentration
             </small>
@@ -166,7 +166,7 @@ export default function SettingsPage() {
         <div className="set-row">
           <span>
             Son du minuteur
-            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+            <small className="muted d-block fs-12">
               app ouverte ; coupé par le mode silencieux de l'iPhone
             </small>
           </span>
@@ -187,9 +187,7 @@ export default function SettingsPage() {
         <div className="set-row">
           <span>
             Objectifs de progression
-            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
-              pré-remplissage et tendance projetée
-            </small>
+            <small className="muted d-block fs-12">pré-remplissage et tendance projetée</small>
           </span>
           <Switch
             label="Objectifs de progression"
@@ -200,7 +198,7 @@ export default function SettingsPage() {
         <div className="set-row">
           <span>
             Saisir l'effort ressenti (RPE)
-            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
+            <small className="muted d-block fs-12">
               proposé après chaque série validée, affine les objectifs
             </small>
           </span>
@@ -210,7 +208,7 @@ export default function SettingsPage() {
             onChange={(v) => set({ rpeEnabled: v })}
           />
         </div>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('age')}>
+        <button className="set-row" onClick={() => setSheet('age')}>
           Ancienneté en musculation
           <span className="t2">
             {settings.trainingAge ? TRAINING_AGE_LABELS[settings.trainingAge.bucket] : 'Non renseignée'} ›
@@ -239,35 +237,23 @@ export default function SettingsPage() {
         <div className="set-row">
           E-mail<span className="t2">{email}</span>
         </div>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('invite')}>
-          Lien d'invitation<span style={{ color: 'var(--accent)' }}>Copier · Régénérer</span>
+        <button className="set-row" onClick={() => setSheet('invite')}>
+          Lien d'invitation<span className="c-accent">Copier · Régénérer</span>
         </button>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('export')}>
+        <button className="set-row" onClick={() => setSheet('export')}>
           Exporter mes données<span className="t2">JSON · CSV ›</span>
         </button>
-        <button
-          className="set-row"
-          style={{ width: '100%' }}
-          onClick={() => navigate('/profile/settings/import-hevy')}
-        >
+        <button className="set-row" onClick={() => navigate('/profile/settings/import-hevy')}>
           Importer depuis HEVY<span className="t2">CSV ›</span>
         </button>
-        <button
-          className="set-row"
-          style={{ width: '100%' }}
-          onClick={() => navigate('/profile/settings/claude')}
-        >
+        <button className="set-row" onClick={() => navigate('/profile/settings/claude')}>
           Claude<span className="t2">Connecteur ›</span>
         </button>
-        <button className="set-row" style={{ width: '100%' }} onClick={() => setSheet('logout')}>
+        <button className="set-row" onClick={() => setSheet('logout')}>
           Se déconnecter
           <span />
         </button>
-        <button
-          className="set-row"
-          style={{ width: '100%', color: 'var(--fail)' }}
-          onClick={() => setSheet('delete')}
-        >
+        <button className="set-row c-fail" onClick={() => setSheet('delete')}>
           Supprimer le compte
           <span />
         </button>
@@ -277,18 +263,10 @@ export default function SettingsPage() {
 
       <div className="section">
         <div className="section-title">À propos</div>
-        <button
-          className="set-row"
-          style={{ width: '100%' }}
-          onClick={async () => toast(await sendTestNotification())}
-        >
-          Tester une notification<span style={{ color: 'var(--accent)' }}>Dans 10 s ›</span>
+        <button className="set-row" onClick={async () => toast(await sendTestNotification())}>
+          Tester une notification<span className="c-accent">Dans 10 s ›</span>
         </button>
-        <button
-          className="set-row"
-          style={{ width: '100%' }}
-          onClick={() => navigate('/profile/settings/errors')}
-        >
+        <button className="set-row" onClick={() => navigate('/profile/settings/errors')}>
           Journal d'erreurs<span className="t2">›</span>
         </button>
         <div className="set-row">
@@ -297,7 +275,7 @@ export default function SettingsPage() {
       </div>
 
       <Sheet open={sheet === 'rest'} title="Repos par défaut" onClose={() => setSheet(null)}>
-        <div className="chips wrap" style={{ marginTop: 8 }}>
+        <div className="chips wrap mt-8">
           {REST_CHOICES.map((s) => (
             <button
               key={String(s)}
@@ -315,7 +293,7 @@ export default function SettingsPage() {
 
       <Sheet open={sheet === 'age'} title="Ancienneté en musculation" onClose={() => setSheet(null)}>
         <p>Sert à projeter ta progression sur la fiche exercice.</p>
-        <div className="chips wrap" style={{ marginTop: 12 }}>
+        <div className="chips wrap mt-12">
           {(Object.keys(TRAINING_AGE_LABELS) as TrainingAgeBucket[]).map((b) => (
             <button
               key={b}
@@ -358,9 +336,7 @@ export default function SettingsPage() {
         ]}
       >
         <p>Ton lien est réutilisable et n'expire pas. Le régénérer rend l'ancien inutilisable.</p>
-        <div className="code-big" style={{ marginTop: 12 }}>
-          {profile ? formatInviteCode(profile.invite_code) : '—'}
-        </div>
+        <div className="code-big mt-12">{profile ? formatInviteCode(profile.invite_code) : '—'}</div>
       </Sheet>
 
       <Sheet

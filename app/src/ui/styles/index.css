@@ -1,0 +1,18 @@
+/* Point d'entrée des styles, dans l'ordre de la cascade : tokens et base, habillage, composants communs,
+   puis un fichier par écran, et les utilitaires en dernier (ils priment sur les composants). */
+@import "./tokens.css";
+@import "./base.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./sheets.css";
+@import "./home.css";
+@import "./routines.css";
+@import "./library.css";
+@import "./workout.css";
+@import "./exercise.css";
+@import "./summary.css";
+@import "./profile.css";
+@import "./goals.css";
+@import "./auth.css";
+@import "./body-map.css";
+@import "./utilities.css";

@@ -141,7 +141,7 @@ export function SubHead(props: { title: string; right?: ReactNode; onBack?: () =
         <BackIcon />
       </button>
       <span className="title-sm">{props.title}</span>
-      <span style={{ minWidth: 38, display: 'flex', justifyContent: 'flex-end' }}>{props.right}</span>
+      <span className="head-end">{props.right}</span>
     </div>
   );
 }
@@ -169,12 +169,11 @@ export function Seg<T extends string>(props: {
   stretch?: boolean;
 }) {
   return (
-    <div className="seg" style={props.stretch ? { display: 'flex' } : undefined}>
+    <div className={props.stretch ? 'seg stretch' : 'seg'}>
       {props.options.map((o) => (
         <button
           key={o.value}
           className={o.value === props.value ? 'on' : ''}
-          style={props.stretch ? { flex: 1 } : undefined}
           onClick={() => props.onChange(o.value)}
         >
           {o.label}

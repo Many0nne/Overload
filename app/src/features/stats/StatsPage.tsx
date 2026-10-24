@@ -86,21 +86,14 @@ export default function StatsPage() {
   return (
     <>
       <SubHead title="Statistiques" />
-      <div className="section" style={{ marginTop: 4 }}>
+      <div className="section mt-4">
         <div className="card">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div className="flex justify-between items-center mb-12">
+            <div className="flex items-center gap-4">
               <button className="icon-btn" aria-label="Mois précédent" onClick={() => shift(-1)}>
                 ‹
               </button>
-              <b style={{ textTransform: 'capitalize' }}>{label}</b>
+              <b className="capitalize">{label}</b>
               <button
                 className="icon-btn"
                 aria-label="Mois suivant"
@@ -110,7 +103,7 @@ export default function StatsPage() {
                 {isCurrent ? '' : '›'}
               </button>
             </div>
-            <span className="pr-pill" style={{ color: 'var(--text)' }}>
+            <span className="pr-pill c-text">
               🔥 {streak} semaine{streak > 1 ? 's' : ''}
             </span>
           </div>
@@ -149,9 +142,7 @@ export default function StatsPage() {
             </div>
           ))}
         </div>
-        <p className="muted" style={{ fontSize: '.75rem', marginTop: 6 }}>
-          Muscle principal = 1 série, secondaire = 0,5.
-        </p>
+        <p className="muted fs-12 mt-6">Muscle principal = 1 série, secondaire = 0,5.</p>
       </div>
       <div className="section">
         <div className="section-title">Records récents</div>
@@ -167,7 +158,7 @@ export default function StatsPage() {
                 <li
                   key={`${r.workoutId}-${r.exerciseId}-${r.criterion}-${r.setId ?? r.entryId}`}
                   onClick={() => navigate(`/exercise/${r.exerciseId}`)}
-                  style={{ cursor: 'pointer', gap: 12 }}
+                  className="pointer gap-12"
                 >
                   <span>
                     {ex?.name ?? 'Exercice'} · {lowerFirst(criterionLabel(r.criterion, type))}
@@ -178,7 +169,7 @@ export default function StatsPage() {
                       </span>
                     )}
                   </span>
-                  <b style={{ whiteSpace: 'nowrap' }}>
+                  <b className="nowrap">
                     {prefix}
                     {formatCanonical(r.value, unit, settings.units)}
                   </b>

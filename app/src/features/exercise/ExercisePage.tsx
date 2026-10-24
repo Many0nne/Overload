@@ -53,6 +53,7 @@ import { BodyMap } from '@/ui/BodyMap';
 import { Chips, Seg, Sheet, SubHead, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { LineChart } from '@/ui/LineChart';
+import { KIND_CLASS } from '@/ui/setKind';
 
 type Units = Settings['units'];
 type Tab = 'resume' | 'histo' | 'consignes';
@@ -132,7 +133,7 @@ export default function ExercisePage() {
           )
         }
       />
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '0 18px 12px' }}>
+      <div className="ex-tags">
         <span className="tag acc">{MUSCLE_LABELS[exercise.primary_muscle]}</span>
         {exercise.secondary_muscles.map((m) => (
           <span key={m} className="tag">
@@ -289,18 +290,12 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
     <div className="pane on">
       {next && <NextGoalCard next={next} units={units} />}
       <div className="section">
-        <div className="muted" style={{ fontSize: '.8125rem' }}>
-          {CHART_METRIC_LABELS[metric]} · dernière séance
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <div className="muted fs-13">{CHART_METRIC_LABELS[metric]} · dernière séance</div>
+        <div className="flex items-baseline gap-10">
           <div className="hero">{last ? fmt(last.v) : '—'}</div>
           {delta !== undefined && (
             <span
-              className="delta"
-              style={{
-                color:
-                  delta === 0 ? 'var(--text-2)' : delta > 0 !== lowerIsBetter ? 'var(--done)' : 'var(--fail)',
-              }}
+              className={`delta${delta === 0 ? ' c-text-2' : delta > 0 !== lowerIsBetter ? '' : ' c-fail'}`}
             >
               {delta >= 0 ? '▲ +' : '▼ −'}
               {fmt(Math.abs(delta)).replace(/^[+−]/, '')} sur la période
@@ -309,7 +304,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
         </div>
       </div>
       {metrics.length > 1 && (
-        <div style={{ marginTop: 12 }}>
+        <div className="mt-12">
           <Chips
             value={metric}
             options={metrics.map((m) => ({ value: m, label: CHART_METRIC_LABELS[m] }))}
@@ -317,7 +312,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
           />
         </div>
       )}
-      <div className="section" style={{ marginTop: 6 }}>
+      <div className="section mt-6">
         {points.length > 0 ? (
           <LineChart
             points={points}
@@ -331,7 +326,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
           <p className="empty">Aucune séance sur la période.</p>
         )}
         {showTrend && <TrendInfo data={trendData} units={units} hasAge={!!settings.trainingAge} now={now} />}
-        <div style={{ marginTop: 10 }}>
+        <div className="mt-10">
           <Seg
             stretch
             value={period}
@@ -358,13 +353,10 @@ function NextGoalCard(props: { next: WorkoutExercise; units: Units }) {
   return (
     <div className="section">
       <div className="card goal-card">
-        <div
-          className="muted"
-          style={{ fontSize: '.8125rem', display: 'flex', justifyContent: 'space-between' }}
-        >
+        <div className="muted fs-13 flex justify-between">
           Objectif de la prochaine séance
           {next.repRange && (
-            <span className="tag" style={{ height: 20, fontSize: '.6875rem' }}>
+            <span className="tag sm">
               Fourchette {next.repRange.min}–{next.repRange.max}
             </span>
           )}
@@ -378,7 +370,7 @@ function NextGoalCard(props: { next: WorkoutExercise; units: Units }) {
                 next.measurementType,
                 units,
               )}{' '}
-              <small className="muted" style={{ fontSize: '.875rem', fontWeight: 600 }}>
+              <small className="muted fs-14 fw-600">
                 · {working.length} série{working.length > 1 ? 's' : ''}
               </small>
             </div>
@@ -408,7 +400,7 @@ function TrendInfo(props: { data: TrendData; units: Units; hasAge: boolean; now:
   return (
     <div className="trend-info">
       {trend?.status === 'up' && (
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <div className="flex gap-14 flex-wrap">
           <span className="legend">
             <i />
             Tendance projetée (12 sem.)
@@ -501,9 +493,7 @@ function RecordsSection(props: {
       </div>
       {type === 'weight_reps' && (
         <>
-          <div className="section-title" style={{ marginTop: 16 }}>
-            Meilleur poids à N reps (au moins)
-          </div>
+          <div className="section-title mt-16">Meilleur poids à N reps (au moins)</div>
           <div className="reps-grid">
             {REP_MILESTONES.map((n) => {
               const rv = bests[`weight_at_${n}`];
@@ -590,23 +580,21 @@ function ProgressionSettings(props: {
     <div className="section">
       <div className="section-title">Réglages de progression</div>
       {showIncrement && (
-        <button className="set-row" style={{ width: '100%' }} onClick={() => open('increment')}>
+        <button className="set-row" onClick={() => open('increment')}>
           Incrément<span className="t2">{formatWeight(increment, units.weight)} ›</span>
         </button>
       )}
       {showRange && (
-        <button className="set-row" style={{ width: '100%' }} onClick={() => open('range')}>
-          <span style={{ textAlign: 'left' }}>
+        <button className="set-row" onClick={() => open('range')}>
+          <span className="ta-left">
             Fourchette par défaut
-            <small className="muted" style={{ display: 'block', fontSize: '.75rem' }}>
-              hors routine (séance vide)
-            </small>
+            <small className="muted d-block fs-12">hors routine (séance vide)</small>
           </span>
           <span className="t2">{range ? `${range.min}–${range.max}` : 'Auto'} ›</span>
         </button>
       )}
       {showGoal && (
-        <button className="set-row" style={{ width: '100%' }} onClick={() => open('goal')}>
+        <button className="set-row" onClick={() => open('goal')}>
           Objectif à long terme
           <span className="t2">
             {goal ? `${formatWeight(goal.weight, units.weight)} × ${goal.reps}` : 'Aucun'} ›
@@ -629,32 +617,30 @@ function ProgressionSettings(props: {
         ]}
       >
         {sheet === 'increment' && (
-          <label className="field" style={{ marginTop: 0 }}>
+          <label className="field mt-0">
             <span>Incrément ({units.weight}) · vide = défaut selon l'équipement</span>
             <input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} />
           </label>
         )}
         {sheet === 'range' && (
-          <label className="field" style={{ marginTop: 0 }}>
+          <label className="field mt-0">
             <span>Fourchette de reps (ex. 8–12, ou 8) · vide = automatique</span>
             <input value={a} onChange={(e) => setA(e.target.value)} placeholder="8–12" />
           </label>
         )}
         {sheet === 'goal' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <label className="field" style={{ marginTop: 0 }}>
+            <div className="grid-2">
+              <label className="field mt-0">
                 <span>Charge ({units.weight})</span>
                 <input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} />
               </label>
-              <label className="field" style={{ marginTop: 0 }}>
+              <label className="field mt-0">
                 <span>Reps (1 à 12)</span>
                 <input inputMode="numeric" value={b} onChange={(e) => setB(e.target.value)} />
               </label>
             </div>
-            <p className="muted" style={{ fontSize: '.75rem', marginTop: 8 }}>
-              Laisse vide pour retirer l'objectif.
-            </p>
+            <p className="muted fs-12 mt-8">Laisse vide pour retirer l'objectif.</p>
           </>
         )}
       </Sheet>
@@ -690,13 +676,8 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
         {list.map((w) => {
           const wb = badges[w.id];
           return (
-            <button
-              key={w.id}
-              className="card hist"
-              style={{ width: '100%', textAlign: 'left' }}
-              onClick={() => navigate(`/history/${w.id}`)}
-            >
-              <h3 style={{ fontSize: '.9375rem' }}>{w.doc.title || 'Séance'}</h3>
+            <button key={w.id} className="card hist" onClick={() => navigate(`/history/${w.id}`)}>
+              <h3 className="sm">{w.doc.title || 'Séance'}</h3>
               {w.doc.exercises
                 .filter((e) => e.exerciseId === props.exercise.id)
                 .map((e) => {
@@ -709,23 +690,10 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
                         {met && <span className="ok"> · 🎯 objectif atteint</span>}
                         {wb?.entries[e.id]?.length ? <span className="pr-pill"> 🏆</span> : null}
                       </div>
-                      <ul style={{ marginTop: 10 }}>
+                      <ul className="mt-10">
                         {e.sets.map((s, i) => (
                           <li key={s.id}>
-                            <b
-                              style={{
-                                color:
-                                  s.kind === 'warmup'
-                                    ? 'var(--warm)'
-                                    : s.kind === 'drop'
-                                      ? 'var(--drop)'
-                                      : s.kind === 'failure'
-                                        ? 'var(--fail)'
-                                        : undefined,
-                              }}
-                            >
-                              {labels[i]}
-                            </b>
+                            <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                             {formatSetValues(s, e.measurementType, settings.units)}
                             {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
                             {wb?.sets[s.id]?.length ? <span className="pr-pill">🏆</span> : null}

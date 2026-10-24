@@ -23,6 +23,7 @@ import { ExerciseList } from '@/features/library/ExerciseList';
 import { fieldText, parseField } from '@/features/workout-live/SetRow';
 import { Seg, Sheet, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
+import { KIND_CLASS } from '@/ui/setKind';
 import { formatRest } from '@/ui/time';
 
 const REST_CHOICES: (number | null)[] = [null, 30, 45, 60, 75, 90, 120, 150, 180, 240, 300];
@@ -71,24 +72,13 @@ function SortableExercise(props: {
   return (
     <div
       ref={setNodeRef}
-      className="card re-ex"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.7 : 1,
-        zIndex: isDragging ? 2 : undefined,
-        position: 'relative',
-      }}
+      className={`card re-ex${isDragging ? ' dragging' : ''}`}
+      // Position et animation calculées par dnd-kit à chaque déplacement : seules valeurs laissées inline.
+      style={{ transform: CSS.Transform.toString(transform), transition }}
     >
       <div className="top">
         {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: rôle et focus fournis par les attributs dnd-kit */}
-        <span
-          className="grip"
-          {...attributes}
-          {...listeners}
-          style={{ touchAction: 'none', padding: '6px 4px' }}
-          aria-label="Réordonner"
-        >
+        <span className="grip" {...attributes} {...listeners} aria-label="Réordonner">
           ⠿
         </span>
         <b>{exercise?.name ?? 'Exercice supprimé'}</b>
@@ -120,39 +110,24 @@ function SortableExercise(props: {
           />
         </div>
       )}
-      <div className="re-row" style={{ alignItems: 'flex-start' }}>
+      <div className="re-row items-start">
         <div>
           Séries
           <small>
             {ROUTINE_FIELDS(type).length ? 'cible (touche pour modifier)' : 'touche pour modifier'}
           </small>
         </div>
-        <div className="re-sets" style={{ justifyContent: 'flex-end' }}>
+        <div className="re-sets justify-end">
           {entry.sets.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => props.onEditSet(s.id)}
-              style={{ all: 'unset', cursor: 'pointer' }}
-            >
+            <button key={s.id} onClick={() => props.onEditSet(s.id)} className="bare">
               <span>
-                <em
-                  className={s.kind === 'warmup' ? 'W' : undefined}
-                  style={
-                    s.kind === 'failure'
-                      ? { color: 'var(--fail)' }
-                      : s.kind === 'drop'
-                        ? { color: 'var(--drop)' }
-                        : undefined
-                  }
-                >
-                  {labels[i]}
-                </em>
+                <em className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</em>
                 {setChipText(s, exercise, props.units)}
               </span>
             </button>
           ))}
           <button
-            style={{ all: 'unset', cursor: 'pointer' }}
+            className="bare"
             onClick={() => {
               const last = entry.sets.at(-1);
               const { id: _id, ...rest } = last ?? { id: '', kind: 'normal' as SetKind };
@@ -165,12 +140,12 @@ function SortableExercise(props: {
               });
             }}
           >
-            <span style={{ color: 'var(--accent)' }}>+</span>
+            <span className="c-accent">+</span>
           </button>
         </div>
       </div>
-      <button className="re-row" style={{ width: '100%' }} onClick={props.onRest}>
-        Repos<span style={{ color: 'var(--accent)', fontWeight: 600 }}>{formatRest(entry.restS)} ›</span>
+      <button className="re-row w-full" onClick={props.onRest}>
+        Repos<span className="c-accent fw-600">{formatRest(entry.restS)} ›</span>
       </button>
     </div>
   );
@@ -267,16 +242,16 @@ export default function RoutineEditor() {
   return (
     <>
       <div className="head">
-        <button className="btn-ghost" style={{ fontWeight: 600 }} onClick={() => navigate(-1)}>
+        <button className="btn-ghost fw-600" onClick={() => navigate(-1)}>
           Annuler
         </button>
         <span className="title-sm">{isNew ? 'Nouvelle routine' : 'Modifier la routine'}</span>
-        <button className="btn-ghost" style={{ fontWeight: 700 }} onClick={() => void save()}>
+        <button className="btn-ghost fw-700" onClick={() => void save()}>
           Enregistrer
         </button>
       </div>
-      <div className="section" style={{ marginTop: 0 }}>
-        <label className="field" style={{ marginTop: 0 }}>
+      <div className="section mt-0">
+        <label className="field mt-0">
           <span>Nom</span>
           <input
             value={doc.name}
@@ -289,14 +264,7 @@ export default function RoutineEditor() {
           <select
             value={folderId ?? ''}
             onChange={(e) => setFolderId(e.target.value || null)}
-            style={{
-              width: '100%',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: 12,
-              padding: '12px 14px',
-              color: 'var(--text)',
-            }}
+            className="select"
           >
             <option value="">Mes routines (sans dossier)</option>
             {(folders ?? []).map((f) => (
@@ -309,10 +277,7 @@ export default function RoutineEditor() {
       </div>
       <div className="section">
         <div className="section-title">
-          Exercices{' '}
-          <span className="muted" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500 }}>
-            glisser ⠿ pour réordonner
-          </span>
+          Exercices <span className="muted normal-case fw-500">glisser ⠿ pour réordonner</span>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={doc.exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
@@ -330,45 +295,27 @@ export default function RoutineEditor() {
             ))}
           </SortableContext>
         </DndContext>
-        <button
-          className="btn btn-soft btn-block"
-          style={{ marginTop: 12, color: 'var(--accent)' }}
-          onClick={() => setPicker({})}
-        >
+        <button className="btn btn-soft btn-block mt-12 c-accent" onClick={() => setPicker({})}>
           + Ajouter un exercice
         </button>
         {!isNew && (
-          <button
-            className="btn btn-danger btn-block"
-            style={{ marginTop: 6 }}
-            onClick={() => setConfirmDelete(true)}
-          >
+          <button className="btn btn-danger btn-block mt-6" onClick={() => setConfirmDelete(true)}>
             Supprimer la routine
           </button>
         )}
       </div>
 
       {picker && (
-        <div className="scrim show" style={{ alignItems: 'stretch' }}>
-          <div
-            className="sheet"
-            style={{
-              height: '100%',
-              overflowY: 'auto',
-              borderRadius: 0,
-            }}
-          >
-            <div
-              className="head"
-              style={{ padding: '8px 0 12px', paddingTop: 'calc(var(--safe-top) + 8px)', top: 0 }}
-            >
+        <div className="scrim show full">
+          <div className="sheet full">
+            <div className="head sheet-head">
               <button className="btn-ghost" onClick={() => setPicker(null)}>
                 Annuler
               </button>
               <span className="title-sm">{picker.replace ? 'Remplacer par…' : 'Ajouter un exercice'}</span>
-              <span style={{ width: 60 }} />
+              <span className="head-spacer" />
             </div>
-            <div style={{ margin: '0 -18px' }}>
+            <div className="bleed">
               <ExerciseList onPick={pick} />
             </div>
           </div>
@@ -401,7 +348,7 @@ export default function RoutineEditor() {
       />
 
       <Sheet open={restFor !== null} title="Temps de repos" onClose={() => setRestFor(null)}>
-        <div className="chips wrap" style={{ marginTop: 8 }}>
+        <div className="chips wrap mt-8">
           {REST_CHOICES.map((r) => (
             <button
               key={String(r)}

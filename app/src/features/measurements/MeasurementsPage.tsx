@@ -95,7 +95,7 @@ export default function MeasurementsPage() {
       <SubHead
         title="Mesures"
         right={
-          <button className="btn-ghost" style={{ fontWeight: 650 }} onClick={() => setEditing('new')}>
+          <button className="btn-ghost fw-650" onClick={() => setEditing('new')}>
             Ajouter
           </button>
         }
@@ -105,14 +105,12 @@ export default function MeasurementsPage() {
         options={KEYS.map((k) => ({ value: k.key, label: k.label }))}
         onChange={(v) => v && setKey(v)}
       />
-      <div className="section" style={{ marginTop: 10 }}>
-        <div className="muted" style={{ fontSize: '.8125rem' }}>
-          {label} · dernière mesure
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+      <div className="section mt-10">
+        <div className="muted fs-13">{label} · dernière mesure</div>
+        <div className="flex items-baseline gap-10">
           <div className="hero">{last ? format(last.v) : '—'}</div>
           {series.length > 1 && (
-            <span className="delta" style={{ color: 'var(--text-2)' }}>
+            <span className="delta c-text-2">
               {delta >= 0 ? '▲ +' : '▼ '}
               {format(Math.abs(delta))} depuis le début
             </span>
@@ -233,8 +231,8 @@ function MeasurementSheet(props: { row?: BodyMeasurementRow; units: Units; onClo
           : []),
       ]}
     >
-      <div style={{ maxHeight: '55vh', overflowY: 'auto', overflowX: 'hidden' }}>
-        <label className="field" style={{ marginTop: 0 }}>
+      <div className="sheet-scroll">
+        <label className="field mt-0">
           <span>Date</span>
           <input
             type="date"

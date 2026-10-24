@@ -7,8 +7,8 @@ import { DEFAULT_SETTINGS, type Settings, type TrainingAgeBucket } from '@/domai
 import { Chips, Seg, toast } from '@/ui/components';
 import { formatInviteCode, normalizeInviteCode } from '@/ui/platform';
 
-const Brand = (props: { title: string; text?: string; top?: number }) => (
-  <div className="brand" style={{ paddingTop: props.top ?? 18 }}>
+const Brand = (props: { title: string; text?: string; spacing?: 'compact' | 'loose' }) => (
+  <div className={props.spacing ? `brand ${props.spacing}` : 'brand'}>
     <span className="logo">O</span>
     <h2>{props.title}</h2>
     {props.text && <p>{props.text}</p>}
@@ -48,7 +48,7 @@ export function InvitePage() {
           <ol className="steps">
             <li>
               <span>
-                Touche le bouton Partager <b style={{ color: 'var(--accent)' }}>⬆</b> en bas de Safari.
+                Touche le bouton Partager <b className="c-accent">⬆</b> en bas de Safari.
               </span>
             </li>
             <li>Choisis « Sur l'écran d'accueil », puis « Ajouter ».</li>
@@ -58,11 +58,10 @@ export function InvitePage() {
       </div>
       <div className="section">
         <div className="section-title">Ton code d'invitation</div>
-        <div className="card" style={{ textAlign: 'center', padding: '18px 16px' }}>
+        <div className="card code-card">
           <div className="code-big">{formatInviteCode(clean)}</div>
           <button
-            className="btn btn-soft btn-block"
-            style={{ marginTop: 14 }}
+            className="btn btn-soft btn-block mt-14"
             onClick={() =>
               void navigator.clipboard?.writeText(formatInviteCode(clean)).then(() => toast('Code copié'))
             }
@@ -70,7 +69,7 @@ export function InvitePage() {
             Copier le code
           </button>
         </div>
-        <p className="muted" style={{ fontSize: '.8125rem', marginTop: 10, lineHeight: 1.5 }}>
+        <p className="muted fs-13 mt-10 lh-15">
           Si le code n'apparaît pas dans l'app, colle-le dans le formulaire d'inscription.
         </p>
         <Link className="link-c" to={`/signup?code=${clean}`}>
@@ -130,8 +129,8 @@ export function SignupPage() {
 
   return (
     <div className="page no-tab center-page">
-      <Brand title="Créer mon compte" top={8} />
-      <div className="section" style={{ marginTop: 4 }}>
+      <Brand title="Créer mon compte" spacing="compact" />
+      <div className="section mt-4">
         <label className="field">
           <span>Code d'invitation</span>
           <input
@@ -139,7 +138,7 @@ export function SignupPage() {
             onChange={(e) => setCode(formatInviteCode(e.target.value))}
             autoCapitalize="characters"
             autoComplete="off"
-            style={{ fontFamily: 'ui-monospace,Menlo,monospace', letterSpacing: '.05em' }}
+            className="code-input"
             placeholder="XXXX-XXXX-XXXX"
           />
           {codeOk && <em className="hint">✓ Format valide</em>}
@@ -181,14 +180,11 @@ export function SignupPage() {
         <div className="field">
           <span>Depuis quand fais-tu de la musculation ? (facultatif)</span>
           <Chips wrap value={age} onChange={setAge} options={AGE_OPTIONS} />
-          <em className="hint" style={{ color: 'var(--muted)', fontWeight: 500 }}>
-            Sert à projeter ta progression. Modifiable dans les paramètres.
-          </em>
+          <em className="hint neutral">Sert à projeter ta progression. Modifiable dans les paramètres.</em>
         </div>
         {error && <p className="error-text">{error}</p>}
         <button
-          className="btn btn-primary btn-block"
-          style={{ marginTop: 20, height: 52 }}
+          className="btn btn-primary btn-block mt-20 btn-lg"
           disabled={busy}
           onClick={() => void submit()}
         >
@@ -229,7 +225,7 @@ export function LoginPage() {
 
   return (
     <div className="page no-tab center-page">
-      <Brand title="Overload" text="Connecte-toi pour retrouver tes séances." top={40} />
+      <Brand title="Overload" text="Connecte-toi pour retrouver tes séances." spacing="loose" />
       <form
         className="section"
         onSubmit={(e) => {
@@ -251,24 +247,16 @@ export function LoginPage() {
           />
         </label>
         {error && <p className="error-text">{error}</p>}
-        <button
-          type="submit"
-          className="btn btn-primary btn-block"
-          style={{ marginTop: 20, height: 52 }}
-          disabled={busy}
-        >
+        <button type="submit" className="btn btn-primary btn-block mt-20 btn-lg" disabled={busy}>
           {busy ? 'Connexion…' : 'Se connecter'}
         </button>
         <button type="button" className="link-c" onClick={() => void forgot()}>
           Mot de passe oublié ?
         </button>
-        <Link className="link-c" style={{ color: 'var(--text-2)', fontWeight: 500 }} to="/signup">
+        <Link className="link-c c-text-2 fw-500" to="/signup">
           J'ai un code d'invitation
         </Link>
-        <p
-          className="muted"
-          style={{ fontSize: '.8125rem', marginTop: 22, textAlign: 'center', lineHeight: 1.5 }}
-        >
+        <p className="muted fs-13 mt-22 ta-center lh-15">
           Pas de compte ? L'inscription se fait uniquement avec le lien d'invitation d'un proche.
         </p>
       </form>
@@ -310,10 +298,10 @@ export function ResetPage() {
       <Brand title="Nouveau mot de passe" />
       {done ? (
         <div className="section">
-          <div className="card" style={{ textAlign: 'center', padding: '22px 16px' }}>
-            <div style={{ fontSize: '2.25rem' }}>✅</div>
-            <b style={{ display: 'block', fontSize: '1.0625rem', marginTop: 6 }}>Mot de passe modifié</b>
-            <p className="t2" style={{ fontSize: '.875rem', marginTop: 8, lineHeight: 1.5 }}>
+          <div className="card done-card">
+            <div className="icon">✅</div>
+            <b>Mot de passe modifié</b>
+            <p className="t2 fs-14 mt-8 lh-15">
               Retourne dans l'app Overload depuis ton écran d'accueil pour te connecter.
             </p>
           </div>
@@ -341,8 +329,7 @@ export function ResetPage() {
           </label>
           {error && <p className="error-text">{error}</p>}
           <button
-            className="btn btn-primary btn-block"
-            style={{ marginTop: 20, height: 52 }}
+            className="btn btn-primary btn-block mt-20 btn-lg"
             disabled={!ready}
             onClick={() => void submit()}
           >
@@ -364,7 +351,7 @@ export function InstallPage(props: { onContinue?: () => void }) {
           <ol className="steps">
             <li>
               <span>
-                Touche le bouton Partager <b style={{ color: 'var(--accent)' }}>⬆</b> en bas de Safari.
+                Touche le bouton Partager <b className="c-accent">⬆</b> en bas de Safari.
               </span>
             </li>
             <li>Choisis « Sur l'écran d'accueil », puis « Ajouter ».</li>

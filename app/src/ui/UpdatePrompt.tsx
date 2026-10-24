@@ -30,22 +30,8 @@ export function UpdatePrompt() {
 
   if (!needRefresh || inWorkout) return null;
   return (
-    <div
-      className="card"
-      style={{
-        position: 'fixed',
-        left: 10,
-        right: 10,
-        top: 'calc(10px + env(safe-area-inset-top))',
-        zIndex: 55,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        boxShadow: '0 8px 24px rgba(0,0,0,.35)',
-        border: '1px solid var(--line)',
-      }}
-    >
-      <span style={{ flex: 1, fontSize: '.9375rem' }}>Nouvelle version disponible</span>
+    <div className="card update-prompt">
+      <span>Nouvelle version disponible</span>
       <button className="btn btn-ghost btn-sm" onClick={() => setNeedRefresh(false)}>
         Plus tard
       </button>
