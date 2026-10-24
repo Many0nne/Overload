@@ -103,16 +103,19 @@ export default function LiveWorkoutPage() {
   );
 
   // « La dernière fois » de chaque exercice, pour la colonne Précédent (§10.4).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ne dépend que du début de la séance, pas de chaque saisie
+  // Clé « entrée:exercice » : saisir une série ne change pas la liste, seuls l'ajout ou le remplacement d'un exercice la changent.
+  const entryKey = doc?.exercises.map((e) => `${e.id}:${e.exerciseId}`).join(',');
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ne dépend que du début de la séance et de ses exercices
   const previousByEntry = useMemo(() => {
     const m = new Map<string, ReturnType<typeof exerciseInWorkout>>();
-    if (!row || !doc || !history) return m;
-    for (const e of doc.exercises) {
-      const w = lastTime(e.exerciseId, row.routine_id, row.started_at, history, row.id);
-      m.set(e.id, w ? exerciseInWorkout(w, e.exerciseId) : undefined);
+    if (!row || !entryKey || !history) return m;
+    for (const pair of entryKey.split(',')) {
+      const [entryId, exerciseId] = pair.split(':') as [string, string];
+      const w = lastTime(exerciseId, row.routine_id, row.started_at, history, row.id);
+      m.set(entryId, w ? exerciseInWorkout(w, exerciseId) : undefined);
     }
     return m;
-  }, [row?.id, row?.routine_id, row?.started_at, doc, history]);
+  }, [row?.id, row?.routine_id, row?.started_at, entryKey, history]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: dépendances choisies pour ne pas recalculer à chaque saisie
   const badges = useMemo(() => {
