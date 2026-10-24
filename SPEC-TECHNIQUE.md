@@ -345,6 +345,7 @@ Le lien de réinitialisation s'ouvre dans Safari, pas dans la PWA. La page `/res
 4. Le service worker affiche la notification (`tag = 'rest'`, qui remplace la précédente). iOS exige d'afficher toute notification reçue, y compris quand l'app est ouverte.
 - Précision attendue : 1 à 2 s.
 - Hors ligne : pas de planification ; seul le minuteur local prévient (comportement prévu par la spec).
+- Minuteur visible hors de l'app ou sur l'écran verrouillé (PiP, Media Session, Live Activities…) : voir l'étude `docs/etude-seance-hors-app.md`.
 
 ### 8.3 Abonnement
 Demandé depuis un geste utilisateur (onboarding ou paramètres), uniquement en mode standalone sur iOS. L'abonnement est enregistré par `device_id` et renouvelé à chaque démarrage si l'endpoint a changé.
