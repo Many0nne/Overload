@@ -32,6 +32,8 @@ npx supabase link --project-ref saiqhwqoibyqgdsdakuy
 npx supabase db push                 # migrations uniquement (les seeds ne sont pas appliqués)
 ```
 
+Ensuite, les migrations partent automatiquement au merge sur `main` (§7). À la main en secours : `bash scripts/deploy-supabase.sh` (migrations puis fonctions).
+
 Catalogue (une fois, puis à chaque régénération de `supabase/seed.sql`) : `npx supabase db query --linked -f supabase/seed.sql` (API de gestion, sans mot de passe de base), ou l'éditeur SQL du tableau de bord. Le seed est idempotent (UUID v5 stables) ; seul le type de mesure d'un exercice du catalogue ne peut plus changer.
 
 Configuration de la notification (éditeur SQL, une fois) :
@@ -51,13 +53,11 @@ Vérifier dans Database › Extensions que `pg_cron` et `pg_net` sont actives, e
 ```bash
 npx tsx scripts/gen-vapid.ts         # paire de PRODUCTION (différente du local)
 npx supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=mailto:<ton e-mail> PUSH_SECRET=<SECRET_ALEATOIRE>
-npx supabase functions deploy signup-with-invite --no-verify-jwt
-npx supabase functions deploy send-push --no-verify-jwt
-npx supabase functions deploy purge-photos --no-verify-jwt   # purge nocturne des photos orphelines (#61)
-npx supabase functions deploy delete-account
-npx supabase functions deploy mcp --no-verify-jwt   # connecteur Claude (docs/spec-mcp.md)
+npx supabase functions deploy        # toutes les fonctions ; options verify_jwt lues dans supabase/config.toml
 ```
 
+Le déploiement des fonctions est automatique au merge sur `main` (§7) ; la commande ci-dessus ne sert qu'en secours.
+Une nouvelle fonction se déclare dans `supabase/config.toml` (`[functions.<nom>]`, `verify_jwt`) : c'est là que vivent ses options.
 `PUSH_SECRET` doit être identique à `private.config.push_secret` (secret partagé des appels pg_net : send-push, purge-photos). Sans CLI : Edge Functions › Secrets accepte un collage au format `.env`.
 Les valeurs de production restent hors dépôt (`.tmp/prod-functions.env`, ignoré par git).
 
@@ -100,6 +100,17 @@ Le script affiche le code d'invitation de l'admin. Lien à partager : `<URL>/i/<
 ## 7. GitHub Actions
 
 Secrets du dépôt : `SUPABASE_URL`, `SUPABASE_ANON_KEY` (clé publishable ; ping `health()` tous les 3 jours, évite la pause du projet Free).
+
+Déploiement du backend (`.github/workflows/deploy.yml`, #72) : à chaque push sur `main` touchant `supabase/migrations`, `supabase/functions`
+ou `supabase/config.toml` (ou via « Run workflow »), `scripts/deploy-supabase.sh` vérifie la copie du domaine de `mcp`, lance `db push` puis
+déploie toutes les fonctions. Réglages, une fois (Settings › Environments › New environment `production`) :
+- Deployment branches : `main` uniquement ; en option, Required reviewers pour valider chaque déploiement.
+- Secrets d'environnement : `SUPABASE_ACCESS_TOKEN` (jeton personnel, tableau de bord › Account › Access Tokens),
+  `SUPABASE_DB_PASSWORD` (mot de passe de la base, Project Settings › Database).
+- Variable d'environnement : `SUPABASE_PROJECT_REF` = `saiqhwqoibyqgdsdakuy`.
+
+Cloudflare Pages construit le front au même moment, sans attendre ce workflow : une migration dont dépend le front
+doit rester rétrocompatible (ajouts d'abord, suppressions dans une release ultérieure).
 
 ## 8. Vérifications après déploiement (iPhone, iOS 27)
 

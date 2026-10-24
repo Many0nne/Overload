@@ -1,0 +1,38 @@
+name: Déploiement Supabase
+
+# Migrations puis Edge Functions de production (#72), à chaque push sur main qui touche le backend, ou à la main.
+# Secrets et variable dans l'environnement GitHub protégé `production` (DEPLOY.md §7).
+on:
+  push:
+    branches: [main]
+    paths:
+      - supabase/migrations/**
+      - supabase/functions/**
+      - supabase/config.toml
+      - scripts/deploy-supabase.sh
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+# Un seul déploiement à la fois, sans annuler celui en cours (une migration interrompue laisserait la base à moitié).
+concurrency:
+  group: deploy-supabase
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: bash scripts/deploy-supabase.sh
+        env:
+          SUPABASE_CLI: supabase
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
