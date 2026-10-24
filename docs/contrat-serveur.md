@@ -65,4 +65,4 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - `dispatch_due_timers()` chaque seconde. URL et secret lus dans `private.config` (clés `send_push_url`, `push_secret`), alimentée par une migration locale et par une commande manuelle en prod (voir `DEPLOY.md`).
 
 ## Storage
-- Bucket privé `photos`, chemins `<user_id>/<workout_id>.jpg` et `<user_id>/avatar.jpg`.
+- Bucket privé `photos`, chemins `<user_id>/<workout_id>-<uuidv7>.jpg` (un chemin neuf par photo, jamais réécrit) et `<user_id>/avatar.jpg`.

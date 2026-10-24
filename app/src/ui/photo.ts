@@ -1,3 +1,11 @@
+import { uuidv7 } from '@/domain/ids';
+
+// Cette méthode permet de construire un chemin de stockage neuf pour chaque photo choisie : remplacer la photo d'une séance
+// change son chemin, ce qui garde vraie l'hypothèse des caches par chemin (service worker, PhotoView) (§12).
+export function photoPath(userId: string, workoutId: string, id: string = uuidv7()): string {
+  return `${userId}/${workoutId}-${id}.jpg`;
+}
+
 // Cette méthode permet de compresser une photo avant stockage : côté long limité, JPEG 0,8, métadonnées EXIF supprimées (§12).
 // Redessiner l'image sur un canevas retire l'EXIF ; createImageBitmap applique l'orientation de l'appareil photo.
 export async function compressImage(file: Blob, maxSide = 1600, quality = 0.8): Promise<Blob> {

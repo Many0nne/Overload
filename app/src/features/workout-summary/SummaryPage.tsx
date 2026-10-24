@@ -23,7 +23,7 @@ import { PhotoView } from '@/features/history/PhotoView';
 import { useRestTimer } from '@/features/workout-live/restTimer';
 import { NoteField, Sheet, SubHead, toast } from '@/ui/components';
 import { WORKOUT_NOTE_MAX } from '@/ui/note';
-import { compressImage } from '@/ui/photo';
+import { compressImage, photoPath } from '@/ui/photo';
 
 const longDate = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -106,7 +106,7 @@ export default function SummaryPage() {
     if (!file || !userId) return;
     try {
       const blob = await compressImage(file);
-      const path = `${userId}/${row.id}.jpg`;
+      const path = photoPath(userId, row.id);
       await db.blobs.put({ path, blob, kind: 'photo', uploaded: false });
       setPhoto(path);
     } catch {

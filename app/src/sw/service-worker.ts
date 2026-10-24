@@ -11,7 +11,7 @@ cleanupOutdatedCaches();
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { denylist: [/^\/api\//] }));
 
 // Photos de séance : l'URL signée change à chaque demande, on met donc l'image en cache par chemin de stockage
-// (paramètre p= ajouté par PhotoView), en CacheFirst : une photo n'est jamais modifiée sous le même chemin (§12).
+// (paramètre p= ajouté par PhotoView), en CacheFirst : une photo n'est jamais modifiée sous le même chemin, chaque nouvelle photo en a un neuf (§12).
 const PHOTO_CACHE = 'photos-v1';
 registerRoute(
   ({ url, request }) =>
