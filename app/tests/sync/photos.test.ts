@@ -1,13 +1,29 @@
 import { v7 as uuidv7 } from 'uuid';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/data/db';
-import { PENDING_GRACE_MS, purgeLocalPhotos } from '@/data/photos';
+import { readErrors } from '@/data/errors';
+import {
+  MAX_PHOTO_ATTEMPTS,
+  PENDING_GRACE_MS,
+  purgeLocalPhotos,
+  readAbandonedPhotos,
+  retryAbandonedPhotos,
+} from '@/data/photos';
 import { saveRow } from '@/data/repositories/base';
 import { photosBucket } from '@/data/supabase';
 import { push } from '@/data/sync/engine';
 import { PHOTO_CACHE, photoCacheKey } from '@/sw/photoCache';
 import { photoPath } from '@/ui/photo';
-import { type Account, DEVICE_A, resetLocalDevice, setupAccount, workoutDraft } from './harness';
+import {
+  type Account,
+  DEVICE_A,
+  DEVICE_HIGH,
+  outboxCount,
+  remoteDevice,
+  resetLocalDevice,
+  setupAccount,
+  workoutDraft,
+} from './harness';
 
 const ORIGIN = 'http://app.test';
 let account: Account;
@@ -128,5 +144,65 @@ describe('Purge locale des photos (#61)', () => {
 
     expect(cache.has(photoCacheKey(ORIGIN, current))).toBe(true);
     expect(cache.has(photoCacheKey(ORIGIN, former))).toBe(false);
+  });
+});
+
+describe("Photos en échec d'envoi (#59)", () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  // Cette méthode permet de préparer une séance dont la photo est rangée hors du dossier du compte (refusée par la RLS).
+  async function refusedPhoto(): Promise<{ w: string; path: string }> {
+    const w = uuidv7();
+    const path = photoPath(uuidv7(), w);
+    await putBlob(path);
+    await saveWorkout(w, path);
+    return { w, path };
+  }
+
+  it("une photo refusée par le serveur n'empêche pas le push des documents", async () => {
+    const { w, path } = await refusedPhoto();
+
+    await push();
+
+    expect(await outboxCount()).toBe(0);
+    expect(await remoteDevice(account, DEVICE_HIGH).row('workouts', w)).toMatchObject({ id: w });
+    expect(await db.blobs.get(path)).toMatchObject({ uploaded: false, attempts: 1, abandoned: false });
+    expect((await readErrors()).some((e) => e.scope === 'sync' && e.message.includes(path))).toBe(true);
+  });
+
+  it('une photo refusée trop souvent est abandonnée, puis relancée à la demande', async () => {
+    const { path } = await refusedPhoto();
+
+    for (let i = 0; i < MAX_PHOTO_ATTEMPTS + 2; i++) await push();
+
+    expect(await db.blobs.get(path)).toMatchObject({ attempts: MAX_PHOTO_ATTEMPTS, abandoned: true });
+    expect((await readAbandonedPhotos()).map((b) => b.path)).toEqual([path]);
+
+    await retryAbandonedPhotos();
+    expect(await readAbandonedPhotos()).toEqual([]);
+    await push();
+    expect(await db.blobs.get(path)).toMatchObject({ attempts: 1, abandoned: false });
+  });
+
+  it("une coupure réseau pendant l'envoi ne compte pas de tentative et laisse partir les documents", async () => {
+    const w = uuidv7();
+    const path = photoPath(account.userId, w);
+    await putBlob(path);
+    await saveWorkout(w, path);
+    const original = globalThis.fetch;
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/storage/v1/')) return Promise.reject(new TypeError('fetch failed'));
+      return original(input, init);
+    });
+
+    await push();
+
+    expect(await outboxCount()).toBe(0);
+    const blob = await db.blobs.get(path);
+    expect(blob).toMatchObject({ uploaded: false });
+    expect(blob?.attempts ?? 0).toBe(0);
   });
 });

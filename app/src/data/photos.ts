@@ -1,10 +1,14 @@
 // Photos de séance stockées sur l'appareil (§12, #61) : blobs en attente d'envoi et purge de ce qui ne sert plus.
+import { useLiveQuery } from 'dexie-react-hooks';
 import { PHOTO_CACHE, photoCacheKey, photoPathFromCacheKey } from '@/sw/photoCache';
 import { parsePhotoPath } from '@/ui/photo';
 import { type BlobEntry, db } from './db';
 
 // Une photo choisie mais pas encore enregistrée dans la séance (récapitulatif ouvert) n'est pas supprimée avant ce délai.
 export const PENDING_GRACE_MS = 24 * 3600_000;
+
+/** Refus du serveur au-delà desquels une photo n'est plus envoyée automatiquement (#59). */
+export const MAX_PHOTO_ATTEMPTS = 5;
 
 // Cette méthode permet de savoir si une séance non supprimée référence encore une photo lorsqu'on décide de l'envoyer ou de la purger.
 // Un chemin d'une autre forme (sans id de séance) est cherché dans toutes les séances.
@@ -17,12 +21,32 @@ export async function isPhotoReferenced(path: string): Promise<boolean> {
 }
 
 // Cette méthode permet de lister les photos à envoyer vers Storage : en attente et référencées par leur séance.
-// Une photo retirée, remplacée ou abandonnée avant l'enregistrement n'est jamais envoyée.
+// Une photo retirée, remplacée ou abandonnée avant l'enregistrement n'est jamais envoyée,
+// ni une photo abandonnée après trop de refus du serveur (#59).
 export async function photosToUpload(): Promise<BlobEntry[]> {
-  const pending = await db.blobs.filter((b) => b.kind === 'photo' && !b.uploaded).toArray();
+  const pending = await db.blobs.filter((b) => b.kind === 'photo' && !b.uploaded && !b.abandoned).toArray();
   const keep: BlobEntry[] = [];
   for (const b of pending) if (await isPhotoReferenced(b.path)) keep.push(b);
   return keep;
+}
+
+// Cette méthode permet de lister les photos abandonnées après trop de refus et encore référencées, pour le journal (#59).
+export async function readAbandonedPhotos(): Promise<BlobEntry[]> {
+  const abandoned = await db.blobs.filter((b) => !b.uploaded && Boolean(b.abandoned)).toArray();
+  const keep: BlobEntry[] = [];
+  for (const b of abandoned) if (await isPhotoReferenced(b.path)) keep.push(b);
+  return keep;
+}
+
+// Cette méthode permet de relancer l'envoi des photos abandonnées lorsque l'utilisateur le demande depuis le journal.
+export async function retryAbandonedPhotos(): Promise<void> {
+  const paths = (await readAbandonedPhotos()).map((b) => b.path);
+  await db.blobs.bulkUpdate(paths.map((key) => ({ key, changes: { abandoned: false, attempts: 0 } })));
+}
+
+// Cette méthode permet de suivre en direct le nombre de photos abandonnées pour la pastille de synchro.
+export function useAbandonedPhotoCount(): number {
+  return useLiveQuery(async () => (await readAbandonedPhotos()).length, []) ?? 0;
 }
 
 // Cette méthode permet de garder une photo envoyée dans le cache du service worker avant de retirer son blob local,

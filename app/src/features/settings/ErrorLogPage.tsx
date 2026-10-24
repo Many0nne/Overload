@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import type { BlobEntry } from '@/data/db';
 import { type LoggedError, readErrors } from '@/data/errors';
+import { readAbandonedPhotos, retryAbandonedPhotos } from '@/data/photos';
 import { clearRejects, readRejects, type SyncReject } from '@/data/sync/rejects';
+import { syncNow } from '@/data/sync/scheduler';
 import { SubHead, toast } from '@/ui/components';
 
 const TABLE_LABELS: Record<SyncReject['table'], string> = {
@@ -14,11 +17,13 @@ const TABLE_LABELS: Record<SyncReject['table'], string> = {
 };
 
 // Cette méthode permet de consulter et copier le journal d'erreurs local (§16),
-// et de prendre connaissance des modifications refusées par le serveur (#58).
+// de prendre connaissance des modifications refusées par le serveur (#58) et de relancer les photos abandonnées (#59).
 export default function ErrorLogPage() {
   const [errors, setErrors] = useState<LoggedError[]>([]);
   const [rejects, setRejects] = useState<SyncReject[]>([]);
+  const [photos, setPhotos] = useState<BlobEntry[]>([]);
   useEffect(() => {
+    void readAbandonedPhotos().then(setPhotos);
     void readErrors().then((e) => setErrors([...e].reverse()));
     void readRejects().then((r) => setRejects([...r].reverse()));
   }, []);
@@ -62,6 +67,34 @@ export default function ErrorLogPage() {
             }}
           >
             Effacer
+          </button>
+        </div>
+      )}
+      {photos.length > 0 && (
+        <div className="section" data-testid="abandoned-photos">
+          <div className="section-title">Photos non envoyées</div>
+          <p className="t2" style={{ fontSize: '.8125rem' }}>
+            Le serveur a refusé ces photos plusieurs fois : elles restent sur cet appareil, mais ne sont plus
+            envoyées automatiquement. Les séances, elles, sont bien synchronisées.
+          </p>
+          <div className="card" style={{ fontSize: '.8125rem', wordBreak: 'break-word' }}>
+            {photos.map((p) => (
+              <div key={p.path}>
+                {p.failedAt ? new Date(p.failedAt).toLocaleString('fr-FR') : ''} · {p.lastError ?? 'refusée'}
+                <span className="t2"> ({p.path})</span>
+              </div>
+            ))}
+          </div>
+          <button
+            className="btn-ghost"
+            onClick={async () => {
+              await retryAbandonedPhotos();
+              setPhotos([]);
+              toast('Nouvel envoi des photos lancé');
+              void syncNow();
+            }}
+          >
+            Réessayer
           </button>
         </div>
       )}
