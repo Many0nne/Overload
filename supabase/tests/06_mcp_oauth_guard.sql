@@ -2,7 +2,7 @@
 -- (PostgREST et RPC appelés directement, sans passer par l'Edge Function).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(28);
 
 select tests.create_user('aaaaaaaa-0000-0000-0000-0000000000c1', 'guard-a@test.local');
 
@@ -30,8 +30,11 @@ select public.upsert_mcp_connection('client-rw', 'Claude', true);
 
 -- ---------- Session de l'app : inchangée ----------
 select is((select count(*)::int from public.folders), 1, 'l''app lit ses dossiers');
-select lives_ok($$update public.folders set name = 'App' where id = 'aaaaaaaa-2222-0000-0000-0000000000c1'$$,
-  'l''app modifie ses dossiers');
+select is(
+  public.sync_push(gen_random_uuid(), jsonb_build_array(jsonb_build_object('table', 'folders', 'row',
+    jsonb_build_object('id', 'aaaaaaaa-2222-0000-0000-0000000000c1', 'user_id', 'aaaaaaaa-0000-0000-0000-0000000000c1', 'name', 'App', 'position', 0,
+      'client_updated_at', 2, 'client_device_id', gen_random_uuid())))) -> 0 ->> 'status',
+  'accepted', 'l''app modifie ses dossiers (sync_push)');
 
 -- ---------- Jeton OAuth en lecture seule ----------
 select tests.authenticate_oauth('aaaaaaaa-0000-0000-0000-0000000000c1', 'client-ro');
@@ -46,7 +49,8 @@ select throws_ok(
   $$insert into public.folders (id, user_id, name, client_updated_at, client_device_id)
     values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-0000000000c1', 'X', 1, gen_random_uuid())$$,
   '42501', null, 'lecture seule : insertion PostgREST refusée');
-update public.folders set name = 'Claude' where id = 'aaaaaaaa-2222-0000-0000-0000000000c1';
+select throws_ok($$update public.folders set name = 'Claude' where id = 'aaaaaaaa-2222-0000-0000-0000000000c1'$$,
+  '42501', null, 'lecture seule : mise à jour PostgREST refusée');
 select tests.as_postgres();
 select is((select name from public.folders where id = 'aaaaaaaa-2222-0000-0000-0000000000c1'), 'App',
   'lecture seule : mise à jour PostgREST sans effet');

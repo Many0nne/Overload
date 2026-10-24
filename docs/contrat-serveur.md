@@ -41,9 +41,9 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 ### Autres RPC
 - `take_over_workout(p_id uuid, p_device_id uuid) returns jsonb` : passe `owner_device_id` à `p_device_id` (séance du compte, `in_progress`), met à jour `client_updated_at = now_ms`, `client_device_id = p_device_id`, supprime les `rest_timers` des autres appareils du compte, renvoie la ligne.
 - `regenerate_invite() returns text` : nouveau code (12 caractères parmi `ABCDEFGHJKMNPQRSTVWXYZ23456789`, sans tirets), renvoyé sans tirets.
-- `register_push_subscription(p_device_id uuid, p_endpoint text, p_p256dh text, p_auth text) returns void` : upsert sur `device_id`.
+- `register_push_subscription(p_device_id uuid, p_endpoint text, p_p256dh text, p_auth text) returns void` : upsert sur `(device_id, user_id)` ; supprime la ligne d'un autre compte qui a le même `device_id` **et** le même `endpoint` (changement de compte sur le navigateur).
 - `unregister_push_subscription(p_device_id uuid) returns void`.
-- `schedule_rest_timer(p_device_id uuid, p_ends_at_ms bigint, p_title text, p_body text) returns void` : upsert sur `device_id`, `sent_at = null`.
+- `schedule_rest_timer(p_device_id uuid, p_ends_at_ms bigint, p_title text, p_body text) returns void` : upsert sur `(device_id, user_id)`, `sent_at = null`. Un compte ne touche jamais l'abonnement ni le minuteur d'un autre, même avec son `device_id`.
 - `cancel_rest_timer(p_device_id uuid) returns void`.
 - `health() returns text` : `'ok'`, accessible à `anon`.
 - `server_now_ms() returns bigint` : pour l'avertissement d'horloge (l'en-tête `Date` n'est pas lisible en CORS ; le client place l'heure serveur au milieu de l'aller-retour, alerte au-delà de 5 min).
@@ -56,8 +56,8 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 - `admin_storage_usage() returns jsonb` : `{ used_bytes, quota_bytes }`, occupation totale de Storage (tous buckets). Admin seulement, sinon `42501 forbidden`. Le client alerte à 80 %.
 
 ## Edge Functions
-- `signup-with-invite` (POST, sans JWT) : `{ code, email, password, display_name, settings }`. Le code est normalisé (majuscules, sans tirets ni espaces). Réponses : `200 { ok: true }`, `400 { error: 'invalid_code' | 'email_taken' | 'weak_password' | 'invalid_input' }`, `429 { error: 'rate_limited' }` (5 / IP / heure, table `signup_attempts`). Le client ouvre ensuite la session avec `signInWithPassword`.
-- `send-push` (POST, en-tête `x-push-secret`) : `{ device_id, title, body }`. Appelée par `dispatch_due_timers()` via `pg_net`.
+- `signup-with-invite` (POST, sans JWT) : `{ code, email, password, display_name, settings }`. Le code est normalisé (majuscules, sans tirets ni espaces). Réponses : `200 { ok: true }`, `400 { error: 'invalid_code' | 'email_taken' | 'weak_password' | 'invalid_input' }`, `429 { error: 'rate_limited' }` (5 / IP / heure, table `signup_attempts` ; IP lue dans `cf-connecting-ip`, sinon le dernier élément de `x-forwarded-for`, jamais le premier fourni par le client). Le client ouvre ensuite la session avec `signInWithPassword`.
+- `send-push` (POST, en-tête `x-push-secret`) : `{ device_id, user_id, title, body }` ; n'envoie qu'à l'abonnement `(device_id, user_id)` du minuteur. Appelée par `dispatch_due_timers()` via `pg_net`.
 - `purge-photos` (POST, en-tête `x-push-secret`) : `{}` → `{ removed }`. Appelée chaque nuit par `dispatch_photo_purge()` via `pg_net` :
   supprime du bucket `photos` les objets qu'aucune séance non supprimée (ni avatar) ne référence depuis 7 jours (RPC `orphan_photos`, service_role).
 - `delete-account` (POST, JWT) : supprime `photos/<uid>/*`, puis `auth.admin.deleteUser(uid)`.
