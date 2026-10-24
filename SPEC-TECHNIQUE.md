@@ -492,6 +492,7 @@ Thème et tokens : variables CSS reprises de la maquette (`--bg`, `--surface`, `
 - Compression côté client avant stockage : côté long 1600 px max, JPEG qualité 0,8 (≈ 200-300 Ko), via `createImageBitmap` + `OffscreenCanvas` ; données EXIF supprimées.
 - Hors ligne : le blob est mis dans `blobs` et le document référence déjà `photoPath = <user_id>/<workout_id>-<uuidv7>.jpg` (chemin neuf à chaque photo choisie : le cache par chemin reste valide quand on la remplace). L'envoi vers Storage se fait avant le push du document.
 - Affichage : URL signée (1 h) mise en cache par chemin dans le SW.
+- Purge (#61) : une photo en attente qu'aucune séance ne référence n'est pas envoyée. Après une synchro, une photo envoyée dont la séance est acceptée par le serveur passe du store `blobs` au cache du SW ; les blobs et entrées de cache orphelins sont supprimés (24 h de grâce pour une photo jamais envoyée). Côté serveur, `pg_cron` appelle chaque nuit l'Edge Function `purge-photos`, qui supprime les objets non référencés par une séance non supprimée depuis 7 jours (Storage interdit le `DELETE` SQL direct).
 - Avatars : même circuit, 512 px.
 - Budget : 1 Go ≈ 4 000 photos ; un compteur de stockage est visible par l'admin dans le tableau de bord Supabase.
 

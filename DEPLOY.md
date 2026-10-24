@@ -39,11 +39,12 @@ Configuration de la notification (éditeur SQL, une fois) :
 ```sql
 insert into private.config (key, value) values
   ('send_push_url', 'https://saiqhwqoibyqgdsdakuy.supabase.co/functions/v1/send-push'),
+  ('purge_photos_url', 'https://saiqhwqoibyqgdsdakuy.supabase.co/functions/v1/purge-photos'),
   ('push_secret', '<SECRET_ALEATOIRE>')
 on conflict (key) do update set value = excluded.value;
 ```
 
-Vérifier dans Database › Extensions que `pg_cron` et `pg_net` sont actives, et dans Integrations › Cron que le job `dispatch-due-timers` tourne chaque seconde.
+Vérifier dans Database › Extensions que `pg_cron` et `pg_net` sont actives, et dans Integrations › Cron que le job `dispatch-due-timers` tourne chaque seconde et `purge-orphan-photos` chaque nuit (photos orphelines, #61).
 
 ## 3. Edge Functions
 
@@ -52,11 +53,12 @@ npx tsx scripts/gen-vapid.ts         # paire de PRODUCTION (différente du local
 npx supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… VAPID_SUBJECT=mailto:<ton e-mail> PUSH_SECRET=<SECRET_ALEATOIRE>
 npx supabase functions deploy signup-with-invite --no-verify-jwt
 npx supabase functions deploy send-push --no-verify-jwt
+npx supabase functions deploy purge-photos --no-verify-jwt   # purge nocturne des photos orphelines (#61)
 npx supabase functions deploy delete-account
 npx supabase functions deploy mcp --no-verify-jwt   # connecteur Claude (docs/spec-mcp.md)
 ```
 
-`PUSH_SECRET` doit être identique à `private.config.push_secret`. Sans CLI : Edge Functions › Secrets accepte un collage au format `.env`.
+`PUSH_SECRET` doit être identique à `private.config.push_secret` (secret partagé des appels pg_net : send-push, purge-photos). Sans CLI : Edge Functions › Secrets accepte un collage au format `.env`.
 Les valeurs de production restent hors dépôt (`.tmp/prod-functions.env`, ignoré par git).
 
 ## 4. Authentification

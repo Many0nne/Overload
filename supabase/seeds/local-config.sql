@@ -2,5 +2,6 @@
 -- send-push est joignable depuis le conteneur Postgres via la passerelle exposée sur l'hôte.
 insert into private.config (key, value) values
   ('send_push_url', 'http://host.docker.internal:54321/functions/v1/send-push'),
+  ('purge_photos_url', 'http://host.docker.internal:54321/functions/v1/purge-photos'),
   ('push_secret', 'dev-push-secret')
 on conflict (key) do update set value = excluded.value;

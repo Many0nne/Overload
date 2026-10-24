@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/data/db';
 import { photosBucket } from '@/data/supabase';
+import { PHOTO_CACHE, photoCacheKey } from '@/sw/photoCache';
 
 const urlCache = new Map<string, string>();
 
-// Cette méthode permet d'obtenir une URL affichable pour une photo : blob local en attente d'envoi, sinon URL signée (1 h).
-// Le service worker met l'image en cache par chemin de stockage, l'URL signée changeant à chaque demande (§12).
+// Cette méthode permet de lire une photo dans le cache du service worker lorsqu'elle n'est plus dans les blobs locaux.
+async function cachedPhoto(path: string): Promise<Blob | undefined> {
+  if (typeof caches === 'undefined') return undefined;
+  try {
+    const res = await caches.match(photoCacheKey(location.origin, path), { cacheName: PHOTO_CACHE });
+    return res ? await res.blob() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// Cette méthode permet d'obtenir une URL affichable pour une photo : blob local, sinon copie du cache du service worker
+// (lisible hors ligne, sans URL signée), sinon URL signée (1 h) que le SW met en cache par chemin de stockage (§12, #61).
 export async function photoUrl(path: string): Promise<string | undefined> {
-  const cached = urlCache.get(path);
-  if (cached) return cached;
-  const local = await db.blobs.get(path);
-  if (local) {
-    const url = URL.createObjectURL(local.blob);
+  const known = urlCache.get(path);
+  if (known) return known;
+  const blob = (await db.blobs.get(path))?.blob ?? (await cachedPhoto(path));
+  if (blob) {
+    const url = URL.createObjectURL(blob);
     urlCache.set(path, url);
     return url;
   }
