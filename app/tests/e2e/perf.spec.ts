@@ -1,9 +1,11 @@
+import type { CDPSession, Page } from '@playwright/test';
 import { v7 as uuidv7 } from 'uuid';
 import type { RoutineDoc, WorkoutDoc } from '@/domain/types';
-import { admin, createAccount, expect, login, test } from './fixtures';
+import { admin, createAccount, expect, login, skipRest, test } from './fixtures';
 
 // Budgets de performance (§15 spec technique, exigences §F9) : séance de 6 exercices ouverte en moins d'1 s,
 // historique et statistiques en moins de 2 s, avec un historique réaliste (40 séances de 6 exercices).
+// Après un gros import HEVY (500 séances), valider une série reste instantané (#65).
 
 const SIX = [
   'eee64d46-7f94-5743-ad72-c90d587e50a0',
@@ -17,8 +19,8 @@ const DEVICE = '33333333-3333-7333-8333-333333333333';
 const DAY_MS = 86_400_000;
 const ROUTINE = 'Budget 6 exos';
 
-// Cette méthode permet de créer la routine de 6 exercices × 3 séries et 40 séances terminées sur 80 jours.
-async function seedHeavyHistory(userId: string): Promise<void> {
+// Cette méthode permet de créer la routine de 6 exercices × 3 séries et `count` séances terminées, une tous les 2 jours.
+async function seedHeavyHistory(userId: string, count = 40): Promise<void> {
   const now = Date.now();
   const routine: RoutineDoc = {
     schemaVersion: 1,
@@ -43,7 +45,7 @@ async function seedHeavyHistory(userId: string): Promise<void> {
   });
   if (r.error) throw new Error(r.error.message);
 
-  const workouts = Array.from({ length: 40 }, (_, k) => {
+  const workouts = Array.from({ length: count }, (_, k) => {
     const startedAt = now - (k * 2 + 1) * DAY_MS;
     const doc: WorkoutDoc = {
       schemaVersion: 1,
@@ -58,7 +60,7 @@ async function seedHeavyHistory(userId: string): Promise<void> {
         sets: [0, 1, 2].map((j) => ({
           id: uuidv7(),
           kind: 'normal' as const,
-          weight: { v: 40 + i * 5 + (40 - k) * 0.5, u: 'kg' as const },
+          weight: { v: 40 + i * 5 + (count - k) * 0.05, u: 'kg' as const },
           reps: 8,
           done: true,
           doneAt: startedAt + (i * 3 + j + 1) * 180_000,
@@ -78,8 +80,38 @@ async function seedHeavyHistory(userId: string): Promise<void> {
       client_device_id: DEVICE,
     };
   });
-  const w = await admin().from('workouts').insert(workouts);
-  if (w.error) throw new Error(w.error.message);
+  for (let k = 0; k < workouts.length; k += 100) {
+    const w = await admin()
+      .from('workouts')
+      .insert(workouts.slice(k, k + 100));
+    if (w.error) throw new Error(w.error.message);
+  }
+}
+
+// Cette méthode permet de compter les séances terminées présentes dans la base locale (synchro initiale finie).
+async function localCompletedCount(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open('overload');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    try {
+      return await new Promise<number>((resolve) => {
+        const req = db.transaction('workouts').objectStore('workouts').index('status').count('completed');
+        req.onsuccess = () => resolve(req.result);
+      });
+    } finally {
+      db.close();
+    }
+  });
+}
+
+// Cette méthode permet de lire le temps CPU cumulé du thread principal (ms) via le protocole Chromium.
+async function taskDuration(cdp: CDPSession | undefined): Promise<number> {
+  if (!cdp) return 0;
+  const { metrics } = await cdp.send('Performance.getMetrics');
+  return (metrics.find((m) => m.name === 'TaskDuration')?.value ?? 0) * 1000;
 }
 
 // Cette méthode permet de chronométrer une action jusqu'à ce que l'écran attendu soit affiché.
@@ -129,4 +161,45 @@ test('budgets : séance de 6 exercices < 1 s, historique et statistiques < 2 s',
   expect(workout, 'ouverture de la séance (6 exercices)').toBeLessThan(1000);
   expect(history, 'historique').toBeLessThan(2000);
   expect(stats, 'statistiques').toBeLessThan(2000);
+});
+
+test("budget : validation d'une série < 500 ms avec 500 séances importées", async ({ page, browserName }) => {
+  test.setTimeout(120_000);
+  const account = await createAccount();
+  await seedHeavyHistory(account.userId, 500);
+  await login(page, account);
+  await expect.poll(() => localCompletedCount(page), { timeout: 60_000 }).toBe(500);
+
+  await page.getByRole('link', { name: 'Séance' }).click();
+  await page.locator('.card.routine', { hasText: ROUTINE }).getByRole('button', { name: 'Démarrer' }).click();
+  await expect(page.locator('.ex')).toHaveCount(6);
+
+  // Chromium : temps CPU du thread principal, qui compte aussi les relectures et recalculs après l'affichage
+  // (indicatif, dépend de la machine ; la non-relecture de l'historique est vérifiée par src/data/queries.test.ts).
+  const cdp = browserName === 'chromium' ? await page.context().newCDPSession(page) : undefined;
+  await cdp?.send('Performance.enable');
+  const cpu0 = await taskDuration(cdp);
+
+  // Trois séries du premier exercice validées d'affilée : le budget porte sur la plus lente.
+  const rows = page.locator('.ex').first().locator('tr.set');
+  const times: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const row = rows.nth(i);
+    times.push(
+      await timed(
+        () => row.getByRole('button', { name: 'Valider la série' }).click(),
+        () => expect(row).toHaveClass(/\bdone\b/),
+      ),
+    );
+    await skipRest(page);
+  }
+
+  await page.waitForTimeout(1000); // laisse finir les écritures Dexie et les requêtes en direct qu'elles relancent
+  const cpu = cdp ? Math.round((await taskDuration(cdp)) - cpu0) : undefined;
+
+  const measured = `${times.map(Math.round).join(' · ')}${cpu === undefined ? '' : ` · CPU ${cpu}`}`;
+  test.info().annotations.push({ type: 'validation 500 séances (ms)', description: measured });
+  console.log(`[budgets] ${browserName} validation (500 séances) ${measured}`);
+  test.skip(browserName === 'webkit' && process.platform === 'win32', 'WebKit Windows : budgets indicatifs');
+  expect(Math.max(...times), "validation d'une série (500 séances)").toBeLessThan(500);
 });

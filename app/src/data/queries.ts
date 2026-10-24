@@ -89,10 +89,12 @@ export function useWorkout(id: string | undefined): WorkoutRow | undefined {
 }
 
 // Cette méthode permet de charger toutes les séances terminées, triées par début croissant (base des calculs du domaine).
+// La lecture passe par l'index `status` : écrire la séance en cours n'invalide donc pas les requêtes en direct (#65).
 export async function loadCompletedWorkouts(): Promise<CompletedWorkout[]> {
   const rows = await db.workouts
-    .orderBy('started_at')
-    .filter((w) => w.status === 'completed' && w.deleted_at == null)
+    .where('status')
+    .equals('completed')
+    .filter((w) => w.deleted_at == null)
     .toArray();
   return rows.sort((a, b) => a.started_at - b.started_at || a.id.localeCompare(b.id)) as CompletedWorkout[];
 }
