@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
+import { useAbandonedPhotoCount } from '@/data/photos';
 import { useOutboxCount } from '@/data/queries';
-import { useAbandonedPhotoCount } from '@/data/sync/photos';
 import { useRejectCount } from '@/data/sync/rejects';
 import { syncNow } from '@/data/sync/scheduler';
 import { useSyncStatus } from '@/data/sync/status';

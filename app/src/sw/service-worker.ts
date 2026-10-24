@@ -2,6 +2,7 @@
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
+import { PHOTO_CACHE, photoCacheKey } from './photoCache';
 import { parseRestPush, showRestNotification } from './restNotification';
 
 declare const self: ServiceWorkerGlobalScope;
@@ -12,7 +13,6 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { deny
 
 // Photos de séance : l'URL signée change à chaque demande, on met donc l'image en cache par chemin de stockage
 // (paramètre p= ajouté par PhotoView), en CacheFirst : une photo n'est jamais modifiée sous le même chemin, chaque nouvelle photo en a un neuf (§12).
-const PHOTO_CACHE = 'photos-v1';
 registerRoute(
   ({ url, request }) =>
     request.destination === 'image' &&
@@ -25,7 +25,7 @@ registerRoute(
         // Cette méthode permet d'indexer le cache par chemin de stockage plutôt que par URL signée.
         cacheKeyWillBeUsed: async ({ request }) => {
           const path = new URL(request.url).searchParams.get('p') ?? request.url;
-          return `${self.location.origin}/__photo/${encodeURIComponent(path)}`;
+          return photoCacheKey(self.location.origin, path);
         },
         // Cette méthode permet de ne garder en cache que les réponses réussies (pas d'URL expirée en 400).
         cacheWillUpdate: async ({ response }) => (response.ok ? response : null),

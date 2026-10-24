@@ -308,13 +308,9 @@ function ReauthNotice() {
       <button className="tag" style={{ color: 'var(--warm)' }} onClick={() => setOpen(true)}>
         Reconnexion requise
       </button>
-      {open && (
-        <div className="scrim show" onClick={() => setOpen(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <LoginPage />
-          </div>
-        </div>
-      )}
+      <Sheet open={open} label="Reconnexion" onClose={() => setOpen(false)}>
+        <LoginPage />
+      </Sheet>
     </>
   );
 }

@@ -2,6 +2,7 @@ import {
   type ReactNode,
   type TextareaHTMLAttributes,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -46,32 +47,70 @@ export type SheetAction = {
   onClick: () => void | Promise<void>;
 };
 
+// Cette méthode permet de rendre inerte tout ce qui entoure un élément (frères de chaque ancêtre jusqu'à <body>),
+// sauf les zones annoncées (toast) ; elle renvoie la fonction qui rétablit l'état d'origine.
+function isolate(el: HTMLElement): () => void {
+  const changed: HTMLElement[] = [];
+  for (let node = el; node.parentElement && node !== document.body; node = node.parentElement) {
+    for (const sibling of node.parentElement.children) {
+      if (sibling === node || !(sibling instanceof HTMLElement)) continue;
+      if (sibling.inert || sibling.matches('[aria-live], script, style')) continue;
+      sibling.inert = true;
+      changed.push(sibling);
+    }
+  }
+  return () => {
+    for (const e of changed) e.inert = false;
+  };
+}
+
 // Cette méthode permet d'afficher une feuille modale en bas d'écran (confirmation, choix), fermée en touchant le fond.
+// Ouverte, elle prend le focus et rend le reste de l'app inerte ; fermée, elle rend le focus à l'élément d'origine.
 export function Sheet(props: {
   open: boolean;
   title?: string;
+  /** Nom accessible quand la feuille n'a pas de titre visible. */
+  label?: string;
   children?: ReactNode;
   actions?: SheetAction[];
   className?: string;
   onClose: () => void;
 }) {
+  const titleId = useId();
+  const sheetRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!props.open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && props.onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [props.open, props.onClose]);
+  useLayoutEffect(() => {
+    const sheet = sheetRef.current;
+    if (!props.open || !sheet) return;
+    const origin = document.activeElement;
+    const restore = isolate(sheet.parentElement ?? sheet);
+    // Un champ en autoFocus garde la main ; sinon la feuille elle-même, pour l'annoncer sans ouvrir le clavier.
+    if (!sheet.contains(document.activeElement)) sheet.focus({ preventScroll: true });
+    return () => {
+      restore();
+      if (origin instanceof HTMLElement && origin.isConnected) origin.focus({ preventScroll: true });
+    };
+  }, [props.open]);
   if (!props.open) return null;
   return (
     <div className="scrim show" onClick={props.onClose}>
       <div
+        ref={sheetRef}
         className={`sheet${props.className ? ` ${props.className}` : ''}`}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={props.title ? titleId : undefined}
+        aria-label={props.title ? undefined : props.label}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="grab" />
-        {props.title && <h3>{props.title}</h3>}
+        {props.title && <h3 id={titleId}>{props.title}</h3>}
         {props.children}
         {props.actions && (
           <div className="acts">

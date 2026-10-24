@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { BlobEntry } from '@/data/db';
 import { type LoggedError, readErrors } from '@/data/errors';
-import { readAbandonedPhotos, retryAbandonedPhotos } from '@/data/sync/photos';
+import { readAbandonedPhotos, retryAbandonedPhotos } from '@/data/photos';
 import { clearRejects, readRejects, type SyncReject } from '@/data/sync/rejects';
 import { syncNow } from '@/data/sync/scheduler';
 import { SubHead, toast } from '@/ui/components';

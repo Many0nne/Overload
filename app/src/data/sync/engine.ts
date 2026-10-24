@@ -3,8 +3,8 @@ import type { SyncTable, WorkoutRow } from '@/domain/types';
 import { db, getMeta, type OutboxEntry, setMeta } from '../db';
 import { deviceIdSync } from '../device';
 import { logError } from '../errors';
+import { MAX_PHOTO_ATTEMPTS, photosToUpload } from '../photos';
 import { photosBucket, supabase } from '../supabase';
-import { MAX_PHOTO_ATTEMPTS } from './photos';
 import { recordRejects, type SyncReject } from './rejects';
 
 export const PUSH_BATCH = 100;
@@ -35,10 +35,11 @@ function check<T>(res: { data: T; error: { message: string; code?: string } | nu
 }
 
 // Cette méthode permet d'envoyer les photos en attente vers Storage avant le push des documents qui les référencent (§12).
+// Seules les photos encore référencées par leur séance partent : pas d'orphelin créé dans Storage (#61).
 // Un échec n'empêche pas le push (#59) : un refus du serveur compte une tentative, et la photo est abandonnée
 // au bout de MAX_PHOTO_ATTEMPTS (signalée dans le journal) ; une coupure réseau remet les envois au cycle suivant.
 async function uploadPendingBlobs(): Promise<void> {
-  const pending = await db.blobs.filter((b) => !b.uploaded && !b.abandoned).toArray();
+  const pending = await photosToUpload();
   for (const b of pending) {
     const { error } = await (await photosBucket()).upload(b.path, b.blob, {
       upsert: true,

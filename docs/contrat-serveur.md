@@ -58,6 +58,8 @@ Précise la spec technique (§6, §7, §8) pour que le front et le SQL restent a
 ## Edge Functions
 - `signup-with-invite` (POST, sans JWT) : `{ code, email, password, display_name, settings }`. Le code est normalisé (majuscules, sans tirets ni espaces). Réponses : `200 { ok: true }`, `400 { error: 'invalid_code' | 'email_taken' | 'weak_password' | 'invalid_input' }`, `429 { error: 'rate_limited' }` (5 / IP / heure, table `signup_attempts`). Le client ouvre ensuite la session avec `signInWithPassword`.
 - `send-push` (POST, en-tête `x-push-secret`) : `{ device_id, title, body }`. Appelée par `dispatch_due_timers()` via `pg_net`.
+- `purge-photos` (POST, en-tête `x-push-secret`) : `{}` → `{ removed }`. Appelée chaque nuit par `dispatch_photo_purge()` via `pg_net` :
+  supprime du bucket `photos` les objets qu'aucune séance non supprimée (ni avatar) ne référence depuis 7 jours (RPC `orphan_photos`, service_role).
 - `delete-account` (POST, JWT) : supprime `photos/<uid>/*`, puis `auth.admin.deleteUser(uid)`.
 - `mcp` (sans vérification JWT par la passerelle) : serveur MCP Streamable HTTP sans session (POST uniquement), voir docs/spec-mcp.md. `GET /mcp/.well-known/oauth-protected-resource` (public) ; sans jeton OAuth valide → `401` + `WWW-Authenticate: Bearer resource_metadata=…`. Écrit par `sync_push` avec l'appareil virtuel `UUIDv5(mcp:<user_id>:<client_id>)`. 120 appels d'outil / min / compte (`429`). Code du domaine copié par `npm run edge:domain` dans `supabase/functions/_shared/domain/`.
 
