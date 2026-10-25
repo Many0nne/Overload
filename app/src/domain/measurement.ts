@@ -1,5 +1,5 @@
 // Types de mesure : champs saisis, colonnes et séries de travail (§F7.2, §F7.4).
-import type { MeasurementType, SetKind, Settings, WorkoutSet } from './types';
+import type { Equipment, MeasurementType, SetKind, Settings, WorkoutSet } from './types';
 
 export type SetField = 'weight' | 'reps' | 'duration' | 'distance';
 
@@ -66,6 +66,26 @@ export function columnLabel(field: SetField, type: MeasurementType, units: Setti
     case 'distance':
       return units.distance;
   }
+}
+
+// Convention de saisie (issue #99) : aux haltères et aux kettlebells, on saisit le poids d'une seule pièce.
+const PER_PIECE: Partial<Record<Equipment, string>> = { dumbbell: 'haltère', kettlebell: 'kettlebell' };
+
+// Cette méthode permet d'obtenir la pièce dont on saisit le poids (« haltère », « kettlebell ») lorsque la charge
+// est une charge libre en plusieurs pièces et que le type de mesure se saisit en poids total ; undefined sinon.
+export function weightPerPiece(equipment: Equipment | undefined, type: MeasurementType): string | undefined {
+  if (!equipment || (type !== 'weight_reps' && type !== 'weight_duration')) return undefined;
+  return PER_PIECE[equipment];
+}
+
+// Cette méthode permet d'obtenir l'unité de charge suivie de la convention de saisie (« kg / haltère », sinon « kg »).
+export function weightUnitLabel(
+  equipment: Equipment | undefined,
+  type: MeasurementType,
+  unit: Settings['units']['weight'],
+): string {
+  const piece = weightPerPiece(equipment, type);
+  return piece ? `${unit} / ${piece}` : unit;
 }
 
 // Cette méthode permet d'obtenir les intitulés de toutes les colonnes de saisie d'un type de mesure.

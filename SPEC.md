@@ -227,6 +227,11 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
   - La mention « from Overload » (ou « de Overload ») sous la notification est ajoutée par iOS aux notifications web ; ni l'app ni le serveur ne l'envoient, elle ne peut pas être retirée.
 - Le minuteur reste juste même si l'app a été mise en arrière-plan.
 
+**Haltères et kettlebells : poids d'une pièce**
+- Convention unique : on saisit le poids **d'un haltère** (ou d'une kettlebell), même quand on en tient deux. 2 haltères de 15 kg se saisissent « 15 ».
+- L'en-tête de la colonne de charge le rappelle (« kg / haltère », « kg / kettlebell »), ainsi que le champ de charge cible de l'éditeur de routine et de l'objectif long terme.
+- Le volume compte la charge saisie telle quelle (pas de ×2, §7.6). L'import HEVY, qui suit la même convention, n'est pas converti ; l'historique déjà saisi n'est pas modifié.
+
 **Calculateur de disques** (exercices à la barre)
 - Pendant la saisie du poids d'une série, un bandeau sous la série dessine la barre chargée et indique les disques de chaque côté (« Par côté : 25 + 5 + 1,25 · barre 20 kg »). Il suit chaque chiffre tapé et disparaît à la sortie du champ.
 - Le calcul vise la charge exacte avec le moins de disques possible ; une charge inatteignable affiche le reste (« 2 kg impossibles »), une charge sous la barre est signalée.
@@ -264,7 +269,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 
   | Type de mesure | Volume d'une série |
   |---|---|
-  | Poids et répétitions | kg × reps |
+  | Poids et répétitions | kg × reps (aux haltères : poids d'un haltère × reps, §7.4) |
   | Poids du corps lesté | kg ajoutés × reps |
   | Poids du corps, assisté, durée, poids et durée, distance et durée | 0 (non compté) |
 

@@ -104,6 +104,13 @@
   padding: 6px 4px;
   text-align: center;
 }
+.sets th .per-piece {
+  display: block;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
 .sets th:first-child,
 .sets td:first-child {
   padding-left: 18px;

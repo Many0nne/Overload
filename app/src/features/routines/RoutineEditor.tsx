@@ -16,7 +16,7 @@ import { useExerciseMap, useFolders, useSettings } from '@/data/queries';
 import { createRoutine, deleteRoutine, updateRoutine } from '@/data/repositories';
 import { uuidv7 } from '@/domain/ids';
 import { SET_KIND_LABELS, setLabels } from '@/domain/labels';
-import { fieldsFor, hasReps, type SetField } from '@/domain/measurement';
+import { fieldsFor, hasReps, type SetField, weightUnitLabel } from '@/domain/measurement';
 import { parseRepRange } from '@/domain/progression';
 import type { ExerciseRow, RoutineDoc, RoutineExercise, RoutineSet, SetKind, Settings } from '@/domain/types';
 import { ExerciseList } from '@/features/library/ExerciseList';
@@ -406,7 +406,7 @@ export default function RoutineEditor() {
                 <label key={f} className="field">
                   <span>
                     {f === 'weight'
-                      ? `Charge cible (${settings.units.weight})`
+                      ? `Charge cible (${weightUnitLabel(editingEx.equipment, editingEx.measurement_type, settings.units.weight)})`
                       : f === 'duration'
                         ? 'Durée cible (m:ss)'
                         : `Distance cible (${settings.units.distance})`}
