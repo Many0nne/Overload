@@ -105,9 +105,12 @@ Déploiement du backend (`.github/workflows/deploy.yml`, #72) : à chaque push s
 ou `supabase/config.toml` (ou via « Run workflow »), `scripts/deploy-supabase.sh` vérifie la copie du domaine de `mcp`, lance `db push` puis
 déploie toutes les fonctions. Réglages, une fois (Settings › Environments › New environment `production`) :
 - Deployment branches : `main` uniquement ; en option, Required reviewers pour valider chaque déploiement.
-- Secrets d'environnement : `SUPABASE_ACCESS_TOKEN` (jeton personnel, tableau de bord › Account › Access Tokens),
-  `SUPABASE_DB_PASSWORD` (mot de passe de la base, Project Settings › Database).
-- Variable d'environnement : `SUPABASE_PROJECT_REF` = `saiqhwqoibyqgdsdakuy`.
+- Secrets d'environnement : `SUPABASE_ACCESS_TOKEN` (jeton personnel, tableau de bord › Account › Access Tokens,
+  permission Application services › Edge Functions en Read-write, tout le reste à None),
+  `SUPABASE_DB_PASSWORD` (mot de passe de la base, Project Settings › Database ; utilisé pour `db push` via le pooler).
+- Variables d'environnement : `SUPABASE_PROJECT_REF` = `saiqhwqoibyqgdsdakuy`,
+  `SUPABASE_POOLER_HOST` = `aws-0-eu-west-1.pooler.supabase.com` (bouton Connect › Session pooler, partie entre `@` et `:5432`).
+- Pas de `supabase link` dans le script : il exigerait un jeton autorisé à lire les clés secrètes (`service_role`).
 
 Cloudflare Pages construit le front au même moment, sans attendre ce workflow : une migration dont dépend le front
 doit rester rétrocompatible (ajouts d'abord, suppressions dans une release ultérieure).
