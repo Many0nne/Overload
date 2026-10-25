@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { formatReason, formatSetValues, formatTargets } from '@/domain/format';
 import { setLabels } from '@/domain/labels';
-import { columnLabels, fieldsFor, type SetField } from '@/domain/measurement';
+import { columnLabels, fieldsFor, type SetField, weightPerPiece } from '@/domain/measurement';
 import type { PlateSet } from '@/domain/plates';
 import { previousSets } from '@/domain/previous';
 import { activeTarget } from '@/domain/progression';
@@ -68,6 +68,9 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   // biome-ignore lint/correctness/useExhaustiveDependencies: comparaison par valeur des types de série
   const prev = useMemo(() => previousSets(kinds, props.previous), [kinds.join(), props.previous]);
   const cols = columnLabels(entry.measurementType, props.units);
+  // Haltères et kettlebells : la colonne de charge rappelle qu'on saisit le poids d'une seule pièce (issue #99).
+  const piece = weightPerPiece(props.exercise?.equipment, entry.measurementType);
+  const fields = fieldsFor(entry.measurementType);
   const reason = entry.targetReason
     ? formatReason(entry.targetReason, entry.measurementType, props.units)
     : undefined;
@@ -80,10 +83,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const kindIndex = entry.sets.findIndex((s) => s.id === kindFor);
   const kindSet = entry.sets[kindIndex];
   // Calculateur de disques : exercices à la barre avec un poids saisi (issue #76).
-  const plates =
-    props.exercise?.equipment === 'barbell' && fieldsFor(entry.measurementType).includes('weight')
-      ? props.plateSet
-      : null;
+  const plates = props.exercise?.equipment === 'barbell' && fields.includes('weight') ? props.plateSet : null;
   // Charge proposée à l'ouverture du calculateur : la prochaine série à faire, sinon la dernière.
   const nextWeight = (entry.sets.find((s) => !s.done && s.weight) ?? entry.sets.findLast((s) => s.weight))
     ?.weight;
@@ -140,8 +140,11 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
           <tr>
             <th>Série</th>
             <th>Précédent</th>
-            {cols.map((c) => (
-              <th key={c}>{c}</th>
+            {cols.map((c, i) => (
+              <th key={c}>
+                {c}
+                {piece && fields[i] === 'weight' && <span className="per-piece">/ {piece}</span>}
+              </th>
             ))}
             {showRpe && <th>RPE</th>}
             <th>✓</th>

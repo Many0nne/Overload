@@ -31,7 +31,7 @@ import {
   formatWeight,
 } from '@/domain/format';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, setLabels } from '@/domain/labels';
-import { fieldsFor, hasReps, hasTargets, isWorkingKind } from '@/domain/measurement';
+import { fieldsFor, hasReps, hasTargets, isWorkingKind, weightUnitLabel } from '@/domain/measurement';
 import { plateSetFor } from '@/domain/plates';
 import { incrementFor, parseRepRange, targetsMet } from '@/domain/progression';
 import {
@@ -670,7 +670,7 @@ function ProgressionSettings(props: {
           <>
             <div className="grid-2">
               <label className="field mt-0">
-                <span>Charge ({units.weight})</span>
+                <span>Charge ({weightUnitLabel(exercise.equipment, type, units.weight)})</span>
                 <input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} />
               </label>
               <label className="field mt-0">
