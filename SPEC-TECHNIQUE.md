@@ -237,6 +237,7 @@ type ExercisePrefsDoc = {
   increment?: Weight;                 // absent = défaut selon l'équipement et l'unité (§F7.10)
   defaultRepRange?: RepRange;
   longTermGoal?: { weight: Weight; reps: number; setAt: number };   // reps 1..12
+  bar?: 'olympic' | 'women' | 'ez' | 'trap';   // barre choisie au calculateur de disques ; absent = détectée ou par défaut (#100)
 };
 
 type Settings = {
@@ -249,6 +250,10 @@ type Settings = {
   progressionEnabled: boolean;        // true par défaut
   rpeEnabled: boolean;                // saisie du RPE, false par défaut
   trainingAge?: { bucket: 'none' | 'lt6m' | '6to12m' | '1to2y' | '2to5y' | 'gt5y'; declaredAt: number };   // absent = non renseignée
+  // Calculateur de disques, par unité ; absent = valeurs par défaut. `bar` = poids de la barre par défaut, toujours écrit
+  // (seul champ lu avant #100) ; `bars` = poids réglé de chaque type de barre ; `defaultBar` absent = olympique.
+  plates?: Partial<Record<'kg' | 'lb', { bar: number; plates: number[];
+           bars?: Partial<Record<'olympic' | 'women' | 'ez' | 'trap', number>>; defaultBar?: 'olympic' | 'women' | 'ez' | 'trap' }>>;
 };
 ```
 

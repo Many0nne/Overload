@@ -237,6 +237,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Le calcul vise la charge exacte avec le moins de disques possible ; une charge inatteignable affiche le reste (« 2 kg impossibles »), une charge sous la barre est signalée.
 - Le menu de l'exercice (« Calculer les disques ») et sa fiche ouvrent le même calculateur, sur une charge libre réglable (− / + d'une paire du plus petit disque).
 - Disques aux couleurs de compétition (rouge 25, bleu 20, jaune 15, vert 10, blanc 5).
+- Plusieurs barres : olympique, femme, EZ, trap bar. La barre d'un exercice est devinée (« EZ » ou « trap bar » dans le nom, ou son identifiant source au catalogue), sinon c'est la barre par défaut. Des puces dans le calculateur changent de barre ; le choix est mémorisé pour l'exercice et synchronisé. Le calculateur s'ouvre aussi pour les exercices à la trap bar, même classés « autre ».
 
 **Fin de séance**
 - Terminer avec des séries non validées : l'app demande « Ignorer les séries non validées ? ». Une séance sans aucune série validée ne peut pas être enregistrée (proposer « Abandonner »).
@@ -329,7 +330,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Notification de fin de repos : activée ou non.
 - Objectifs de progression : activés ou non (activés par défaut). Désactivés, les champs se pré-remplissent comme sans objectif et la tendance projetée est masquée.
 - Saisir l'effort ressenti (RPE) : désactivé par défaut (§7.4). Un RPE déjà enregistré (saisi ou importé de HEVY) reste affiché et pris en compte par les objectifs même si la saisie est désactivée.
-- Disques : poids de la barre (20 kg / 45 lb par défaut) et disques disponibles, réglés séparément pour le kg et le lb (§7.4).
+- Disques : barres (poids de chacune, par défaut olympique 20 kg / 45 lb, femme 15 / 35, EZ 10 / 25, trap bar 25 / 55, et barre par défaut) et disques disponibles, réglés séparément pour le kg et le lb (§7.4).
 - Ancienneté en musculation, modifiable à tout moment : « Je débute », « Moins de 6 mois », « 6 mois à 1 an », « 1 à 2 ans », « 2 à 5 ans », « Plus de 5 ans », ou « Non renseignée ».
 - Compte : e-mail, mot de passe, lien d'invitation (copier, régénérer), export des données, import HEVY, suppression du compte, déconnexion.
 

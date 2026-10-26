@@ -113,8 +113,12 @@ export type RoutineDoc = {
   exercises: RoutineExercise[];
 };
 
+/** Type de barre du calculateur de disques (issue #100). */
+export type BarType = 'olympic' | 'women' | 'ez' | 'trap';
+
 export type ExercisePrefsDoc = {
   schemaVersion: 1;
+  bar?: BarType; // barre choisie à la main pour le calculateur ; absent = détection auto ou barre par défaut
   increment?: Weight;
   defaultRepRange?: RepRange;
   longTermGoal?: { weight: Weight; reps: number; setAt: number };
@@ -133,8 +137,18 @@ export type Settings = {
   progressionEnabled: boolean;
   rpeEnabled: boolean;
   trainingAge?: { bucket: TrainingAgeBucket; declaredAt: number };
-  /** Barre et disques disponibles par unité (calculateur de disques) ; absent = valeurs par défaut. */
-  plates?: Partial<Record<WeightUnit, { bar: number; plates: number[] }>>;
+  /** Barres et disques disponibles par unité (calculateur de disques) ; absent = valeurs par défaut. */
+  plates?: Partial<Record<WeightUnit, PlateSettingsDoc>>;
+};
+
+export type PlateSettingsDoc = {
+  /** Poids de la barre par défaut (seul champ barre avant #100, toujours écrit pour les anciennes versions). */
+  bar: number;
+  plates: number[];
+  /** Poids réglé de chaque type de barre ; absent = valeur par défaut. */
+  bars?: Partial<Record<BarType, number>>;
+  /** Barre des exercices sans barre détectée ni choisie ; absent = olympique. */
+  defaultBar?: BarType;
 };
 
 export const DEFAULT_SETTINGS: Settings = {

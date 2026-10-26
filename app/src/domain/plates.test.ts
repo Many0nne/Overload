@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PLATES, groupPlates, loadBar, plateSetFor, plateStep } from './plates';
+import {
+  barCaption,
+  barToRemember,
+  barTypeFor,
+  barWeights,
+  DEFAULT_PLATES,
+  detectBarType,
+  exercisePlateSet,
+  groupPlates,
+  loadBar,
+  plateSetFor,
+  plateStep,
+  usesBar,
+} from './plates';
+import type { ExerciseRow } from './types';
 
 const KG = DEFAULT_PLATES.kg;
 
@@ -43,11 +57,88 @@ describe('loadBar', () => {
 
 describe('plateSetFor', () => {
   it('prend les valeurs par défaut de l’unité, sinon les réglages triés', () => {
-    expect(plateSetFor({}, 'lb')).toEqual(DEFAULT_PLATES.lb);
+    expect(plateSetFor({}, 'lb')).toEqual({ ...DEFAULT_PLATES.lb, barType: 'olympic' });
     expect(plateSetFor({ plates: { kg: { bar: 15, plates: [5, 20, 10] } } }, 'kg')).toEqual({
       bar: 15,
       plates: [20, 10, 5],
+      barType: 'olympic',
     });
+  });
+
+  it('donne le poids du type de barre demandé', () => {
+    expect(plateSetFor({}, 'kg', 'ez')).toMatchObject({ bar: 10, barType: 'ez' });
+    expect(plateSetFor({}, 'lb', 'trap')).toMatchObject({ bar: 55, barType: 'trap' });
+    const settings = {
+      plates: { kg: { bar: 15, plates: [20], bars: { ez: 8 }, defaultBar: 'women' as const } },
+    };
+    expect(plateSetFor(settings, 'kg')).toMatchObject({ bar: 15, barType: 'women' });
+    expect(plateSetFor(settings, 'kg', 'ez')).toMatchObject({ bar: 8, plates: [20] });
+  });
+});
+
+describe('barWeights', () => {
+  it('reprend l’ancien poids unique comme barre olympique', () => {
+    expect(barWeights({ plates: { kg: { bar: 15, plates: [20] } } }, 'kg')).toEqual({
+      olympic: 15,
+      women: 15,
+      ez: 10,
+      trap: 25,
+    });
+  });
+
+  it('préfère les poids réglés par type', () => {
+    expect(
+      barWeights({ plates: { lb: { bar: 45, plates: [45], bars: { olympic: 45, trap: 65 } } } }, 'lb'),
+    ).toEqual({ olympic: 45, women: 35, ez: 25, trap: 65 });
+  });
+});
+
+const ex = (name: string, equipment: ExerciseRow['equipment'], source_id: string | null = null) => ({
+  name,
+  equipment,
+  source_id,
+});
+
+describe('détection de la barre', () => {
+  it('reconnaît la barre EZ et la trap bar', () => {
+    expect(detectBarType(ex('Curl biceps (barre EZ)', 'barbell', 'EZ-Bar_Curl'))).toBe('ez');
+    expect(detectBarType(ex('Mon curl ez', 'barbell'))).toBe('ez');
+    expect(detectBarType(ex('Soulevé de terre trap bar', 'other'))).toBe('trap');
+    expect(detectBarType(ex('Shrug barre hexagonale', 'other'))).toBe('trap');
+    expect(detectBarType(ex('Développé couché (barre)', 'barbell'))).toBeUndefined();
+    expect(detectBarType(ex('Squat trapèzes', 'barbell'))).toBeUndefined();
+  });
+
+  it('ouvre le calculateur à la barre et à la trap bar seulement', () => {
+    expect(usesBar(ex('Développé couché (barre)', 'barbell'))).toBe(true);
+    expect(usesBar(ex('Soulevé de terre trap bar', 'other'))).toBe(true);
+    expect(usesBar(ex('Squat (Smith)', 'machine'))).toBe(false);
+    expect(usesBar(undefined)).toBe(false);
+    expect(exercisePlateSet(ex('Curl haltères', 'dumbbell'), undefined, {}, 'kg')).toBeNull();
+  });
+
+  it('prend le choix mémorisé, sinon la détection, sinon la barre par défaut', () => {
+    const curl = ex('Curl biceps (barre EZ)', 'barbell');
+    const bench = ex('Développé couché (barre)', 'barbell');
+    const women = { plates: { kg: { bar: 15, plates: [20], defaultBar: 'women' as const } } };
+    expect(barTypeFor(curl, undefined, {}, 'kg')).toBe('ez');
+    expect(barTypeFor(curl, { bar: 'olympic' }, {}, 'kg')).toBe('olympic');
+    expect(barTypeFor(bench, undefined, women, 'kg')).toBe('women');
+    expect(exercisePlateSet(curl, undefined, {}, 'kg')).toMatchObject({ bar: 10, barType: 'ez' });
+    // Curl EZ à 30 kg : 10 kg par côté, pas 5 (issue #100).
+    expect(loadBar(30, exercisePlateSet(curl, undefined, {}, 'kg')!).perSide).toEqual([10]);
+  });
+
+  it('ne mémorise pas la barre qu’aurait eue l’exercice d’office', () => {
+    const curl = ex('Curl biceps (barre EZ)', 'barbell');
+    expect(barToRemember(curl, {}, 'kg', 'ez')).toBeUndefined();
+    expect(barToRemember(curl, {}, 'kg', 'olympic')).toBe('olympic');
+  });
+
+  it('nomme la barre dans les textes courts', () => {
+    expect(barCaption('olympic', '20 kg')).toBe('barre 20 kg');
+    expect(barCaption('ez', '10 kg')).toBe('barre EZ 10 kg');
+    expect(barCaption('trap', '25 kg')).toBe('trap bar 25 kg');
   });
 });
 

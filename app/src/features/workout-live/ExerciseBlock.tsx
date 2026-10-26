@@ -6,7 +6,7 @@ import { columnLabels, fieldsFor, type SetField, weightPerPiece } from '@/domain
 import type { PlateSet } from '@/domain/plates';
 import { previousSets } from '@/domain/previous';
 import { activeTarget } from '@/domain/progression';
-import type { ExerciseRow, SetKind, Settings, WorkoutExercise } from '@/domain/types';
+import type { BarType, ExerciseRow, SetKind, Settings, WorkoutExercise } from '@/domain/types';
 import { weightIn } from '@/domain/units';
 import { initials } from '@/features/library/ExerciseList';
 import { PlateSheet } from '@/features/plates/PlateSheet';
@@ -41,8 +41,11 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   exercise: ExerciseRow | undefined;
   previous: WorkoutExercise | undefined;
   units: Settings['units'];
-  /** Barre et disques de l'utilisateur dans son unité de poids (calculateur de disques). */
-  plateSet: PlateSet;
+  /** Barre et disques de l'exercice dans l'unité de poids (calculateur de disques) ; null s'il ne se charge pas sur une barre. */
+  plateSet: PlateSet | null;
+  /** Poids de chaque type de barre, pour en changer dans le calculateur. */
+  bars: Record<BarType, number>;
+  onBar: (exerciseId: string, type: BarType) => void;
   setBadges: Record<string, string[]>;
   entryRecord: boolean;
   goalSetId: string | undefined;
@@ -82,8 +85,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const rpeSet = entry.sets[rpeIndex];
   const kindIndex = entry.sets.findIndex((s) => s.id === kindFor);
   const kindSet = entry.sets[kindIndex];
-  // Calculateur de disques : exercices à la barre avec un poids saisi (issue #76).
-  const plates = props.exercise?.equipment === 'barbell' && fields.includes('weight') ? props.plateSet : null;
+  // Calculateur de disques : exercices à la barre avec un poids saisi (issues #76, #100).
+  const plates = fields.includes('weight') ? props.plateSet : null;
   // Charge proposée à l'ouverture du calculateur : la prochaine série à faire, sinon la dernière.
   const nextWeight = (entry.sets.find((s) => !s.done && s.weight) ?? entry.sets.findLast((s) => s.weight))
     ?.weight;
@@ -277,6 +280,8 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
           initial={nextWeight && weightIn(nextWeight, props.units.weight)}
           unit={props.units.weight}
           plateSet={plates}
+          bars={props.bars}
+          onBar={(t) => props.onBar(entry.exerciseId, t)}
           onClose={() => setPlateSheet(false)}
         />
       )}
