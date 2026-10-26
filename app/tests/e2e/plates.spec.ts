@@ -34,3 +34,27 @@ test('Disques : bandeau qui suit la saisie du poids, puis calculateur depuis le 
   await expect(sheet.getByLabel('Charge totale')).toHaveValue('145');
   await expect(sheet).toContainText('Par côté : 2 × 25 + 10 + 2,5');
 });
+
+const EZ_CURL = { id: '1f9fad84-4617-52f9-be85-ca9df81108dc', name: 'Curl biceps (barre EZ)' };
+
+test('Disques : barre EZ détectée sur le curl, autre barre choisie et mémorisée pour l’exercice', async ({
+  page,
+  seeded,
+}) => {
+  await login(page, seeded.account);
+  await page.goto(`/exercise/${EZ_CURL.id}`);
+  await page.getByRole('button', { name: 'Calculer les disques' }).click();
+  const sheet = page.locator('.plate-sheet');
+  await expect(sheet.getByRole('button', { name: 'EZ · 10' })).toHaveAttribute('aria-pressed', 'true');
+  await sheet.getByLabel('Charge totale').fill('30');
+  await expect(sheet).toContainText('Par côté : 10');
+  await expect(sheet).toContainText('barre EZ 10 kg');
+
+  // Barre olympique choisie à la main : 5 kg par côté, choix gardé après rechargement.
+  await sheet.getByRole('button', { name: 'Olympique · 20' }).click();
+  await expect(sheet).toContainText('Par côté : 5');
+  await expect(sheet).toContainText('barre 20 kg');
+  await page.reload();
+  await page.getByRole('button', { name: 'Calculer les disques' }).click();
+  await expect(sheet.getByRole('button', { name: 'Olympique · 20' })).toHaveAttribute('aria-pressed', 'true');
+});

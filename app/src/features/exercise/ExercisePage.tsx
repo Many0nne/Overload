@@ -32,7 +32,7 @@ import {
 } from '@/domain/format';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, setLabels } from '@/domain/labels';
 import { fieldsFor, hasReps, hasTargets, isWorkingKind, weightUnitLabel } from '@/domain/measurement';
-import { plateSetFor } from '@/domain/plates';
+import { barToRemember, barWeights, exercisePlateSet } from '@/domain/plates';
 import { incrementFor, parseRepRange, targetsMet } from '@/domain/progression';
 import {
   bestRecords,
@@ -256,7 +256,10 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   const [next, setNext] = useState<WorkoutExercise | undefined>();
   const [plateSheet, setPlateSheet] = useState(false);
   const now = Date.now();
-  const barbell = ex.equipment === 'barbell' && fieldsFor(type).includes('weight');
+  // Calculateur de disques : exercices à la barre avec un poids saisi, barre choisie ou détectée (issues #76, #100).
+  const plateSet = fieldsFor(type).includes('weight')
+    ? exercisePlateSet(ex, prefs, settings, units.weight)
+    : null;
   // Charge proposée au calculateur : celle de la prochaine série de travail visée, sinon la barre seule.
   const nextWeight = next?.sets.find((s) => isWorkingKind(s.kind) && s.weight)?.weight;
 
@@ -309,7 +312,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   return (
     <div className="pane on">
       {next && <NextGoalCard next={next} units={units} />}
-      {barbell && (
+      {plateSet && (
         <div className="section">
           <button className="btn btn-soft btn-block btn-sm" onClick={() => setPlateSheet(true)}>
             Calculer les disques
@@ -319,7 +322,11 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
             subtitle={ex.name}
             initial={nextWeight && weightIn(nextWeight, units.weight)}
             unit={units.weight}
-            plateSet={plateSetFor(settings, units.weight)}
+            plateSet={plateSet}
+            bars={barWeights(settings, units.weight)}
+            onBar={(t) =>
+              void saveExercisePrefs(ex.id, { bar: barToRemember(ex, settings, units.weight, t) })
+            }
             onClose={() => setPlateSheet(false)}
           />
         </div>

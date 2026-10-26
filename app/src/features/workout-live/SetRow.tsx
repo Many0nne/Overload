@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { formatDuration, formatRpe, formatSetValues, parseDuration } from '@/domain/format';
 import { fieldsFor, type SetField } from '@/domain/measurement';
-import { loadBar, type PlateSet } from '@/domain/plates';
+import { barCaption, loadBar, type PlateSet } from '@/domain/plates';
 import { activeTarget } from '@/domain/progression';
 import type { MeasurementType, Settings, WorkoutSet } from '@/domain/types';
 import {
@@ -369,7 +369,7 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
 // (issue #76) ; le bandeau suit chaque chiffre tapé et signale une charge inatteignable.
 function PlateStrip(props: { total: number; unit: Units['weight']; plates: PlateSet; cols: number }) {
   const load = loadBar(props.total, props.plates);
-  const bar = `barre ${formatNumber(props.plates.bar, 2)} ${props.unit}`;
+  const bar = barCaption(props.plates.barType, `${formatNumber(props.plates.bar, 2)} ${props.unit}`);
   return (
     <tr className="plate-strip" aria-live="polite">
       <td colSpan={props.cols}>

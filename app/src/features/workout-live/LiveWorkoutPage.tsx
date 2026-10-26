@@ -4,16 +4,16 @@ import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
 import { deviceIdSync } from '@/data/device';
 import { useCompletedWorkouts, useExerciseMap, useSettings, useWorkout } from '@/data/queries';
-import { deleteWorkout, updateWorkout } from '@/data/repositories';
+import { deleteWorkout, saveExercisePrefs, updateWorkout } from '@/data/repositories';
 import { AppOutdatedError, takeOverWorkout } from '@/data/sync/engine';
 import { formatClock, formatKg } from '@/domain/format';
 import type { SetField } from '@/domain/measurement';
-import { plateSetFor } from '@/domain/plates';
+import { barToRemember, barWeights, exercisePlateSet, type PlateSet } from '@/domain/plates';
 import { checkSet, exerciseInWorkout, lastTime, previousSets } from '@/domain/previous';
 import { workoutBadges } from '@/domain/records';
 import { doneSetCount, unvalidatedCount } from '@/domain/summary';
 import { goalAchievedSet } from '@/domain/trend';
-import type { ExercisePrefsDoc, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
+import type { BarType, ExercisePrefsDoc, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
 import { workoutVolumeKg } from '@/domain/volume';
 import { ExerciseList } from '@/features/library/ExerciseList';
 import { Sheet, toast } from '@/ui/components';
@@ -103,11 +103,28 @@ export default function LiveWorkoutPage() {
     [prefsRows],
   );
 
-  // Barre et disques de l'utilisateur dans son unité, pour le calculateur des exercices à la barre (issue #76).
+  // Barre et disques de chaque exercice à la barre de la séance, dans l'unité de l'utilisateur (issues #76, #100).
+  // Clé par exercice : saisir une série ne recrée pas les jeux de disques (blocs mémoïsés).
+  const exerciseKey = doc?.exercises.map((e) => e.exerciseId).join(',');
+  const unit = settings.units.weight;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seuls les exercices, leurs réglages, les disques et l'unité comptent
+  const plateSets = useMemo(() => {
+    const m = new Map<string, PlateSet | null>();
+    for (const exId of exerciseKey?.split(',') ?? []) {
+      m.set(exId, exercisePlateSet(exercises.get(exId), prefs.get(exId), settings, unit));
+    }
+    return m;
+  }, [exerciseKey, exercises, prefs, settings.plates, unit]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: seuls les disques et l'unité comptent
-  const plateSet = useMemo(
-    () => plateSetFor(settings, settings.units.weight),
-    [settings.plates, settings.units.weight],
+  const bars = useMemo(() => barWeights(settings, unit), [settings.plates, unit]);
+  // Cette méthode permet de mémoriser la barre choisie dans le calculateur pour un exercice (issue #100).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: seuls les exercices, les disques et l'unité comptent
+  const onBar = useCallback(
+    (exerciseId: string, type: BarType) => {
+      const ex = exercises.get(exerciseId);
+      if (ex) void saveExercisePrefs(exerciseId, { bar: barToRemember(ex, settings, unit, type) });
+    },
+    [exercises, settings.plates, unit],
   );
 
   // « La dernière fois » de chaque exercice, pour la colonne Précédent (§10.4).
@@ -335,7 +352,9 @@ export default function LiveWorkoutPage() {
           exercise={exercises.get(e.exerciseId)}
           previous={previousByEntry.get(e.id)}
           units={settings.units}
-          plateSet={plateSet}
+          plateSet={plateSets.get(e.exerciseId) ?? null}
+          bars={bars}
+          onBar={onBar}
           setBadges={badges?.sets ?? {}}
           entryRecord={Boolean(badges?.entries[e.id]?.length)}
           goalSetId={goalSets.get(e.id)}

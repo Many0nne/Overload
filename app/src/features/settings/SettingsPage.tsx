@@ -9,7 +9,15 @@ import { refreshStorageUsage, useStorageUsage } from '@/data/storageUsage';
 import { supabase } from '@/data/supabase';
 import { syncNow } from '@/data/sync/scheduler';
 import { TRAINING_AGE_LABELS } from '@/domain/labels';
-import { BAR_CHOICES, PLATE_CHOICES, plateSetFor } from '@/domain/plates';
+import {
+  BAR_CHOICES,
+  BAR_LABELS,
+  BAR_TYPES,
+  barWeights,
+  defaultBarType,
+  PLATE_CHOICES,
+  plateSetFor,
+} from '@/domain/plates';
 import { formatStorageUsage, isStorageNearQuota } from '@/domain/quota';
 import type { Settings, TrainingAgeBucket } from '@/domain/types';
 import { formatPlate } from '@/features/plates/PlateBar';
@@ -70,9 +78,14 @@ export default function SettingsPage() {
   const set = (patch: Partial<Settings>) => void updateSettings(patch);
   const units = settings.units;
   const plateSet = plateSetFor(settings, units.weight);
-  // Cette méthode permet d'enregistrer la barre ou les disques de l'unité de poids courante (l'autre unité garde les siens).
-  const setPlates = (patch: Partial<typeof plateSet>) =>
-    set({ plates: { ...settings.plates, [units.weight]: { ...plateSet, ...patch } } });
+  const bars = barWeights(settings, units.weight);
+  const defaultBar = defaultBarType(settings, units.weight);
+  // Cette méthode permet d'enregistrer les barres ou les disques de l'unité de poids courante (l'autre unité garde les siens) ;
+  // `bar` reste le poids de la barre par défaut, seul champ lu par les versions d'avant #100.
+  const setPlates = (patch: { plates?: number[]; bars?: typeof bars; defaultBar?: typeof defaultBar }) => {
+    const next = { plates: plateSet.plates, bars, defaultBar, ...patch };
+    set({ plates: { ...settings.plates, [units.weight]: { ...next, bar: next.bars[next.defaultBar] } } });
+  };
   // Cette méthode permet d'activer ou retirer un disque disponible, en gardant au moins un disque.
   const togglePlate = (p: number) => {
     const on = plateSet.plates.includes(p);
@@ -199,9 +212,14 @@ export default function SettingsPage() {
       <div className="section">
         <div className="section-title">Disques</div>
         <button className="set-row" onClick={() => setSheet('bar')}>
-          Barre
+          <span>
+            Barres
+            <small className="muted d-block fs-12">
+              la barre EZ ou la trap bar est choisie selon l'exercice
+            </small>
+          </span>
           <span className="t2">
-            {formatPlate(plateSet.bar)} {units.weight} ›
+            {BAR_LABELS[defaultBar]} {formatPlate(plateSet.bar)} {units.weight} ›
           </span>
         </button>
         <button className="set-row" onClick={() => setSheet('plates')}>
@@ -322,21 +340,37 @@ export default function SettingsPage() {
         </div>
       </Sheet>
 
-      <Sheet open={sheet === 'bar'} title="Poids de la barre" onClose={() => setSheet(null)}>
+      <Sheet open={sheet === 'bar'} title="Barres" onClose={() => setSheet(null)}>
+        <p>Barre par défaut, pour les exercices sans barre reconnue ni choisie dans le calculateur.</p>
         <div className="chips wrap mt-8">
-          {BAR_CHOICES[units.weight].map((b) => (
+          {BAR_TYPES.map((t) => (
             <button
-              key={b}
-              className={`chip${plateSet.bar === b ? ' on' : ''}`}
-              onClick={() => {
-                setPlates({ bar: b });
-                setSheet(null);
-              }}
+              key={t}
+              className={`chip${defaultBar === t ? ' on' : ''}`}
+              aria-pressed={defaultBar === t}
+              onClick={() => setPlates({ defaultBar: t })}
             >
-              {formatPlate(b)} {units.weight}
+              {BAR_LABELS[t]}
             </button>
           ))}
         </div>
+        {BAR_TYPES.map((t) => (
+          <div key={t}>
+            <div className="muted fs-13 mt-12">Poids · {BAR_LABELS[t]}</div>
+            <div className="chips wrap mt-8">
+              {BAR_CHOICES[units.weight].map((b) => (
+                <button
+                  key={b}
+                  className={`chip${bars[t] === b ? ' on' : ''}`}
+                  aria-pressed={bars[t] === b}
+                  onClick={() => setPlates({ bars: { ...bars, [t]: b } })}
+                >
+                  {formatPlate(b)} {units.weight}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </Sheet>
 
       <Sheet open={sheet === 'plates'} title="Disques disponibles" onClose={() => setSheet(null)}>
