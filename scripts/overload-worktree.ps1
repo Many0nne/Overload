@@ -16,8 +16,8 @@
   pid .dev.pid dans le worktree) et attend que l'API Supabase et Vite repondent. -NoUp : sans demarrer.
 
   Registre de nettoyage (worktrees\.owners.json, lu par overload-worktree-cleanup.ps1) : la session Claude qui lance le
-  script est inscrite comme utilisatrice du worktree. Quand tous ses threads T3 sont settled, la stack est arretee ;
-  quand ils sont archives, le worktree est supprime (si tout est commite et pousse).
+  script est inscrite comme utilisatrice du worktree. Quand ses threads T3 ne sont plus actifs, la stack est arretee ;
+  quand la PR de la branche est mergee (ou fermee), le worktree est supprime (si tout est commite et pousse).
 
 .EXAMPLE
   .\scripts\overload-worktree.ps1 feature/stats             # cree/reutilise et demarre (branche creee depuis dev si absente)
