@@ -112,7 +112,7 @@ try {
       if (-not ((Test-Path (Join-Path $dir '.dev.pid')) -or $supabaseUp)) { continue }
       if ($DryRun) { Write-Host "A ARRETER $branch"; continue }
       & $worktreeScript $branch -Stop *>&1 | Out-Null
-      Write-Log "ARRETE $branch (threads settled)"
+      Write-Log "ARRETE $branch (threads termines, PR non mergee)"
       continue
     }
 

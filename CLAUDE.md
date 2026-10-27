@@ -31,8 +31,9 @@ Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. 
 2. Implémenter, tester (typecheck, lint, test, et test:sync / e2e si concernés).
 3. Besoin d'un avis de l'utilisateur (UX, UI, rendu) : lui fournir un environnement prêt avec l'URL Vite du worktree
    (`http://localhost:5173+100N`), un compte de test créé dans la stack du worktree, et le scénario à suivre (étapes,
-   ce qu'il faut observer). Compte : `test@overload.local` / `overload-test`, créé avec `scripts/create-admin.ts`
-   (`SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` tirés de `npx supabase status -o env` lancé dans le worktree). Attendre son retour.
+   ce qu'il faut observer). Compte : `test@overload.local` / `overload-test`, créé dans `app/` du worktree (PowerShell) :
+   `$s = npx supabase status -o json | ConvertFrom-Json; $env:SUPABASE_URL = $s.API_URL; $env:SUPABASE_SERVICE_ROLE_KEY = $s.SERVICE_ROLE_KEY; npx tsx ../scripts/create-admin.ts test@overload.local overload-test Test`.
+   Attendre son retour.
 4. Fonctionnement vérifié (et validé par l'utilisateur si l'étape 3 s'appliquait) : commit, push, `gh pr create --base dev`
    avec `Closes #<n>` dans la description si une issue est liée, puis fermer le thread (settle via `t3_thread_organize`).
 5. Le nettoyage automatique arrête la stack une fois le thread fermé, et supprime le worktree et sa stack une fois la PR mergée.
