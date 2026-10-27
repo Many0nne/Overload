@@ -12,6 +12,7 @@
   Le lien worktree -> threads vient du registre worktrees\.owners.json, rempli par overload-worktree.ps1.
   Garde-fous de suppression : rien n'est supprime s'il reste des modifications non commitees, ou des commits
   absents d'origin (sauf ceux contenus dans une PR mergee, cas du squash-merge avec branche distante supprimee).
+  A chaque passage, le checkout principal est avance en fast-forward sur origin/dev s'il est sur dev sans modification.
   Lance toutes les 10 minutes par la tache planifiee "Overload worktree cleanup" (install-cleanup-task.ps1) ;
   journal dans worktrees\.cleanup.log.
 
@@ -81,6 +82,12 @@ $mutex = New-Object System.Threading.Mutex($false, 'Local\overload-worktree-clea
 if (-not $mutex.WaitOne(0)) { return }
 try {
   git -C $root fetch origin --quiet 2>$null
+  # Scripts du checkout principal (dont celui-ci) a jour apres un merge : fast-forward de dev, seulement si le checkout
+  # est sur dev sans modification suivie. Pris en compte des le -Remove ci-dessous, et pour ce script au passage suivant.
+  if (-not $DryRun -and (git -C $root branch --show-current) -eq 'dev' -and -not (git -C $root status --porcelain --untracked-files=no)) {
+    git -C $root merge --ff-only --quiet origin/dev *>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Log "MAJ dev impossible en fast-forward (checkout principal diverge d'origin/dev)" -Once }
+  }
   $owners = @(Get-Content $ownersFile -Raw | ConvertFrom-Json)
   foreach ($entry in $owners) {
     $branch = $entry.branch

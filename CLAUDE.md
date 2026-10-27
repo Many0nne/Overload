@@ -62,3 +62,4 @@ Script idempotent, à relancer au début de chaque tâche (PowerShell, depuis la
   du worktree ne sont plus actifs (settled, archivés), et supprime le worktree et sa stack quand la PR de la branche est mergée
   (ou fermée sans merge) et que tout est poussé ; la branche locale est aussi supprimée si la PR est mergée. Fermer ou archiver un thread ne supprime jamais rien à lui seul.
   Tâche planifiée (toutes les 10 min, à réinstaller sur un nouveau poste) : `scripts/install-cleanup-task.ps1`.
+  À chaque passage, elle avance aussi le checkout principal sur `origin/dev` (fast-forward, seulement s'il est sur `dev` sans modification).
