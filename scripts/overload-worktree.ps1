@@ -219,6 +219,11 @@ if ($Stop -or $Remove) {
       Write-Host "Supabase '$project' arrete$(if ($Remove) { ' (volumes supprimes)' })."
     }
   }
+  # Stack deja arretee (-Stop, ou nettoyage a la fermeture du thread) : supabase stop ne passe pas, ses volumes restent.
+  if ($Remove) {
+    $volumes = @(docker volume ls -q --filter "label=com.supabase.cli.project=$project" 2>$null)
+    if ($volumes) { docker volume rm $volumes | Out-Null; Write-Host "Volumes Supabase restants supprimes : $($volumes.Count)." }
+  }
   if ($Stop) { return }
 }
 
