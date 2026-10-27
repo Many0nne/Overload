@@ -1,10 +1,11 @@
 <#
 .SYNOPSIS
-  Libere les ressources des worktrees Overload dont le travail est termine cote T3, en deux paliers :
-  - tous les threads settled (ou settled + archives) : arret de la stack (Vite + Supabase, donnees conservees) (reversible, relancer
-    overload-worktree.ps1 <branche> pour reprendre) ;
-  - tous les threads archives ou supprimes, ou bien threads termines (settled) et PR de la branche mergee sans PR encore
-    ouverte : suppression (overload-worktree.ps1 -Remove, branche conservee).
+  Libere les ressources des worktrees Overload dont les threads T3 ne sont plus actifs (settled, archives ou supprimes),
+  en deux paliers :
+  - PR de la branche pas encore mergee (ou pas de PR) : arret de la stack seulement (Vite + Supabase, donnees conservees)
+    (reversible, relancer overload-worktree.ps1 <branche> pour reprendre) ;
+  - PR de la branche mergee, ou fermee sans merge, et aucune PR encore ouverte : suppression du worktree et de sa stack
+    (overload-worktree.ps1 -Remove, branche conservee). Fermer ou archiver un thread ne supprime jamais rien a lui seul.
   Un thread settled qui recoit un nouveau message redevient actif : rien n'est touche. Une session inscrite
   pas encore rattachee a un thread (premier tour en cours) et active depuis moins de 30 min bloque aussi l'entree.
   Le lien worktree -> threads vient du registre worktrees\.owners.json, rempli par overload-worktree.ps1.
@@ -98,12 +99,14 @@ try {
     $states = python -I $helper status @threads | ConvertFrom-Json
     if (@($threads | Where-Object { $states.$_ -eq 'active' })) { continue }
 
-    # Travail livre : PR mergee et aucune PR encore ouverte sur la branche -> suppression sans attendre l'archivage.
+    # Travail clos : PR mergee (ou fermee sans merge) et aucune PR encore ouverte sur la branche -> suppression.
     $prs = Get-BranchPrs $branch
-    $delivered = @($prs | Where-Object { $_.state -eq 'MERGED' }) -and -not @($prs | Where-Object { $_.state -eq 'OPEN' })
+    $open = @($prs | Where-Object { $_.state -eq 'OPEN' })
+    $delivered = @($prs | Where-Object { $_.state -eq 'MERGED' }) -and -not $open
+    $abandoned = -not $delivered -and @($prs | Where-Object { $_.state -eq 'CLOSED' }) -and -not $open
 
-    # Palier 1 : au moins un thread settled (pas encore archive), travail non livre -> arret de la stack seulement.
-    if (-not $delivered -and @($threads | Where-Object { $states.$_ -eq 'settled' })) {
+    # Palier 1 : threads termines mais travail non clos (PR ouverte ou absente) -> arret de la stack seulement.
+    if (-not ($delivered -or $abandoned)) {
       $project = Split-Path -Leaf $dir
       $supabaseUp = [bool](docker ps --filter "name=^supabase_db_$project$" --format '{{.Names}}' 2>$null)
       if (-not ((Test-Path (Join-Path $dir '.dev.pid')) -or $supabaseUp)) { continue }
@@ -118,7 +121,7 @@ try {
       $reason = Get-UnsafeReason $dir $branch $prs
       if ($reason) { Write-Log "GARDE $branch (threads termines) : $reason" -Once; continue }
     }
-    $why = if ($delivered) { 'PR mergee, threads termines' } else { "threads archives/supprimes : $($threads.Count)" }
+    $why = if ($delivered) { 'PR mergee, threads termines' } else { 'PR fermee sans merge, threads termines' }
     if ($DryRun) { Write-Host "A SUPPRIMER $branch ($why) : overload-worktree.ps1 $branch -Remove"; continue }
     try {
       & $worktreeScript $branch -Remove *>&1 | Out-Null

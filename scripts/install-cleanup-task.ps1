@@ -30,5 +30,5 @@ $triggers = @(
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
   -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings `
-  -Description 'Arrete les stacks des worktrees Overload dont les threads T3 sont settled, supprime ceux dont les threads sont archives.' -Force | Out-Null
+  -Description 'Arrete les stacks des worktrees Overload dont les threads T3 sont termines, supprime ceux dont la PR est mergee ou fermee.' -Force | Out-Null
 Write-Host "Tache '$taskName' installee (toutes les 10 minutes et a l'ouverture de session)."
