@@ -21,8 +21,8 @@ Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. 
 - Branche d'intégration : `dev`. Les branches de travail partent de `dev` et les PR visent `dev` (`gh pr create --base dev`), jamais `main`.
 - Aucun crédit Claude : pas de `Co-Authored-By` dans les commits ni de mention « Generated with Claude Code » dans les PR.
   Les commits sont faits avec l'identité git de l'utilisateur.
-- Pas de merge sans ordre explicite. Sur ordre : `gh pr merge`, puis `.\scripts\overload-worktree.ps1 <branche> -Remove`
-  depuis la racine du checkout principal.
+- Pas de merge sans ordre explicite. Sur ordre : `gh pr merge`, puis depuis la racine du checkout principal
+  `git pull --ff-only origin dev`, `.\scripts\overload-worktree.ps1 <branche> -Remove` et `git branch -d <branche>`.
 
 ## Workflow d'une tâche (feature, bug…)
 
@@ -36,7 +36,8 @@ Contrat client/serveur : `docs/contrat-serveur.md`. Déploiement : `DEPLOY.md`. 
    Attendre son retour.
 4. Fonctionnement vérifié (et validé par l'utilisateur si l'étape 3 s'appliquait) : commit, push, `gh pr create --base dev`
    avec `Closes #<n>` dans la description si une issue est liée, puis fermer le thread (settle via `t3_thread_organize`).
-5. Le nettoyage automatique arrête la stack une fois le thread fermé, et supprime le worktree et sa stack une fois la PR mergée.
+5. Le nettoyage automatique arrête la stack une fois le thread fermé, et supprime le worktree, sa stack et la branche locale
+   une fois la PR mergée.
 
 ## Worktrees (travail en parallèle)
 
@@ -59,5 +60,5 @@ Script idempotent, à relancer au début de chaque tâche (PowerShell, depuis la
 - Ne pas lire ni recopier le `.env` d'un worktree (ni `supabase/functions/.env`, copié du principal).
 - Nettoyage auto (registre `worktrees/.owners.json`) : `scripts/overload-worktree-cleanup.ps1` arrête la stack quand les threads T3
   du worktree ne sont plus actifs (settled, archivés), et supprime le worktree et sa stack quand la PR de la branche est mergée
-  (ou fermée sans merge) et que tout est poussé. Fermer ou archiver un thread ne supprime jamais rien à lui seul.
+  (ou fermée sans merge) et que tout est poussé ; la branche locale est aussi supprimée si la PR est mergée. Fermer ou archiver un thread ne supprime jamais rien à lui seul.
   Tâche planifiée (toutes les 10 min, à réinstaller sur un nouveau poste) : `scripts/install-cleanup-task.ps1`.

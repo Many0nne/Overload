@@ -5,7 +5,8 @@
   - PR de la branche pas encore mergee (ou pas de PR) : arret de la stack seulement (Vite + Supabase, donnees conservees)
     (reversible, relancer overload-worktree.ps1 <branche> pour reprendre) ;
   - PR de la branche mergee, ou fermee sans merge, et aucune PR encore ouverte : suppression du worktree et de sa stack
-    (overload-worktree.ps1 -Remove, branche conservee). Fermer ou archiver un thread ne supprime jamais rien a lui seul.
+    (overload-worktree.ps1 -Remove) ; la branche locale est aussi supprimee si la PR est mergee, gardee si elle est fermee
+    sans merge. Fermer ou archiver un thread ne supprime jamais rien a lui seul.
   Un thread settled qui recoit un nouveau message redevient actif : rien n'est touche. Une session inscrite
   pas encore rattachee a un thread (premier tour en cours) et active depuis moins de 30 min bloque aussi l'entree.
   Le lien worktree -> threads vient du registre worktrees\.owners.json, rempli par overload-worktree.ps1.
@@ -125,6 +126,11 @@ try {
     if ($DryRun) { Write-Host "A SUPPRIMER $branch ($why) : overload-worktree.ps1 $branch -Remove"; continue }
     try {
       & $worktreeScript $branch -Remove *>&1 | Out-Null
+      # PR mergee : la branche locale n'a plus d'usage (son travail est sur origin, verifie ci-dessus). Fermee sans merge : gardee.
+      if ($delivered) {
+        git -C $root branch -D $branch *>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) { $why += ', branche locale supprimee' }
+      }
       Write-Log "SUPPRIME $branch ($why)"
     } catch {
       Write-Log "ECHEC $branch : $($_.Exception.Message)" -Once
