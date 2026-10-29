@@ -9,16 +9,16 @@ import {
   criterionLabel,
   formatDuration,
   formatDurationHuman,
-  formatKg,
   formatTargets,
   parseDuration,
 } from '@/domain/format';
 import { uuidv7 } from '@/domain/ids';
 import { targetsMet } from '@/domain/progression';
-import { workoutBadges } from '@/domain/records';
+import { type RecordCriterion, workoutBadges } from '@/domain/records';
 import { diffRoutine, workoutToRoutine } from '@/domain/routineDiff';
 import { defaultTitle, isForgotten, pruneUnvalidated, workoutSummary } from '@/domain/summary';
 import type { RoutineRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
+import { formatNumber, kgTo } from '@/domain/units';
 import { PhotoView } from '@/features/history/PhotoView';
 import { useRestTimer } from '@/features/workout-live/restTimer';
 import { NoteField, Sheet, SubHead, toast } from '@/ui/components';
@@ -41,6 +41,14 @@ function timeInput(ms: number): string {
 
 // Cette méthode permet d'afficher le récapitulatif de fin de séance (ou de modification) et d'enregistrer (§F7.4, P2.6-8).
 // Elle propose ensuite de mettre à jour la routine si la structure a changé, ou d'enregistrer la séance comme routine.
+// Cette méthode permet de regrouper les records battus par exercice (nom affiché une seule fois, records en pastilles),
+// dans l'ordre d'apparition des exercices.
+function recordGroups(pairs: { exerciseId: string; criterion: RecordCriterion }[]) {
+  const groups = new Map<string, RecordCriterion[]>();
+  for (const p of pairs) groups.set(p.exerciseId, [...(groups.get(p.exerciseId) ?? []), p.criterion]);
+  return [...groups].map(([exerciseId, criteria]) => ({ exerciseId, criteria }));
+}
+
 export default function SummaryPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -200,8 +208,8 @@ export default function SummaryPage() {
           <div className="k">Durée</div>
         </div>
         <div className="card">
-          <div className="v">{formatKg(summary.volumeKg, settings.units.weight, 0)}</div>
-          <div className="k">Volume</div>
+          <div className="v">{formatNumber(kgTo(summary.volumeKg, settings.units.weight), 0)}</div>
+          <div className="k">Volume ({settings.units.weight})</div>
         </div>
         <div className="card">
           <div className="v">{summary.setCount}</div>
@@ -222,7 +230,7 @@ export default function SummaryPage() {
         <div className="section">
           <div className="section-title">Objectifs du jour</div>
           <div className="card">
-            <ul className="rec-list">
+            <ul className="rec-list name-status">
               {goalRows.map(({ e, met }) => (
                 <li key={e.id}>
                   <span>
@@ -235,7 +243,7 @@ export default function SummaryPage() {
                       )}
                     </small>
                   </span>
-                  <b className={met ? 'ok' : 'ko'}>{met ? '✓ atteint' : '✗'}</b>
+                  <b className={met ? 'ok' : 'ko'}>{met ? '✓ atteint' : '✗ manqué'}</b>
                 </li>
               ))}
             </ul>
@@ -247,12 +255,18 @@ export default function SummaryPage() {
           <div className="section-title">Records battus</div>
           <div className="card">
             <ul className="rec-list">
-              {badges.pairs.map((p) => {
-                const ex = exercises.get(p.exerciseId);
+              {recordGroups(badges.pairs).map(({ exerciseId, criteria }) => {
+                const ex = exercises.get(exerciseId);
                 return (
-                  <li key={p.exerciseId + p.criterion}>
-                    <span>{ex?.name ?? 'Exercice'}</span>
-                    <b className="pr-pill">🏆 {ex ? criterionLabel(p.criterion, ex.measurement_type) : ''}</b>
+                  <li key={exerciseId} className="rec-group">
+                    <span className="rec-name">{ex?.name ?? 'Exercice'}</span>
+                    <span className="rec-pills">
+                      {criteria.map((c) => (
+                        <span key={c} className="rec-pill">
+                          🏆 {ex ? criterionLabel(c, ex.measurement_type) : ''}
+                        </span>
+                      ))}
+                    </span>
                   </li>
                 );
               })}

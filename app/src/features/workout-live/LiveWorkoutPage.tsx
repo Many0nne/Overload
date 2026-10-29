@@ -200,7 +200,7 @@ export default function LiveWorkoutPage() {
               setId,
               endsAt: Date.now() + entry.restS * 1000,
               totalS: entry.restS,
-              label: `${name}, série ${idx + 1}`,
+              label: `Série ${idx + 1} · ${name}`,
             },
             settings.restNotification,
           );

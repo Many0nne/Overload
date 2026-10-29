@@ -114,7 +114,6 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
           <span>
             {reason.arrow} {formatTargets(targets, entry.measurementType, props.units)}
           </span>
-          <span className="why">{reason.text}</span>
           {entry.repRange && (
             <span className="tag">
               {entry.repRange.min === entry.repRange.max
@@ -122,6 +121,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
                 : `${entry.repRange.min}–${entry.repRange.max} reps`}
             </span>
           )}
+          <span className="why">{reason.text}</span>
         </div>
       )}
       <NoteField

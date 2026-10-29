@@ -94,6 +94,9 @@
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
+  /* Colonnes de largeur fixe : alignées d'un exercice à l'autre quel que soit le contenu. Les champs de saisie
+     se partagent la largeur restante. */
+  table-layout: fixed;
 }
 .sets th {
   font-size: 0.6875rem;
@@ -120,6 +123,12 @@
 .sets td:last-child {
   padding-right: 14px;
   width: 56px;
+}
+.sets th:nth-child(2) {
+  width: 104px;
+}
+.sets.with-rpe th:nth-child(2) {
+  width: 96px;
 }
 .sets td {
   text-align: center;
@@ -171,6 +180,11 @@
   font-size: 0.875rem;
   color: var(--muted);
   white-space: nowrap;
+  display: block;
+  max-width: 100%;
+  margin: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .prev:hover {
   color: var(--text-2);

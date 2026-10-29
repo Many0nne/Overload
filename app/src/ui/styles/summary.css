@@ -26,6 +26,7 @@
 }
 .recap-grid .v {
   font-size: 0.9375rem;
+  white-space: nowrap;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }

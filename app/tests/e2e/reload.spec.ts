@@ -35,7 +35,7 @@ test('rechargement en pleine séance sans perte (séries validées, saisie en co
   await expect(setRow(page, BENCH.name, 0)).toHaveClass(/\bdone\b/);
   await expect(setRow(page, BENCH.name, 1).getByRole('textbox', { name: 'Poids' })).toHaveValue('62,5');
   await expect(setRow(page, BENCH.name, 1)).not.toHaveClass(/\bdone\b/);
-  await expect(page.locator('.rest-panel .lbl')).toContainText(`${BENCH.name}, série 1`);
+  await expect(page.locator('.rest-panel .lbl')).toContainText(`Série 1 · ${BENCH.name}`);
 
   // Même chose hors ligne : l'app se recharge depuis le service worker et la base locale.
   await page.context().setOffline(true);
