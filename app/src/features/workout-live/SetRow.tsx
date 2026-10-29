@@ -332,14 +332,18 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
         ))}
         {p.showRpe && (
           <td>
-            <button
-              className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
-              disabled={p.readOnly || !p.set.done}
-              aria-label={p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'}
-              onClick={() => p.onOpenRpe(p.set.id)}
-            >
-              {p.set.rpe !== undefined ? formatRpe(p.set.rpe) : <GaugeIcon />}
-            </button>
+            {p.set.kind !== 'warmup' && (
+              <button
+                className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
+                disabled={p.readOnly || !p.set.done}
+                aria-label={
+                  p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'
+                }
+                onClick={() => p.onOpenRpe(p.set.id)}
+              >
+                {p.set.rpe !== undefined ? formatRpe(p.set.rpe) : <GaugeIcon />}
+              </button>
+            )}
           </td>
         )}
         <td>

@@ -38,8 +38,21 @@ export function removeSet(doc: WorkoutDoc, entryId: string, setId: string): Work
 }
 
 // Cette méthode permet de changer la nature d'une série (choisie dans la feuille ouverte depuis son numéro).
+// Une série passée en échauffement perd son RPE et les valeurs pré-remplies par son objectif (jamais celles saisies).
 export function setKind(doc: WorkoutDoc, entryId: string, setId: string, kind: SetKind): WorkoutDoc {
-  return mapSet(doc, entryId, setId, (s) => (s.kind === kind ? s : { ...s, kind }));
+  return mapSet(doc, entryId, setId, (s) => {
+    if (s.kind === kind) return s;
+    if (kind !== 'warmup') return { ...s, kind };
+    const { rpe: _rpe, ...rest } = s;
+    const next: WorkoutSet = { ...rest, kind };
+    const t = s.target;
+    if (t && !s.done) {
+      if (t.weight && s.weight && t.weight.v === s.weight.v && t.weight.u === s.weight.u) delete next.weight;
+      if (t.reps !== undefined && t.reps === s.reps) delete next.reps;
+      if (t.durationS !== undefined && t.durationS === s.durationS) delete next.durationS;
+    }
+    return next;
+  });
 }
 
 // Cette méthode permet de déplacer un exercice d'un cran vers le haut (-1) ou le bas (+1).
