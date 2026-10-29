@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overload : refonte des statistiques (issue #103)</title>
+<style>
+/* ---------- Jetons de design (repris de design/maquette.html) ---------- */
+:root{
+  --radius:14px; --radius-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;
+}
+[data-theme=dark]{
+  --page:#07080a; --bg:#0d0e11; --surface:#16181d; --surface-2:#1e2128; --line:#2a2e37;
+  --text:#f3f5f8; --text-2:#a3abb8; --muted:#6f7785;
+  --accent:#4c8dff; --accent-ink:#fff; --accent-soft:rgba(76,141,255,.15);
+  --done:#22c55e; --done-soft:rgba(34,197,94,.15);
+  --warm:#f5a524; --drop:#b197fc; --fail:#f87171; --gold:#f5c518;
+  --shadow:0 30px 80px rgba(0,0,0,.6);
+}
+[data-theme=light]{
+  --page:#e7eaf0; --bg:#ffffff; --surface:#f4f6f9; --surface-2:#eaedf2; --line:#e2e6ed;
+  --text:#101318; --text-2:#4b5563; --muted:#8a93a3;
+  --accent:#1f6fe5; --accent-ink:#fff; --accent-soft:rgba(31,111,229,.1);
+  --done:#16a34a; --done-soft:#dcf7e6;
+  --warm:#d98a00; --drop:#7c5cd6; --fail:#dc2626; --gold:#c99a00;
+  --shadow:0 30px 80px rgba(20,30,50,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- Habillage du document ---------- */
+.topbar{display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--page);z-index:10;flex-wrap:wrap}
+.topbar h1{font-size:17px;font-weight:700}
+.topbar .sub{color:var(--muted);font-size:13px}
+.topbar .spacer{flex:1}
+.toc{display:flex;gap:6px;flex-wrap:wrap}
+.toc a{font-size:13px;color:var(--text-2);text-decoration:none;padding:6px 10px;border-radius:8px;background:var(--surface)}
+.toc a:hover{color:var(--accent)}
+.doc{max-width:1320px;margin:0 auto;padding:24px 24px 80px}
+.doc h2{font-size:21px;font-weight:800;letter-spacing:-.01em;margin:44px 0 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.doc h2:first-child{margin-top:0}
+.doc h3{font-size:15px;font-weight:700;margin:22px 0 8px}
+.doc p,.doc li{font-size:14px;line-height:1.55;color:var(--text-2);max-width:900px}
+.doc p+p{margin-top:8px}
+.doc ul.l{margin:6px 0 0 18px}
+.doc code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px;color:var(--text)}
+.key{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:15px}
+.badge-reco{font-size:12px;font-weight:700;color:var(--done);background:var(--done-soft);padding:3px 9px;border-radius:10px}
+.phones{display:flex;flex-wrap:wrap;gap:28px;margin-top:16px}
+.phone-wrap{display:flex;flex-direction:column;gap:8px;max-width:100%}
+.phone-cap{font-size:13px;color:var(--muted);max-width:390px;line-height:1.4}
+.phone-cap b{color:var(--text-2)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;max-width:1100px}
+@media (max-width:820px){.cols{grid-template-columns:1fr}}
+.box{background:var(--surface);border-radius:var(--radius);padding:14px 16px}
+.box h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:8px}
+.box ul{list-style:none}
+.box li{font-size:13.5px;padding:3px 0 3px 20px;position:relative;max-width:none}
+.box li::before{position:absolute;left:0;font-weight:800}
+.box.plus li::before{content:"+";color:var(--done)}
+.box.moins li::before{content:"−";color:var(--fail)}
+table.t{border-collapse:collapse;width:100%;max-width:1200px;margin-top:10px;font-size:13px}
+table.t th,table.t td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line);line-height:1.45;color:var(--text-2)}
+table.t th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;background:var(--surface)}
+table.t td:first-child{color:var(--text);font-weight:600;white-space:nowrap}
+table.t td b{color:var(--text)}
+.scroll-x{overflow-x:auto;max-width:100%}
+.tg{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px;margin:1px 2px 1px 0;white-space:nowrap}
+.tg.ok{background:var(--done-soft);color:var(--done)}
+.tg.new{background:var(--accent-soft);color:var(--accent)}
+.tg.no{background:var(--surface-2);color:var(--muted)}
+.tg.warn{background:rgba(245,165,36,.15);color:var(--warm)}
+.reco-box{border:1.5px solid var(--done);border-radius:var(--radius);padding:16px 18px;margin-top:12px;max-width:1100px;background:var(--done-soft)}
+.reco-box p,.reco-box li{color:var(--text)}
+
+/* ---------- Téléphone (390 px, iPhone) ---------- */
+.phone{width:390px;max-width:100%;height:780px;border-radius:44px;background:var(--bg);overflow:hidden;position:relative;
+  box-shadow:var(--shadow),0 0 0 8px #1b1c20,0 0 0 9px #3a3c42;display:flex;flex-direction:column;flex-shrink:0;margin:9px}
+.statusbar{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 6px 34px;font-size:15px;font-weight:600;flex-shrink:0}
+.scr{flex:1;overflow-y:auto;padding-bottom:28px;scrollbar-width:thin}
+.head{display:flex;align-items:center;gap:10px;padding:6px 14px 10px;position:sticky;top:0;background:var(--bg);z-index:5}
+.head .title-sm{font-size:17px;font-weight:700;flex:1;text-align:center}
+.icon-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2);font-size:24px;line-height:1}
+.sticky-sub{position:sticky;top:54px;background:var(--bg);z-index:4;padding:0 18px 10px}
+.section{padding:0 18px;margin-top:18px}
+.section-title{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.section-title .seg button{text-transform:none;letter-spacing:0}
+.section-title .r{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);font-size:12.5px}
+.card{background:var(--surface);border-radius:var(--radius);padding:14px 16px}
+.card+.card{margin-top:10px}
+.muted{color:var(--muted)} .t2{color:var(--text-2)}
+.fs-12{font-size:12px} .fs-13{font-size:13px} .mt-6{margin-top:6px} .mt-10{margin-top:10px} .mt-12{margin-top:12px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px}
+.seg button{padding:6px 12px;border-radius:8px;font-size:13px;color:var(--text-2);min-height:32px}
+.seg button.on{background:var(--bg);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.seg.stretch{display:flex;width:100%}
+.seg.stretch button{flex:1;padding:6px 4px}
+.seg.big button{min-height:38px;font-size:14px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.chip{flex-shrink:0;height:32px;padding:0 13px;border-radius:16px;background:var(--surface-2);font-size:13px;font-weight:600;color:var(--text-2)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.hero{font-size:30px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero.compact{font-size:24px}
+.pr-pill{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--text)}
+.row-link{display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:60px;background:var(--surface);font-size:15px;font-weight:550;width:100%;text-align:left}
+.row-link:first-child{border-radius:var(--radius) var(--radius) 0 0}
+.row-link:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.row-link+.row-link{border-top:1px solid var(--line)}
+.row-link .ico{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex-shrink:0;font-size:17px}
+.row-link .txt{flex:1;min-width:0}
+.row-link .txt small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:2px}
+.row-link .end{color:var(--muted);font-size:18px}
+.row-link.off{opacity:.55}
+
+/* Chiffres clés */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi{background:var(--surface);border-radius:12px;padding:11px 12px}
+.kpi .k{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.kpi .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px;letter-spacing:-.01em}
+.kpi .d{font-size:12px;font-weight:700;margin-top:1px;font-variant-numeric:tabular-nums}
+.d.up{color:var(--done)} .d.down{color:var(--fail)} .d.eq{color:var(--muted)}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 8px;text-align:center}
+.totals .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.totals .k{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+/* Calendrier, barres */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}
+.cal .h{font-size:11px;color:var(--muted);font-weight:700}
+.cal .c{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.cal .c.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.cal .c.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal .c.fut{color:var(--muted);opacity:.5}
+.hbar{display:grid;grid-template-columns:86px 1fr 46px;align-items:center;gap:10px;font-size:13px;padding:4px 0}
+.hbar .track{height:10px}
+.hbar .fill{height:10px;border-radius:0 4px 4px 0;background:var(--accent)}
+.hbar .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+svg.chart{display:block;width:100%;overflow:visible}
+svg .bar{fill:var(--accent);fill-opacity:.35}
+svg .bar.last{fill-opacity:1}
+svg .axis{fill:var(--muted);font-size:10px;font-family:var(--font)}
+svg .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .ln.flat{stroke:var(--muted)}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px}
+.stack span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:12.5px;color:var(--text-2)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:0}
+.legend b{color:var(--text);font-variant-numeric:tabular-nums}
+.balance{display:grid;grid-template-columns:52px 1fr 52px;gap:8px;align-items:center;font-size:12.5px;padding:5px 0}
+.balance .r{text-align:right}
+.balance b{font-variant-numeric:tabular-nums}
+.balance .stack{height:10px}
+.goal{padding:9px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border:0;padding-bottom:2px}
+.goal .top{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.goal .top b{font-variant-numeric:tabular-nums}
+.goal .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.goal .track{height:6px;border-radius:3px;background:var(--surface-2);margin-top:7px;overflow:hidden}
+.goal .track span{display:block;height:100%;background:var(--accent);border-radius:3px}
+.mom{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);min-height:44px}
+.mom:last-child{border:0}
+.mom .n{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mom .n small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.mom svg{width:70px;flex-shrink:0}
+.mom .v{font-size:13px;font-weight:700;width:66px;text-align:right;font-variant-numeric:tabular-nums}
+.list-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;min-height:44px}
+.list-row:last-child{border:0}
+.list-row b{font-variant-numeric:tabular-nums}
+.list-row .chev{color:var(--muted)}
+
+/* Records récents (variante C retenue dans #102) */
+.rec-day{font-size:12px;font-weight:700;color:var(--muted);padding-top:12px}
+.rec-day:first-child{padding-top:0}
+.rec-line{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0}
+.rec-main{flex:1;min-width:0}
+.rec-name{font-weight:600;font-size:14.5px}
+.rec-crit{font-size:12.5px;color:var(--muted)}
+.rec-val{text-align:right;white-space:nowrap}
+.rec-val b{font-size:14.5px;font-variant-numeric:tabular-nums}
+.rec-gain{display:block;font-size:12.5px;font-weight:700;color:var(--done)}
+.rec-chev{color:var(--muted)}
+
+/* Sections repliables (A) */
+.fold{margin-top:10px}
+.fold-h{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:10px 16px;background:var(--surface);border-radius:var(--radius);text-align:left}
+.fold.open .fold-h{border-radius:var(--radius) var(--radius) 0 0;border-bottom:1px solid var(--line)}
+.fold-h .tt{font-size:15px;font-weight:700}
+.fold-h .sm{font-size:12.5px;color:var(--muted);margin-left:auto;text-align:right}
+.fold-h .ch{color:var(--muted);transition:transform .15s;font-size:16px}
+.fold.open .fold-h .ch{transform:rotate(90deg)}
+.fold-b{background:var(--surface);border-radius:0 0 var(--radius) var(--radius);padding:12px 16px 14px}
+.fold-b .sub-t{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+.fold-b .sub-t:first-child{margin-top:0}
+
+/* Carte musculaire schématique (l'app utilise les tracés réels de ui/BodyMap) */
+.bm{display:flex;justify-content:center;gap:22px}
+.bm svg{height:200px;width:auto}
+.bm .z0{fill:var(--text);fill-opacity:.12}
+.bm .z1{fill:var(--accent);fill-opacity:.25}
+.bm .z2{fill:var(--accent);fill-opacity:.45}
+.bm .z3{fill:var(--accent);fill-opacity:.7}
+.bm .z4{fill:var(--accent);fill-opacity:1}
+.bm-scale{display:flex;align-items:center;gap:6px;justify-content:center;font-size:11.5px;color:var(--muted);margin-top:8px}
+.bm-scale i{width:16px;height:8px;border-radius:2px;display:inline-block}
+
+/* États vides */
+.empty{text-align:center;padding:16px 8px}
+.empty .ic{font-size:26px}
+.empty h5{font-size:15px;font-weight:700;margin-top:6px}
+.empty p{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.45}
+.empty .prog{height:6px;border-radius:3px;background:var(--surface-2);margin:10px auto 0;max-width:180px;overflow:hidden}
+.empty .prog span{display:block;height:100%;background:var(--accent)}
+.hint{font-size:12.5px;color:var(--muted);padding:12px 2px 0;line-height:1.45}
+.hint a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Statistiques : propositions de refonte</h1>
+  <span class="sub">issue #103, étape 1 · écrans iPhone 390 px</span>
+  <span class="spacer"></span>
+  <nav class="toc"><a href="#A">A · Page repliable</a><a href="#B">B · Onglets</a><a href="#C">C · Sommaire</a><a href="#indicateurs">Indicateurs</a><a href="#reco">Recommandation</a></nav>
+  <div class="seg" id="theme"><button data-t="dark">Sombre</button><button data-t="light">Clair</button></div>
+</div>
+<main class="doc" id="root"></main>
+
+<script>
+// Données fictives cohérentes entre les maquettes : « aujourd'hui » = jeudi 29 octobre 2026, 186 séances depuis
+// mars 2024, 3 séances par semaine environ, RPE activé sauf dans les écrans d'état vide.
+const TRAINED_OCT = [1, 3, 6, 8, 10, 13, 15, 17, 20, 22, 24, 27, 29];
+const WEEKS = [4, 3, 3, 2, 4, 3, 3, 4, 3, 3, 3, 2];
+const MUSCLES = [
+  ['Pectoraux', 42, 15.2], ['Dos', 40.5, 18.9], ['Quadriceps', 33, 21.4], ['Épaules', 31.5, 7.1], ['Ischios', 22, 10.8],
+  ['Fessiers', 21.5, 9.6], ['Triceps', 21, 4.0], ['Biceps', 18, 2.9], ['Mollets', 12, 3.6], ['Abdos', 9, 0.4],
+];
+const RECORDS_BY_MONTH = [['mai', 9], ['juin', 12], ['juil.', 7], ['août', 4], ['sept.', 11], ['oct.', 15]];
+const nf = (v) => String(v).replace('.', ',');
+
+// Cette méthode permet de dessiner l'en-tête d'un écran (retour, titre centré).
+const head = (title) => `<div class="head"><button class="icon-btn" aria-label="Retour">‹</button><span class="title-sm">${title}</span><span style="width:38px"></span></div>`;
+
+// Cette méthode permet d'habiller un contenu en téléphone 390 px avec sa légende.
+function phone(cap, inner) {
+  return `<div class="phone-wrap"><div class="phone"><div class="statusbar"><span>9:41</span><span>●●● ▮</span></div>
+    <div class="scr">${inner}</div></div><div class="phone-cap">${cap}</div></div>`;
+}
+
+// Cette méthode permet de dessiner les chips de période (sélectionnée = on).
+const periods = (on = '30 j', list = ['7 j', '30 j', '3 mois', '1 an', 'Tout']) =>
+  `<div class="chips">${list.map((p) => `<button class="chip${p === on ? ' on' : ''}">${p}</button>`).join('')}</div>`;
+
+// Cette méthode permet de dessiner un segmented control (option active = on).
+const seg = (opts, on, cls = '') =>
+  `<div class="seg stretch ${cls}">${opts.map((o) => `<button class="${o === on ? 'on' : ''}">${o}</button>`).join('')}</div>`;
+
+// Cette méthode permet d'afficher une tuile de chiffre clé avec son écart à la période précédente.
+const kpi = (k, v, d, dir = 'up') => `<div class="kpi"><span class="k">${k}</span><div class="v">${v}</div>${d ? `<div class="d ${dir}">${d}</div>` : ''}</div>`;
+
+// Cette méthode permet de dessiner le calendrier d'octobre 2026 (1er = jeudi, semaine lundi → dimanche).
+function calendar(trained = TRAINED_OCT) {
+  const head = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => `<div class="h">${d}</div>`).join('');
+  const blanks = '<div></div>'.repeat(3);
+  let days = '';
+  for (let d = 1; d <= 31; d++) {
+    const cls = [trained.includes(d) ? 'on' : '', d === 29 ? 'today' : '', d > 29 ? 'fut' : ''].join(' ');
+    days += `<div class="c ${cls}">${d}</div>`;
+  }
+  return `<div class="cal">${head}${blanks}${days}</div>`;
+}
+
+// Cette méthode permet d'afficher la carte calendrier + série de semaines, comme l'écran actuel.
+const calendarCard = (streak = 14, trained) => `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <div style="display:flex;align-items:center;gap:4px"><button class="icon-btn">‹</button><b>Octobre 2026</b></div>
+  <span class="pr-pill">🔥 ${streak} semaine${streak > 1 ? 's' : ''}</span></div>${calendar(trained)}</div>`;
+
+// Cette méthode permet de dessiner un histogramme hebdomadaire SVG (dernière barre pleine), comme ui/BarChart.
+function bars(values, first = '10 août', last = 'cette semaine', h = 110) {
+  const W = 354, P = 18, max = Math.max(...values) * 1.1 || 1, slot = W / values.length, gap = slot > 12 ? 6 : 2, bw = Math.max(2, slot - gap);
+  const r = values.map((v, i) => {
+    const bh = (v / max) * (h - P);
+    return `<rect class="bar${i === values.length - 1 ? ' last' : ''}" x="${i * slot + gap / 2}" y="${h - P - bh}" width="${bw}" height="${Math.max(bh, 2)}" rx="3"/>`;
+  }).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${h}">${r}<text class="axis" x="0" y="${h - 4}">${first}</text><text class="axis" x="${W}" y="${h - 4}" text-anchor="end">${last}</text></svg>`;
+}
+
+// Cette méthode permet de dessiner une barre horizontale par muscle (valeur max = pleine largeur).
+function hbars(rows, idx = 1, unit = '') {
+  const max = Math.max(...rows.map((r) => r[idx]));
+  return rows.map((r) => `<div class="hbar"><span>${r[0]}</span><div class="track"><div class="fill" style="width:${(r[idx] / max) * 100}%"></div></div><span class="n">${nf(r[idx])}${unit}</span></div>`).join('');
+}
+
+// Cette méthode permet de dessiner une barre empilée (répartition) avec sa légende.
+function stack(parts) {
+  const bar = parts.map(([, pct, color]) => `<span style="width:${pct}%;background:var(${color})"></span>`).join('');
+  const leg = parts.map(([label, pct, color]) => `<span><i style="background:var(${color})"></i>${label} <b>${pct} %</b></span>`).join('');
+  return `<div class="stack">${bar}</div><div class="legend">${leg}</div>`;
+}
+
+// Cette méthode permet de dessiner un équilibre entre deux groupes (push/pull, haut/bas) sur une barre à deux couleurs.
+const balance = (a, pa, b, pb) => `<div class="balance"><span>${a}</span><div class="stack"><span style="width:${pa}%;background:var(--accent)"></span><span style="width:${pb}%;background:var(--drop)"></span></div><span class="r">${b}</span></div>
+  <div class="balance" style="padding-top:0"><b>${pa} %</b><span></span><b class="r">${pb} %</b></div>`;
+
+// Cette méthode permet de dessiner une petite courbe (sparkline) de 1RM estimé hebdomadaire.
+function spark(pts, flat = false) {
+  const W = 70, H = 26, min = Math.min(...pts), max = Math.max(...pts), span = Math.max(max - min, max * 0.1);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1)) * W},${H - 3 - ((p - min) / span) * (H - 6)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}"><path class="ln${flat ? ' flat' : ''}" d="${d}"/></svg>`;
+}
+
+// Cette méthode permet de dessiner une carte musculaire schématique colorée selon le niveau de chaque zone (0 à 4).
+function bodyMap(lv) {
+  const z = (n) => `z${lv[n] ?? 0}`;
+  const front = `<svg viewBox="0 0 100 220"><circle class="z0" cx="50" cy="14" r="11"/>
+    <ellipse class="${z('shoulders')}" cx="27" cy="38" rx="10" ry="8"/><ellipse class="${z('shoulders')}" cx="73" cy="38" rx="10" ry="8"/>
+    <rect class="${z('chest')}" x="31" y="34" width="18" height="20" rx="6"/><rect class="${z('chest')}" x="51" y="34" width="18" height="20" rx="6"/>
+    <rect class="${z('abs')}" x="38" y="57" width="24" height="40" rx="6"/>
+    <ellipse class="${z('biceps')}" cx="20" cy="62" rx="7" ry="14"/><ellipse class="${z('biceps')}" cx="80" cy="62" rx="7" ry="14"/>
+    <ellipse class="${z('forearms')}" cx="15" cy="94" rx="6" ry="15"/><ellipse class="${z('forearms')}" cx="85" cy="94" rx="6" ry="15"/>
+    <ellipse class="${z('quads')}" cx="39" cy="132" rx="10" ry="27"/><ellipse class="${z('quads')}" cx="61" cy="132" rx="10" ry="27"/>
+    <ellipse class="${z('calves')}" cx="39" cy="185" rx="7" ry="18"/><ellipse class="${z('calves')}" cx="61" cy="185" rx="7" ry="18"/></svg>`;
+  const back = `<svg viewBox="0 0 100 220"><circle class="z0" cx="50" cy="14" r="11"/>
+    <path class="${z('traps')}" d="M36 28 L64 28 L58 44 L42 44 Z"/>
+    <ellipse class="${z('shoulders')}" cx="27" cy="38" rx="10" ry="8"/><ellipse class="${z('shoulders')}" cx="73" cy="38" rx="10" ry="8"/>
+    <path class="${z('back')}" d="M32 44 L68 44 L64 76 L36 76 Z"/><rect class="${z('lower_back')}" x="40" y="78" width="20" height="16" rx="5"/>
+    <ellipse class="${z('triceps')}" cx="20" cy="62" rx="7" ry="14"/><ellipse class="${z('triceps')}" cx="80" cy="62" rx="7" ry="14"/>
+    <ellipse class="${z('forearms')}" cx="15" cy="94" rx="6" ry="15"/><ellipse class="${z('forearms')}" cx="85" cy="94" rx="6" ry="15"/>
+    <ellipse class="${z('glutes')}" cx="40" cy="106" rx="11" ry="11"/><ellipse class="${z('glutes')}" cx="60" cy="106" rx="11" ry="11"/>
+    <ellipse class="${z('hamstrings')}" cx="39" cy="143" rx="9" ry="22"/><ellipse class="${z('hamstrings')}" cx="61" cy="143" rx="9" ry="22"/>
+    <ellipse class="${z('calves')}" cx="39" cy="185" rx="8" ry="18"/><ellipse class="${z('calves')}" cx="61" cy="185" rx="8" ry="18"/></svg>`;
+  const scale = [0, 1, 2, 3, 4].map((n) => `<i class="z${n}" style="background:${n ? 'var(--accent)' : 'var(--text)'};opacity:${[0.12, 0.25, 0.45, 0.7, 1][n]}"></i>`).join('');
+  return `<div class="bm">${front}${back}</div><div class="bm-scale">0 série ${scale} 40+ séries</div>`;
+}
+const LEVELS = { chest: 4, back: 4, quads: 3, shoulders: 3, hamstrings: 2, glutes: 2, triceps: 2, biceps: 2, calves: 1, abs: 1, traps: 1, lower_back: 1, forearms: 1 };
+
+// Cette méthode permet d'afficher la liste « Records récents » au format retenu dans #102 (en-tête de jour, ligne à deux niveaux).
+const recent = (n = 3) => [
+  ["Aujourd'hui · jeu. 29 oct.", [['Développé couché (barre)', 'Charge max', '105 kg', '+2,5 kg'], ['Dips lestés', 'Charge ajoutée max', '+25 kg', '+2,5 kg']]],
+  ['Il y a 2 j · mar. 27 oct.', [['Squat (barre)', 'Meilleur poids à 5 reps', '110 kg', '+5 kg']]],
+  ['Il y a 5 j · sam. 24 oct.', [['Rowing (barre)', 'Meilleur 1RM estimé', '96 kg', '+1,3 kg']]],
+].slice(0, n).map(([day, lines]) => `<div class="rec-day">${day}</div>${lines.map(([nm, c, v, g]) => `<div class="rec-line"><div class="rec-main"><div class="rec-name">${nm}</div><div class="rec-crit">${c}</div></div><div class="rec-val"><b>${v}</b><span class="rec-gain">${g}</span></div><span class="rec-chev">›</span></div>`).join('')}`).join('');
+
+// Cette méthode permet de dessiner l'histogramme « records par mois » (6 derniers mois, mois en cours plein).
+const recordsByMonth = () => bars(RECORDS_BY_MONTH.map((r) => r[1]), '', '', 80)
+  + `<div class="legend" style="justify-content:space-between">${RECORDS_BY_MONTH.map(([m, v]) => `<span>${m} <b>${v}</b></span>`).join('')}</div>`;
+
+// Cette méthode permet d'afficher le taux d'objectifs atteints, global et par raison de l'objectif (TargetReason.kind).
+const targetRate = () => `<div style="display:flex;align-items:baseline;gap:10px"><div class="hero compact">78 %</div><span class="muted fs-13">47 / 60 exercices avec objectif</span></div>
+  <div class="mt-10">${hbars([['Charge +', 71], ['+1 rep', 85], ['Consolider', 80], ['Reprise', 100]], 1, ' %')}</div>`;
+
+// Cette méthode permet d'afficher l'avancement des objectifs à long terme (ExercisePrefsDoc.longTermGoal + goalDate).
+const goals = () => [
+  ['Développé couché', '100 kg × 5', 92, 'atteint vers février 2027'],
+  ['Soulevé de terre', '180 kg × 3', 88, 'atteint vers avril 2027'],
+  ['Squat', '140 kg × 5', 79, 'date non estimée : rythme trop lent'],
+].map(([n, g, p, s]) => `<div class="goal"><div class="top"><span>${n}</span><b>${g}</b></div><div class="track"><span style="width:${p}%"></span></div><div class="sub">${p} % du 1RM estimé visé · ${s}</div></div>`).join('');
+
+// Cette méthode permet d'afficher les exercices en progression ou à l'arrêt (tendance trend.ts + dernier record de 1RM estimé).
+const momentum = () => [
+  ['Développé couché', 'record il y a 0 j', [98, 100, 101, 101, 103, 104, 106, 108], '+2,1 kg/mois'],
+  ['Squat (barre)', 'record il y a 2 j', [120, 121, 124, 124, 126, 127, 129, 131], '+1,8 kg/mois'],
+  ['Développé militaire', 'aucun record depuis 7 sem.', [62, 63, 63, 62, 63, 62, 63, 63], 'à l\'arrêt', true],
+].map(([n, s, pts, v, flat]) => `<div class="mom"><div class="n">${n}<small>${s}</small></div>${spark(pts, flat)}<div class="v${flat ? ' muted' : ' d up'}">${v}</div></div>`).join('');
+
+// Cette méthode permet d'afficher les routines les plus utilisées sur la période (WorkoutRow.routine_id).
+const routines = () => [['Push A', 4], ['Pull A', 4], ['Legs', 4], ['Séance libre', 1]]
+  .map(([n, v]) => `<div class="list-row"><span>${n}</span><b>${v} séance${v > 1 ? 's' : ''}</b></div>`).join('');
+
+const KINDS = [['Normales', 74, '--accent'], ['Échauff.', 14, '--warm'], ['Dégressives', 5, '--drop'], ['Échec', 7, '--fail']];
+const ZONES = [['1-5 reps', 18, '--fail'], ['6-12 reps', 64, '--accent'], ['13+ reps', 18, '--done']];
+
+// ---------- Proposition A : une page, sections repliables ----------
+
+// Cette méthode permet de dessiner une section repliable (ouverte ou fermée, résumé visible fermé).
+const fold = (title, summary, body, open) => `<div class="fold${open ? ' open' : ''}"><button class="fold-h"><span class="tt">${title}</span><span class="sm">${open ? '' : summary}</span><span class="ch">›</span></button>${open ? `<div class="fold-b">${body}</div>` : ''}</div>`;
+
+const a1 = `${head('Statistiques')}<div class="sticky-sub">${periods('30 j', ['30 j', '3 mois', '1 an', 'Tout'])}</div>
+  <div class="section" style="margin-top:4px"><div class="kpis">
+    ${kpi('Séances', '13', '+2 vs 30 j préc.')}${kpi('Durée moyenne', '1 h 08', '−4 min', 'down')}
+    ${kpi('Volume', '94,6 t', '+8 %')}${kpi('Séries', '268', '+21')}</div></div>
+  <div class="section" style="margin-top:12px">${calendarCard()}
+  ${fold('Muscles', 'Pectoraux en tête', `${seg(['Séries', 'Volume'], 'Séries')}<div class="mt-10">${hbars(MUSCLES.slice(0, 6))}</div><div class="muted fs-12 mt-6">Principal = 1 série, secondaire = 0,5.</div>`, true)}
+  ${fold('Progression', '15 records ce mois', '', false)}
+  ${fold('Séances', '78 % d\'objectifs atteints', '', false)}</div>`;
+
+const a2 = `${head('Statistiques')}<div class="sticky-sub">${periods('30 j', ['30 j', '3 mois', '1 an', 'Tout'])}</div>
+  <div class="section" style="margin-top:4px">
+  ${fold('Muscles', 'Pectoraux en tête', '', false)}
+  ${fold('Progression', '', `<div class="sub-t">Records par mois</div>${recordsByMonth()}<div class="sub-t">Records récents</div>${recent(2)}`, true)}
+  ${fold('Séances', '', `<div class="sub-t">Objectifs atteints</div>${targetRate()}<div class="sub-t">Types de séries</div>${stack(KINDS)}`, true)}</div>`;
+
+const a3 = `${head('Statistiques')}<div class="sticky-sub">${periods('30 j', ['30 j', '3 mois', '1 an', 'Tout'])}</div>
+  <div class="section" style="margin-top:4px"><div class="kpis">
+    ${kpi('Séances', '2', 'pas de période précédente', 'eq')}${kpi('Durée moyenne', '58 min', '')}
+    ${kpi('Volume', '9,8 t', '')}${kpi('Séries', '41', '')}</div></div>
+  <div class="section" style="margin-top:12px">${calendarCard(1, [27, 29])}
+  ${fold('Muscles', 'Pectoraux en tête', '', false)}
+  ${fold('Progression', 'pas encore de record', '', false)}
+  ${fold('Séances', '', `<div class="sub-t">Objectifs atteints</div><div class="empty"><div class="ic">🎯</div><h5>Pas encore d'objectif</h5><p>Les objectifs sont proposés à partir de la 2ᵉ séance d'un exercice.</p></div>`, true)}</div>`;
+
+// ---------- Proposition B : onglets thématiques (segmented control) ----------
+
+const tabs = (on) => `<div class="sticky-sub">${seg(['Aperçu', 'Muscles', 'Progrès', 'Séances'], on, 'big')}${on === 'Aperçu' ? '' : `<div class="mt-10">${periods('30 j', ['30 j', '3 mois', '1 an', 'Tout'])}</div>`}</div>`;
+
+const b1 = `${head('Statistiques')}${tabs('Aperçu')}
+  <div class="section" style="margin-top:4px"><div class="section-title">Depuis le début <span class="r">mars 2024</span></div>
+    <div class="card"><div class="totals">
+      <div><div class="v">186</div><div class="k">séances</div></div><div><div class="v">213 h</div><div class="k">d'entraînement</div></div>
+      <div><div class="v">1 302 t</div><div class="k">soulevées</div></div><div><div class="v">3 912</div><div class="k">séries</div></div>
+      <div><div class="v">31 480</div><div class="k">reps</div></div><div><div class="v">64</div><div class="k">exercices</div></div></div></div></div>
+  <div class="section"><div class="section-title">30 derniers jours <span class="r">vs 30 précédents</span></div><div class="kpis">
+    ${kpi('Séances', '13', '+2')}${kpi('Durée moyenne', '1 h 08', '−4 min', 'down')}${kpi('Volume', '94,6 t', '+8 %')}${kpi('Records', '15', '+6')}</div></div>
+  <div class="section"><div class="card"><div class="muted fs-13">Séances · cette semaine</div><div class="hero compact">2 séances</div>${bars(WEEKS)}
+    <div class="mt-10">${seg(['Durée', 'Volume', 'Séances'], 'Séances')}</div></div></div>
+  <div class="section">${calendarCard()}</div>`;
+
+const b2 = `${head('Statistiques')}${tabs('Muscles')}
+  <div class="section" style="margin-top:4px"><div class="card">${bodyMap(LEVELS)}</div></div>
+  <div class="section"><div class="section-title">Par muscle ${seg(['Séries', 'Volume'], 'Volume').replace('stretch', '')}</div>
+    <div class="card">${hbars([...MUSCLES].sort((a, b) => b[2] - a[2]).slice(0, 8), 2, ' t')}</div>
+    <div class="muted fs-12 mt-6">Volume réparti comme les séries : principal 100 %, secondaire 50 %.</div></div>
+  <div class="section"><div class="section-title">Équilibres</div><div class="card">${balance('Pousser', 55, 'Tirer', 45)}${balance('Haut', 69, 'Bas', 31)}</div></div>`;
+
+const b3 = `${head('Statistiques')}${tabs('Progrès')}
+  <div class="section" style="margin-top:4px"><div class="section-title">Records par mois</div><div class="card">${recordsByMonth()}</div></div>
+  <div class="section"><div class="section-title">Objectifs de séance atteints</div><div class="card">${targetRate()}</div></div>
+  <div class="section"><div class="section-title">Objectifs à long terme</div><div class="card">${goals()}</div></div>
+  <div class="section"><div class="section-title">Records récents</div><div class="card">${recent(2)}</div></div>`;
+
+const b4 = `${head('Statistiques')}${tabs('Séances')}
+  <div class="section" style="margin-top:4px"><div class="kpis">${kpi('Durée moyenne', '1 h 08', '−4 min', 'down')}${kpi('RPE moyen', '8,2', '+0,3', 'eq')}</div></div>
+  <div class="section"><div class="section-title">Types de séries</div><div class="card">${stack(KINDS)}</div></div>
+  <div class="section"><div class="section-title">Zones de répétitions</div><div class="card">${stack(ZONES)}<div class="muted fs-12 mt-6">Séries de travail à poids et reps, hors échauffement.</div></div></div>
+  <div class="section"><div class="section-title">Routines les plus utilisées</div><div class="card">${routines()}</div></div>`;
+
+const b5 = `${head('Statistiques')}${tabs('Séances')}
+  <div class="section" style="margin-top:4px"><div class="kpis">${kpi('Durée moyenne', '58 min', 'pas de période précédente', 'eq')}${kpi('Séances', '2', '')}</div></div>
+  <div class="section"><div class="section-title">Types de séries</div><div class="card">${stack([['Normales', 83, '--accent'], ['Échauff.', 17, '--warm']])}</div></div>
+  <div class="section"><div class="section-title">Zones de répétitions</div><div class="card"><div class="empty"><div class="ic">📊</div><h5>Encore 1 séance</h5><p>La répartition s'affiche à partir de 3 séances sur la période.</p><div class="prog"><span style="width:66%"></span></div></div></div></div>
+  <div class="section"><div class="section-title">Routines les plus utilisées</div><div class="card"><div class="list-row"><span>Full body</span><b>2 séances</b></div></div>
+  <p class="hint">RPE désactivé : le RPE moyen apparaîtra ici si vous l'activez dans <a>Paramètres › Séance</a>.</p></div>`;
+
+// ---------- Proposition C : sommaire + sous-pages ----------
+
+// Cette méthode permet de dessiner un lien du sommaire avec son chiffre clé (grisé si les données manquent).
+const link = (ico, t, s, off) => `<button class="row-link${off ? ' off' : ''}"><span class="ico">${ico}</span><span class="txt">${t}<small>${s}</small></span><span class="end">›</span></button>`;
+
+const c1 = `${head('Statistiques')}
+  <div class="section" style="margin-top:4px"><div class="card"><div class="muted fs-13">Cette semaine</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between"><div class="hero compact">2 séances</div></div>
+    <div class="muted fs-13 mt-6">2 h 21 · 15,1 t · 3 records</div></div></div>
+  <div class="section">${calendarCard()}</div>
+  <div class="section"><div>
+    ${link('💪', 'Muscles', 'Pectoraux et dos en tête · 30 j')}
+    ${link('📈', 'Progression', '15 records en octobre · 78 % d\'objectifs')}
+    ${link('⏱', 'Séances', '1 h 08 en moyenne · 3 mois')}
+    ${link('🏋', 'Exercices', '64 pratiqués · développé couché en tête')}</div></div>`;
+
+const c2 = `${head('Progression')}<div class="sticky-sub">${periods('1 an', ['3 mois', '1 an', 'Tout'])}</div>
+  <div class="section" style="margin-top:4px"><div class="section-title">Records par mois</div><div class="card">${recordsByMonth()}</div></div>
+  <div class="section"><div class="section-title">Exercices principaux <span class="r">1RM estimé</span></div><div class="card">${momentum()}</div></div>
+  <div class="section"><div class="section-title">Objectifs de séance atteints</div><div class="card">${targetRate()}</div></div>
+  <div class="section"><div class="section-title">Objectifs à long terme</div><div class="card">${goals()}</div></div>`;
+
+const c3 = `${head('Séances')}<div class="sticky-sub">${periods('3 mois', ['30 j', '3 mois', '1 an'])}</div>
+  <div class="section" style="margin-top:4px"><div class="card"><div class="muted fs-13">Séances par semaine · 52 semaines</div><div class="hero compact">3,1 <span class="muted fs-13">en moyenne</span></div>
+    ${bars([2, 3, 3, 4, 3, 2, 0, 1, 3, 3, 4, 3, 3, 3, 2, 3, 4, 3, 3, 3, 4, 3, 2, 3, 3, 4, 3, 3, 3, 1, 0, 2, 3, 3, 4, 3, 3, 4, 3, 2, 3, 4, 4, 3, 3, 2, 4, 3, 3, 4, 3, 2], 'nov. 2025', 'cette semaine')}</div></div>
+  <div class="section"><div class="kpis">${kpi('Durée moyenne', '1 h 08', '−4 min', 'down')}${kpi('RPE moyen', '8,2', '+0,3', 'eq')}</div></div>
+  <div class="section"><div class="section-title">Types de séries</div><div class="card">${stack(KINDS)}</div></div>
+  <div class="section"><div class="section-title">Zones de répétitions</div><div class="card">${stack(ZONES)}</div></div>
+  <div class="section"><div class="section-title">Jours d'entraînement</div><div class="card">${hbars([['Lundi', 11], ['Mardi', 4], ['Mercredi', 10], ['Jeudi', 3], ['Vendredi', 10], ['Samedi', 2], ['Dimanche', 0]])}</div></div>`;
+
+const c4 = `${head('Statistiques')}
+  <div class="section" style="margin-top:4px"><div class="card"><div class="muted fs-13">Cette semaine</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between"><div class="hero compact">2 séances</div></div>
+    <div class="muted fs-13 mt-6">1 h 56 · 9,8 t · pas encore de record</div></div></div>
+  <div class="section">${calendarCard(1, [27, 29])}</div>
+  <div class="section"><div>
+    ${link('💪', 'Muscles', 'Pectoraux en tête · 30 j')}
+    ${link('📈', 'Progression', 'Disponible après 3 séances d\'un même exercice', true)}
+    ${link('⏱', 'Séances', '58 min en moyenne')}
+    ${link('🏋', 'Exercices', '9 pratiqués')}</div></div>`;
+
+// ---------- Contenu du document ----------
+
+// Cette méthode permet d'afficher le tableau des réponses d'une proposition aux 5 points à trancher de l'issue.
+const points = (rows) => `<div class="scroll-x"><table class="t"><thead><tr><th>Point à trancher</th><th>Réponse de la proposition</th></tr></thead><tbody>
+  ${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table></div>`;
+
+// Cette méthode permet d'afficher les avantages et inconvénients d'une proposition côte à côte.
+const proscons = (plus, moins) => `<div class="cols"><div class="box plus"><h4>Avantages</h4><ul>${plus.map((t) => `<li>${t}</li>`).join('')}</ul></div>
+  <div class="box moins"><h4>Inconvénients</h4><ul>${moins.map((t) => `<li>${t}</li>`).join('')}</ul></div></div>`;
+
+const ok = (t) => `<span class="tg ok">${t}</span>`;
+const nw = (t) => `<span class="tg new">${t}</span>`;
+const no = (t) => `<span class="tg no">${t}</span>`;
+const wn = (t) => `<span class="tg warn">${t}</span>`;
+
+// Réservoir d'indicateurs : n°, nom, données vérifiées dans le code, fonction du domaine, coût, propositions qui le retiennent.
+const INDICATORS = [
+  ['1', 'Totaux depuis le début (séances, heures, tonnage, séries, reps, exercices)', '<code>WorkoutRow.started_at</code>, <code>doc.durationS</code>, <code>doc.exercises[].sets[]</code> (<code>done</code>, <code>kind</code>, <code>weight</code>, <code>reps</code>), colonne <code>exercise_ids</code>',
+    `${ok('workoutDurationS')} ${ok('workoutVolumeKg')} ${ok('doneSetCount')} (summary.ts, volume.ts) ; ${nw('lifetimeTotals')} : une passe`, 'Faible : 1 passe sur toutes les séries (déjà en mémoire via <code>useCompletedWorkouts</code>). Format tonnes/lb à créer (<code>formatKg</code> n\'a pas de « t »).', 'B'],
+  ['2', 'Chiffres de la période vs période précédente (Δ)', 'Mêmes champs que n° 1', `${nw('periodTotals(from, to)')} appelée 2 fois (même durée, fenêtre glissante)`, 'Faible : 2 passes filtrées sur <code>started_at</code>.', 'A B C'],
+  ['3', 'Calendrier + série de semaines', '<code>started_at</code>', `${ok('trainingDays')} ${ok('weekStreak')} (stats.ts), ${ok('monthGrid')} (dates.ts)`, 'Nul : existant.', 'A B C'],
+  ['4', 'Histogramme hebdo (séances / durée / volume)', '<code>started_at</code>, durée, volume ; choix mémorisé <code>settings.profileChart</code>', `${ok('weeklyAggregates(…, weeks)')} (stats.ts) + ${ok('ui/BarChart')} (SVG, sans uPlot)`, 'Nul : existant, paramétrable à 52 semaines.', 'B (déplacé) C (dupliqué, 52 sem.)'],
+  ['5', 'Séries par muscle sur une période', '<code>ExerciseRow.primary_muscle</code>, <code>secondary_muscles</code> ; séries <code>done</code> hors <code>warmup</code>', `${ok('muscleDistribution(from, to)')} (stats.ts)`, 'Nul : existant (période déjà paramétrable).', 'A B C'],
+  ['6', 'Volume par muscle', 'Idem n° 5 + <code>weight</code>, <code>reps</code>, <code>WorkoutExercise.measurementType</code>', `${ok('setVolumeKg')} (volume.ts) ; ${nw('muscleVolume')} (même règle 1 / 0,5 ?)`, 'Faible. Règle de répartition à trancher (même pondération que les séries proposée).', 'A B C'],
+  ['7', 'Carte musculaire colorée selon la charge de travail', 'Sortie de n° 5 ; tracés <code>data/bodyMap.generated.ts</code> (43,5 Ko brut)', `${ok('MUSCLE_ZONES')} (bodyMap.ts) ; ${nw('heatHighlights')} (niveaux 0-4) ; <code>ui/BodyMap</code> : ajouter un mode « niveaux » (classes <code>bm-h1…h4</code>)`, 'Moyen : les tracés sont déjà un chunk lazy (fiche exercice, miniatures) ; aucun impact sur le JS initial.', 'B C'],
+  ['8', 'Équilibres pousser/tirer, haut/bas', 'Sortie de n° 5 (type <code>Muscle</code>, 14 valeurs)', `${nw('MUSCLE_GROUPS')} + ${nw('balance')} ; épaules comptées en « pousser » (pas de deltoïde postérieur dans le catalogue)`, 'Très faible.', 'B C'],
+  ['9', 'Records par mois', 'Événements de records (<code>RecordEvent.startedAt</code>)', `${ok('recentRecords(all, ∞)')} (déjà calculé par l'écran actuel) ; ${nw('recordsByMonth')} : compter comme ${ok('recordCount')} (1 par exercice et critère par séance)`, 'Faible : réutilise le calcul existant (le plus coûteux de l\'écran, déjà mémoïsé).', 'A B C'],
+  ['10', 'Records récents (#102)', 'Idem n° 9', `${ok('recordLines')} ${ok('recordDays')} ${ok('mergeRepMilestones')}`, 'Nul : existant.', 'A B C'],
+  ['11', 'Taux d\'objectifs de séance atteints (#92)', '<code>WorkoutSet.target</code>, <code>WorkoutExercise.targetCount</code>, <code>targetReason.kind</code> ; présent seulement si <code>settings.progressionEnabled</code> au démarrage', `${ok('targetsMet')} ${ok('workoutTargetsMet')} (progression.ts) ; ${nw('targetRate(from, to)')} global + par <code>reason.kind</code>`, 'Faible. Importer progression.ts (16,7 Ko brut) dans le chunk Stats : préférer exporter <code>targetsMet</code> depuis un petit module.', 'A B C'],
+  ['12', 'Exercices en progression / à l\'arrêt', '<code>weight_reps</code> seulement ; séries de travail ≤ 12 reps', `${ok('weeklyE1rmPoints')} ${ok('fitTrend')} ${ok('currentRate')} (trend.ts) ; ${nw('exerciseMomentum')} : « à l'arrêt » = aucun record de 1RM estimé depuis N semaines (règle à définir : <code>fitTrend</code> ne renvoie « flat » que si la pente est ≤ 0)`, 'Moyen : 1 ajustement par exercice ; <code>fitTrend</code> exige 6 points sur 8 semaines, donc vide pour un débutant. Sparklines en SVG, sans uPlot.', 'C'],
+  ['13', 'Objectifs à long terme', '<code>ExercisePrefsDoc.longTermGoal</code> (table <code>exercise_prefs</code>) + tendance n° 12', `${ok('goalDate')} ${ok('goalAchievedSet')} ${ok('trainingOrigin')} (trend.ts) ; requête de toutes les prefs (comme <code>LiveWorkoutPage</code>)`, 'Faible (quelques exercices avec objectif).', 'B C'],
+  ['14', 'Durée moyenne des séances', '<code>doc.durationS</code> (fallback <code>started_at</code>)', `${ok('workoutDurationS')} dans ${nw('periodTotals')}`, 'Nul (inclus dans n° 2).', 'A B C'],
+  ['15', 'Répartition des types de séries', '<code>WorkoutSet.kind</code> (<code>normal</code>, <code>warmup</code>, <code>drop</code>, <code>failure</code>), <code>done</code>', `${nw('setKindSplit')}`, 'Très faible. Couleurs déjà dans les jetons (<code>--warm</code>, <code>--drop</code>, <code>--fail</code>).', 'A B C'],
+  ['16', 'Zones de répétitions (1-5 / 6-12 / 13+)', '<code>reps</code> des séries de travail (<code>isWorkingKind</code>) pour <code>weight_reps</code> et <code>weighted_bw</code>', `${ok('isWorkingKind')} (measurement.ts) ; ${nw('repZones')}`, 'Très faible.', 'B C'],
+  ['17', 'RPE moyen (période, Δ)', '<code>WorkoutSet.rpe</code> (6-10), saisi seulement si <code>settings.rpeEnabled</code> (désactivé par défaut) ; aussi importé de Hevy', `${nw('averageRpe')}`, 'Très faible. Bloc souvent vide.', 'B C'],
+  ['18', 'Repos réels vs prévus', '<code>WorkoutSet.doneAt</code> (facultatif), <code>WorkoutExercise.restS</code> (<code>null</code> possible)', `${nw('actualRest')}`, wn('écarté V1') + ' L\'écart entre deux <code>doneAt</code> inclut la durée de la série ; les séances importées de Hevy n\'ont pas de <code>doneAt</code>.', '—'],
+  ['19', 'Routines les plus utilisées', '<code>WorkoutRow.routine_id</code> + <code>RoutineRow.doc.name</code> (<code>useRoutines</code>) ; routine supprimée → titre de séance', `${nw('routineUsage')}`, 'Très faible.', 'B C'],
+  ['20', 'Jours / heures d\'entraînement', '<code>started_at</code> (fuseau de l\'appareil)', `${nw('weekdayHistogram')}`, 'Très faible.', 'C'],
+  ['21', 'Classement des exercices (fréquence, volume)', `Colonne <code>exercise_ids</code>, ${ok('exerciseVolumeKg')} (volume.ts)`, `${nw('exerciseRanking')} ; lien vers la fiche exercice`, 'Faible.', 'C'],
+  ['22', 'Force relative (1RM / poids de corps)', '<code>BodyMeasurementRow.values.weight</code> + n° 12', `${ok('measurementSeries')} (stats.ts) ; ${nw('relativeStrength')}`, wn('écarté V1') + ' Dépend de pesées régulières, souvent absentes.', '—'],
+];
+
+const indicatorTable = `<div class="scroll-x"><table class="t"><thead><tr><th>N°</th><th>Indicateur</th><th>Données (vérifiées dans le code)</th><th>Fonction du domaine (${ok('existe')} ${nw('à créer')})</th><th>Coût estimé</th><th>Retenu par</th></tr></thead><tbody>
+  ${INDICATORS.map(([n, name, data, fn, cost, who]) => `<tr><td>${n}</td><td><b>${name}</b></td><td>${data}</td><td>${fn}</td><td>${cost}</td><td>${who}</td></tr>`).join('')}</tbody></table></div>`;
+
+document.getElementById('root').innerHTML = `
+<h2>Contexte</h2>
+<p>L'écran Profil › Statistiques n'affiche aujourd'hui que le calendrier + la série 🔥, les séries par muscle sur 30 jours fixes
+et les 10 records récents. L'histogramme hebdomadaire est sur le Profil. Trois structures sont proposées ci-dessous, avec les
+mêmes données fictives (186 séances depuis mars 2024, « aujourd'hui » = jeudi 29 octobre 2026). Chaque proposition se termine
+par ses réponses aux 5 points à trancher de l'issue. Les sources et coûts de chaque indicateur sont regroupés dans
+<a href="#indicateurs" style="color:var(--accent)">un tableau commun</a>.</p>
+<p>Communs à toutes les propositions : règles de date §F7.6 (jour de début, semaine lundi → dimanche, fuseau de l'appareil),
+échauffements exclus des volumes, records et répartitions musculaires ; unités de l'utilisateur (kg/lb) ; cibles tactiles ≥ 44 px ;
+l'écran reste chargé en <i>lazy</i> (<code>ProfilePage.tsx</code> : <code>lazy(() => import('@/features/stats/StatsPage'))</code>),
+il ne pèse donc pas sur le budget du JS initial (§15, <code>scripts/check-bundle.mjs</code> ne compte que l'entrée et ses <i>modulepreload</i>).
+La carte musculaire est dessinée ici en schéma ; l'app réutiliserait les tracés réels de <code>ui/BodyMap</code>.</p>
+
+<h2 id="A"><span class="key">A</span>Une page, sections repliables</h2>
+<p>Évolution minimale de l'écran actuel : une seule page, un sélecteur de période collant en haut, des chiffres clés et le calendrier
+toujours visibles, puis trois sections repliables (Muscles, Progression, Séances) qui affichent un résumé d'une ligne une fois
+fermées. L'état ouvert/fermé est mémorisé sur l'appareil. Peu d'indicateurs nouveaux.</p>
+<div class="phones">
+  ${phone('<b>A1 · Haut de page.</b> Chiffres clés avec Δ, calendrier, Muscles ouvert ; Progression et Séances fermées avec leur résumé.', a1)}
+  ${phone('<b>A2 · Sections ouvertes.</b> Records par mois + records récents ; objectifs atteints + types de séries.', a2)}
+  ${phone('<b>A3 · État vide (2 séances).</b> Δ remplacé par « pas de période précédente » ; section ouverte vide avec explication.', a3)}
+</div>
+<h3>Réponses aux 5 points</h3>
+${points([
+  ['Découpage', 'Une page unique : chiffres clés + calendrier fixes, puis 3 sections repliables (Muscles, Progression, Séances). Pas de nouvelle route.'],
+  ['Histogramme hebdo', '<b>Reste sur le Profil</b>, inchangé.'],
+  ['Sélecteur de période', '<b>Commun</b> : chips collantes 30 j · 3 mois · 1 an · Tout (défaut 30 j), appliquées à toutes les sections ; le calendrier garde sa navigation par mois.'],
+  ['Indicateurs V1', 'n° 2, 3, 5, 6, 9, 10, 11, 14, 15 (9 blocs, 5 nouvelles fonctions du domaine).'],
+  ['États vides', 'Résumé « pas encore de … » dans l\'en-tête de la section fermée ; section ouverte : carte explicative. Δ remplacé par « pas de période précédente ». Rien n\'est masqué (pas de bloc RPE en V1).'],
+])}
+${proscons(
+  ['Aucune navigation : tout se lit en faisant défiler', 'Coût le plus faible : on étend <code>StatsPage</code>, pas de nouvelle route ni de nouveaux tests E2E de navigation', 'Les résumés des sections fermées donnent un aperçu sans ouvrir'],
+  ['Page longue dès que les sections sont ouvertes ; ne passe pas à l\'échelle si on ajoute des indicateurs plus tard', 'Une section fermée cache l\'information : on oublie qu\'elle existe', 'Tous les calculs se font à l\'ouverture de la page, même pour les sections fermées (sauf calcul paresseux à l\'ouverture)', 'Exploite peu le réservoir de l\'issue (ni carte musculaire, ni objectifs à long terme)'],
+)}
+
+<h2 id="B"><span class="key">B</span>Onglets thématiques <span class="badge-reco">recommandée</span></h2>
+<p>La structure suggérée par l'issue : un segmented control collant sous le titre, quatre vues courtes (Aperçu, Muscles, Progrès, Séances).
+La période se choisit sous les onglets et reste la même quand on change de vue ; l'Aperçu n'en a pas (depuis le début, 30 derniers jours,
+semaine en cours). La vue active est gardée dans l'URL (<code>?vue=muscles</code>) pour revenir au bon onglet depuis une fiche exercice.</p>
+<div class="phones">
+  ${phone('<b>B1 · Aperçu.</b> Totaux depuis le début, 30 j vs 30 j précédents, histogramme hebdo déplacé du Profil (avec son choix Durée / Volume / Séances), calendrier.', b1)}
+  ${phone('<b>B2 · Muscles.</b> Carte musculaire colorée selon les séries, volume ou séries par muscle, équilibres pousser/tirer et haut/bas.', b2)}
+  ${phone('<b>B3 · Progrès.</b> Records par mois, taux d\'objectifs de séance atteints (#92), objectifs à long terme, records récents (#102).', b3)}
+  ${phone('<b>B4 · Séances.</b> Durée et RPE moyens, types de séries, zones de reps, routines les plus utilisées.', b4)}
+  ${phone('<b>B5 · État vide (2 séances, RPE désactivé).</b> Bloc RPE masqué avec une ligne de renvoi vers les paramètres ; zones de reps en attente avec compteur.', b5)}
+</div>
+<h3>Réponses aux 5 points</h3>
+${points([
+  ['Découpage', '4 vues en segmented control collant : Aperçu · Muscles · Progrès · Séances. Libellés courts imposés par la largeur (« Progrès »). Une 5ᵉ vue Exercices ne tiendrait pas : elle passerait en lien depuis l\'Aperçu, plus tard.'],
+  ['Histogramme hebdo', '<b>Déplacé</b> dans l\'Aperçu, avec le choix Durée / Volume / Séances (<code>settings.profileChart</code> conservé). Le Profil garde un résumé d\'une ligne dans le lien Statistiques (« 2 séances cette semaine »).'],
+  ['Sélecteur de période', '<b>Commun</b> aux vues Muscles, Progrès, Séances : 30 j · 3 mois · 1 an · Tout (défaut 30 j), conservé en changeant de vue, non persistant. Absent de l\'Aperçu.'],
+  ['Indicateurs V1', 'Aperçu : n° 1, 2, 3, 4. Muscles : n° 5, 6, 7, 8. Progrès : n° 9, 10, 11, 13. Séances : n° 14, 15, 16, 17, 19. (17 blocs, 12 nouvelles fonctions.) Hors V1 : n° 12, 18, 20, 21, 22.'],
+  ['États vides', '<b>Fonction désactivée et aucune donnée</b> (RPE, objectifs de progression) : bloc masqué, avec une ligne discrète en bas de la vue qui renvoie aux paramètres. <b>Données insuffisantes</b> : carte explicative avec le seuil (« Encore 1 séance »). Δ : « pas de période précédente » tant que la fenêtre précédente est vide.'],
+])}
+${proscons(
+  ['Chaque vue tient en 1 à 1,5 écran : lecture rapide, pas de scroll interminable', 'Période partagée : on compare muscles, progrès et séances sur la même fenêtre', 'Exploite les points forts de l\'issue (carte musculaire, objectifs #92, objectifs à long terme) sans tout prendre', 'Chaque vue peut être un chunk <i>lazy</i> distinct ; seule la vue ouverte est calculée', 'L\'histogramme rejoint les autres statistiques ; le Profil s\'allège'],
+  ['4 segments à la limite de la largeur : pas de 5ᵉ vue possible sans changer de structure', 'Les vues 2 à 4 sont moins découvertes qu\'une page qui défile', 'L\'histogramme quitte le Profil : un tap de plus pour le voir', 'Aperçu et Accueil se recoupent un peu (semaine en cours)'],
+)}
+
+<h2 id="C"><span class="key">C</span>Sommaire + sous-pages</h2>
+<p>La page Statistiques devient un sommaire : la semaine en cours, le calendrier et une liste de liens (même style que les liens du Profil),
+chacun avec son chiffre clé. Chaque thème est une sous-page avec sa propre route (<code>/profile/stats/muscles</code>, <code>…/progression</code>,
+<code>…/seances</code>, <code>…/exercices</code>) et son propre sélecteur de période. C'est la proposition la plus complète.</p>
+<div class="phones">
+  ${phone('<b>C1 · Sommaire.</b> Semaine en cours + série, calendrier, 4 liens avec leur chiffre clé.', c1)}
+  ${phone('<b>C2 · Progression</b> (défaut 1 an). Records par mois, exercices en progression ou à l\'arrêt (sparklines du 1RM estimé), objectifs.', c2)}
+  ${phone('<b>C3 · Séances</b> (défaut 3 mois). Histogramme 52 semaines, durée et RPE, types de séries, zones de reps, jours d\'entraînement.', c3)}
+  ${phone('<b>C4 · État vide (2 séances).</b> Le lien Progression est grisé et dit quand il sera disponible ; les autres liens restent actifs.', c4)}
+</div>
+<p class="phone-cap" style="margin-top:8px">La sous-page Muscles reprend B2 (avec son propre sélecteur de période) ; la sous-page Exercices est une liste classée par fréquence ou volume, chaque ligne ouvrant la fiche exercice.</p>
+<h3>Réponses aux 5 points</h3>
+${points([
+  ['Découpage', 'Sommaire (semaine, calendrier, liens avec chiffre clé) + 4 sous-pages : Muscles, Progression, Séances, Exercices.'],
+  ['Histogramme hebdo', '<b>Dupliqué</b> : le Profil garde le sien (12 semaines) ; la sous-page Séances en a une version 52 semaines (même composant, <code>weeklyAggregates(…, 52)</code>).'],
+  ['Sélecteur de période', '<b>Propre à chaque sous-page</b>, avec un défaut adapté : Muscles 30 j, Progression 1 an, Séances 3 mois, Exercices tout.'],
+  ['Indicateurs V1', 'Sommaire : n° 2 (semaine), 3. Muscles : n° 5, 6, 7, 8. Progression : n° 9, 10, 11, 12, 13. Séances : n° 4, 14, 15, 16, 17, 20. Exercices : n° 21, 19. (Presque tout le réservoir, 15 nouvelles fonctions.)'],
+  ['États vides', 'Au sommaire : lien grisé avec sa condition (« Disponible après 3 séances d\'un même exercice »). Dans les sous-pages : carte explicative ; RPE masqué si désactivé et sans données.'],
+])}
+${proscons(
+  ['Motif déjà connu (liens du Profil), retour arrière natif, URLs directes', 'Extensible sans limite : un nouvel indicateur = un bloc ou un lien', 'Chaque sous-page est une route <i>lazy</i> : découpage du code naturel', 'Le sommaire donne une vision d\'ensemble chiffrée en un écran'],
+  ['Un tap de plus pour toute information hors sommaire', 'Périodes différentes selon la page : comparer muscles et séances sur la même fenêtre demande de régler deux fois', 'Plus gros chantier : 5 écrans, plus de tests E2E, histogramme en double', 'Indicateurs n° 12 et 20 coûteux à bien définir (« à l\'arrêt », fuseau) pour un gain modeste en V1'],
+)}
+
+<h2 id="indicateurs">Réservoir d'indicateurs : source et coût</h2>
+<p>Champs vérifiés dans <code>app/src/domain/types.ts</code> et les modules cités (et non repris du seul tableau de l'issue). Toutes les données sont déjà
+en local (Dexie), sans travail backend. Coût = calcul à l'ouverture de l'écran + poids ajouté au chunk <i>lazy</i> des statistiques ; aucun indicateur
+ne touche le JS initial. Chaque fonction <i>à créer</i> serait pure et testée, puis recopiée dans l'Edge Function par <code>npm run edge:domain</code>.</p>
+${indicatorTable}
+<p class="mt-12"><b>Point d'attention sur le découpage du code :</b> <code>domain/stats.ts</code> est importé par <code>HomePage</code> (premier écran affiché)
+et <code>ProfilePage</code>. Y ajouter une douzaine d'agrégats alourdirait le chunk de l'Accueil. Proposition : placer les nouveaux agrégats
+dans un module dédié (ex. <code>domain/insights.ts</code>) importé seulement par les statistiques.</p>
+
+<h2 id="reco">Recommandation</h2>
+<div class="reco-box">
+<p><b>Proposition B (onglets thématiques).</b> Elle donne de la matière à l'écran sans le rendre interminable : chaque vue tient en un écran et demi,
+et la période commune permet de lire muscles, progrès et séances sur la même fenêtre. A ne règle pas le problème de fond (l'écran restera pauvre ou
+deviendra long) ; C est la plus complète mais coûte deux fois plus (5 écrans, histogramme en double, périodes à régler page par page) pour un gain
+de lecture faible en V1.</p>
+<p>Réponses recommandées aux 5 points :</p>
+<ul class="l">
+  <li><b>Découpage</b> : 4 vues en segmented control (Aperçu, Muscles, Progrès, Séances), vue active dans l'URL.</li>
+  <li><b>Histogramme</b> : déplacé dans l'Aperçu (choix Durée/Volume/Séances conservé) ; le Profil garde une ligne « N séances cette semaine » sur le lien Statistiques.</li>
+  <li><b>Période</b> : commune aux 3 vues thématiques (30 j · 3 mois · 1 an · Tout, défaut 30 j), non persistante.</li>
+  <li><b>Indicateurs V1</b> : n° 1 à 11, 13 à 17 et 19. Reportés : progression/arrêt par exercice (n° 12, règle « à l'arrêt » à définir), repos réels (n° 18, données biaisées), jours/heures (n° 20), classement des exercices (n° 21), force relative (n° 22).</li>
+  <li><b>États vides</b> : masquer un bloc seulement si sa fonction est désactivée et qu'il n'a aucune donnée (avec une ligne de renvoi vers les paramètres) ; sinon carte explicative avec le seuil manquant.</li>
+</ul>
+<p>Variante possible si le Profil doit garder son histogramme : B avec l'histogramme <b>dupliqué</b> (même composant), sans autre changement.</p>
+</div>
+`;
+
+// Cette méthode permet d'appliquer le thème choisi (clair ou sombre) à toute la page, maquettes comprises.
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  document.querySelectorAll('#theme button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+}
+document.querySelectorAll('#theme button').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.t)));
+setTheme(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+</script>
+</body>
+</html>

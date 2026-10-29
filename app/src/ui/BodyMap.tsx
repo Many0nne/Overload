@@ -3,6 +3,7 @@ import { BODY_BACK, BODY_FRONT, type BodyView } from '@/data/bodyMap.generated';
 import {
   type BodySide,
   bodyHighlights,
+  type HeatLevel,
   type Highlight,
   OVERLAY_ZONES,
   thumbnailSide,
@@ -18,7 +19,11 @@ const CROP_UPPER = { y: 110, h: 640 };
 const CROP_LOWER = { y: 600, h: 775 };
 
 // Cette méthode permet de dessiner une vue du corps en colorant les zones sollicitées.
-function Silhouette(props: { side: BodySide; highlights: Map<string, Highlight>; viewBox?: string }) {
+function Silhouette(props: {
+  side: BodySide;
+  highlights: ReadonlyMap<string, Highlight | HeatLevel>;
+  viewBox?: string;
+}) {
   const view = VIEWS[props.side];
   return (
     <svg className="body-map" viewBox={props.viewBox ?? view.viewBox} aria-hidden="true">
@@ -58,6 +63,16 @@ export function BodyMap(props: { primary: Muscle; secondary: readonly Muscle[] }
     <div className="body-pair">
       <Silhouette side="front" highlights={highlights} />
       <Silhouette side="back" highlights={highlights} />
+    </div>
+  );
+}
+
+// Cette méthode permet d'afficher la carte musculaire des statistiques (face et dos), zones colorées en 4 niveaux.
+export function BodyHeatMap(props: { levels: ReadonlyMap<string, HeatLevel>; label: string }) {
+  return (
+    <div className="body-pair heat" role="img" aria-label={props.label}>
+      <Silhouette side="front" highlights={props.levels} />
+      <Silhouette side="back" highlights={props.levels} />
     </div>
   );
 }

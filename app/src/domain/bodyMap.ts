@@ -2,6 +2,7 @@
 import type { Muscle } from './types';
 
 export type Highlight = 'primary' | 'secondary';
+export type HeatLevel = 'h1' | 'h2' | 'h3' | 'h4';
 export type BodySide = 'front' | 'back';
 
 // Zones dessinées pour chaque muscle de l'app. Le cardio n'en a aucune (silhouette neutre).
@@ -48,4 +49,21 @@ export function bodyHighlights(primary: Muscle, secondary: readonly Muscle[]): M
 // Cette méthode permet de choisir la vue (face ou dos) de la miniature selon le muscle principal.
 export function thumbnailSide(primary: Muscle): BodySide {
   return BACK_MUSCLES.has(primary) ? 'back' : 'front';
+}
+
+// Cette méthode permet de colorer la carte musculaire des statistiques selon une répartition par muscle : 4 niveaux
+// proportionnels au muscle le plus sollicité (h4) ; une zone partagée par deux muscles prend le niveau le plus haut.
+export function heatHighlights(dist: Partial<Record<Muscle, number>>): Map<string, HeatLevel> {
+  const max = Math.max(0, ...Object.values(dist));
+  const map = new Map<string, HeatLevel>();
+  if (max <= 0) return map;
+  for (const [m, v] of Object.entries(dist) as [Muscle, number][]) {
+    if (v <= 0) continue;
+    const level = Math.min(4, Math.max(1, Math.ceil((4 * v) / max)));
+    for (const z of MUSCLE_ZONES[m]) {
+      const prev = Number(map.get(z)?.slice(1) ?? 0);
+      if (level > prev) map.set(z, `h${level}` as HeatLevel);
+    }
+  }
+  return map;
 }

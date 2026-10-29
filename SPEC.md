@@ -139,7 +139,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
   - Chaque membre a un **lien d'invitation personnel**. Il est réutilisable sans limite et n'expire pas. Le membre peut le régénérer, ce qui rend l'ancien lien inutilisable (utile s'il a circulé trop largement).
   - Inviter quelqu'un ne crée aucun lien entre les deux comptes.
   - Le lien contient un **code d'invitation** (ex. `RX7K-2P9Q-D4MA`). Le formulaire d'inscription a un champ « Code d'invitation » qui accepte le collage, au cas où le code ne passe pas automatiquement de Safari à l'app installée.
-- Le **profil** affiche : photo, nom, nombre de séances, et un graphique hebdomadaire (au choix : durée, volume ou nombre de séances).
+- Le **profil** affiche : photo, nom, nombre de séances, et le nombre de séances de la semaine sur le lien Statistiques. Le graphique hebdomadaire (au choix : durée, volume ou nombre de séances) est dans Statistiques › Aperçu (§7.6).
 - **Suppression du compte** avec toutes ses données.
 - **Export** de ses données : un fichier JSON complet (profil, séances, routines, exercices personnalisés, mesures), et un fichier CSV des séances lisible dans un tableur.
 - **Import HEVY** : l'utilisateur choisit les fichiers CSV exportés par HEVY (séances, et mesures en option). Avant l'import, il vérifie la correspondance de chaque exercice HEVY : exercice de la bibliothèque proposé automatiquement, exercice personnalisé à créer, ou exercice ignoré. Une séance déjà importée n'est jamais dupliquée ni modifiée ; une mesure existante n'est complétée que sur ses champs vides.
@@ -300,9 +300,30 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
 - Périodes : 1 mois, 3 mois, 1 an, tout.
 
 **Statistiques globales** (onglet Profil › Statistiques)
-- Séances, durée et volume par semaine (histogramme).
-- Répartition des séries par **groupe musculaire** sur une période. Un muscle principal compte pour 1 série, un muscle secondaire pour 0,5.
-- **Calendrier** des jours d'entraînement et série de semaines consécutives avec au moins une séance.
+- Quatre vues dans un sélecteur segmenté : **Aperçu**, **Muscles**, **Progrès**, **Séances**. La vue ouverte et la période sont gardées dans l'adresse de la page, pour revenir au même endroit depuis une fiche exercice.
+- **Période** commune aux vues Muscles, Progrès et Séances : 30 jours (par défaut), 3 mois, 1 an ou tout. Elle n'est pas mémorisée d'une visite à l'autre. Un écart compare à la fenêtre précédente de même durée ; sans séance dans cette fenêtre, il affiche « pas de période précédente ».
+- **Aperçu** :
+  - totaux depuis le début : séances, heures, volume, séries, reps, exercices différents ;
+  - 30 derniers jours comparés aux 30 précédents : séances, durée moyenne, volume, records ;
+  - séances, durée et volume par semaine (histogramme sur 12 semaines, mesure au choix mémorisée) ;
+  - **calendrier** des jours d'entraînement et série de semaines consécutives avec au moins une séance.
+- **Muscles** :
+  - carte musculaire colorée en 4 niveaux selon les séries de la période (niveau relatif au muscle le plus travaillé) ;
+  - séries ou volume par **groupe musculaire** : un muscle principal compte pour 1 série et 100 % du volume, un muscle secondaire pour 0,5 et 50 % ;
+  - équilibres en séries : pousser (pectoraux, épaules, triceps) / tirer (dos, biceps, trapèzes, avant-bras), et haut / bas du corps (quadriceps, ischios, fessiers, mollets). Abdos, lombaires et cardio n'y entrent pas.
+- **Progrès** :
+  - records battus par mois (6 derniers mois ; 12 pour « 1 an » ; depuis le premier record, 24 au plus, pour « tout »), au plus un par séance, exercice et critère ;
+  - taux d'objectifs de séance atteints sur la période (§7.10), au global et par raison de l'objectif ;
+  - objectifs à long terme : 1RM estimé de la dernière semaine entraînée rapporté au 1RM estimé visé, et date estimée. Chaque ligne ouvre la fiche de l'exercice ;
+  - records récents (ci-dessous).
+- **Séances** :
+  - durée moyenne et RPE moyen (séries notées, hors échauffement), avec l'écart à la période précédente ;
+  - répartition des séries validées par type (normale, échauffement, dégressive, échec) ;
+  - zones de répétitions des séries de travail chargées (poids et reps, lesté) : 1-5, 6-12, 13 et plus. Affichées à partir de 3 séances sur la période ;
+  - routines les plus utilisées (5 au plus, séances libres regroupées).
+- **Données absentes** : un bloc dont la fonction est désactivée (RPE, objectifs de progression) et qui n'a aucune donnée est masqué, avec une ligne qui renvoie aux paramètres. Sinon, un état vide explique ce qui manque (« Encore 2 séances »).
+- Volumes cumulés : en kg (ou lb) en dessous de 10 000, puis en tonnes (« 94,6 t ») ou milliers de lb (« 208,6 k lb »).
+- Le profil n'affiche plus l'histogramme : son lien Statistiques indique les séances de la semaine en cours.
 - Règles de date communes : une séance appartient au jour de son **début** (même si elle se termine après minuit), dans le fuseau horaire de l'appareil. La semaine va du lundi au dimanche. La semaine en cours ne casse pas la série de semaines tant qu'elle n'est pas terminée.
 - Liste des records battus récemment, du plus récent au plus ancien (10 lignes au plus, une par exercice et par séance), groupée sous un en-tête de jour : « Aujourd'hui », « Hier » ou « Il y a N j » (jusqu'à 6 jours) suivi de la date, puis la date seule (avec l'année si ce n'est pas l'année en cours).
   - Chaque ligne donne le nom de l'exercice (2 lignes au plus), le critère principal battu en clair (premier dans l'ordre de la table des records), sa valeur et le **gain** sur l'ancien record, à droite. La meilleure série en volume s'affiche comme une série (« 100 kg × 5 ») et son gain en volume (« +20 kg vol. »).

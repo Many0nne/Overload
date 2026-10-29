@@ -3,13 +3,10 @@ import { lazy, useMemo } from 'react';
 import { Route, Routes, useNavigate } from 'react-router';
 import { db } from '@/data/db';
 import { useCompletedWorkouts, useProfile, useSettings } from '@/data/queries';
-import { updateSettings } from '@/data/repositories';
-import { formatDurationHuman, formatKg, formatWeight } from '@/domain/format';
+import { formatWeight } from '@/domain/format';
 import { weeklyAggregates } from '@/domain/stats';
-import type { Settings } from '@/domain/types';
 import { ExerciseList } from '@/features/library/ExerciseList';
-import { BarChart } from '@/ui/BarChart';
-import { Seg, SubHead, toast } from '@/ui/components';
+import { SubHead, toast } from '@/ui/components';
 import { SyncPill } from '@/ui/SyncPill';
 
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
@@ -18,8 +15,6 @@ const ImportHevyPage = lazy(() => import('@/features/settings/ImportHevyPage'));
 const ClaudePage = lazy(() => import('@/features/settings/ClaudePage'));
 const StatsPage = lazy(() => import('@/features/stats/StatsPage'));
 const MeasurementsPage = lazy(() => import('@/features/measurements/MeasurementsPage'));
-
-const weekFmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 
 // Cette méthode permet de router les écrans de l'onglet Profil (profil, statistiques, mesures, exercices, paramètres).
 export default function ProfilePage() {
@@ -37,16 +32,7 @@ export default function ProfilePage() {
   );
 }
 
-const CHART: Record<
-  Settings['profileChart'],
-  { label: string; pick: (w: ReturnType<typeof weeklyAggregates>[number]) => number }
-> = {
-  duration: { label: 'Durée', pick: (w) => w.durationS },
-  volume: { label: 'Volume', pick: (w) => w.volumeKg },
-  count: { label: 'Séances', pick: (w) => w.count },
-};
-
-// Cette méthode permet d'afficher le profil : nom, nombre de séances, histogramme hebdomadaire et liens (§F7.1).
+// Cette méthode permet d'afficher le profil : nom, nombre de séances, séances de la semaine et liens (§F7.1).
 function ProfileHome() {
   const navigate = useNavigate();
   const profile = useProfile();
@@ -60,16 +46,7 @@ function ProfileHome() {
       .toArray();
     return rows.find((r) => r.values.weight)?.values.weight;
   }, []);
-  const metric = settings.profileChart;
-  const weeks = useMemo(() => weeklyAggregates(workouts ?? [], Date.now(), 12), [workouts]);
-
-  // Cette méthode permet d'afficher une valeur hebdomadaire selon la mesure choisie (durée, volume ou séances).
-  const format = (v: number) =>
-    metric === 'duration'
-      ? formatDurationHuman(v)
-      : metric === 'volume'
-        ? formatKg(v, settings.units.weight, 0)
-        : `${v} séance${v > 1 ? 's' : ''}`;
+  const week = useMemo(() => weeklyAggregates(workouts ?? [], Date.now(), 1)[0]?.count ?? 0, [workouts]);
 
   // Cette méthode permet de copier le lien d'invitation personnel (§F7.1).
   const copyInvite = async () => {
@@ -84,7 +61,6 @@ function ProfileHome() {
   };
 
   const name = profile?.display_name ?? '';
-  const values = weeks.map(CHART[metric].pick);
   const count = workouts?.length ?? 0;
 
   return (
@@ -108,32 +84,6 @@ function ProfileHome() {
         </div>
       </div>
       <div className="section">
-        <div className="card">
-          <div className="muted fs-13">{CHART[metric].label} · cette semaine</div>
-          <div className="hero compact">{format(values.at(-1) ?? 0)}</div>
-          <BarChart
-            values={values}
-            labels={weeks.map((w) => `sem. du ${weekFmt.format(w.weekStart)}`)}
-            format={format}
-            firstLabel={weeks[0] ? weekFmt.format(weeks[0].weekStart) : ''}
-            lastLabel="cette semaine"
-            ariaLabel={`${CHART[metric].label} par semaine`}
-          />
-          <div className="mt-10">
-            <Seg
-              stretch
-              value={metric}
-              onChange={(profileChart) => void updateSettings({ profileChart })}
-              options={[
-                { value: 'duration', label: 'Durée' },
-                { value: 'volume', label: 'Volume' },
-                { value: 'count', label: 'Séances' },
-              ]}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="section">
         <div>
           <button className="row-link" onClick={() => navigate('/profile/stats')}>
             <span className="ico">
@@ -148,7 +98,8 @@ function ProfileHome() {
                 <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
               </svg>
             </span>
-            Statistiques<span className="end">›</span>
+            Statistiques
+            <span className="end">{week ? `${week} séance${week > 1 ? 's' : ''} cette semaine ›` : '›'}</span>
           </button>
           <button className="row-link" onClick={() => navigate('/profile/exercises')}>
             <span className="ico">
