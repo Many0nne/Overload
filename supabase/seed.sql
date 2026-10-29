@@ -1,5 +1,5 @@
 -- Fichier généré par scripts/build-catalog.ts : ne pas modifier à la main.
--- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 + scripts/catalog-extra.json (220 exercices).
+-- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 + scripts/catalog-extra.json (221 exercices).
 insert into public.exercises
   (id, user_id, name, name_search, equipment, primary_muscle, secondary_muscles, measurement_type, instructions, source_id, client_updated_at, client_device_id)
 values
@@ -666,7 +666,10 @@ Redescends lentement jusqu''aux bras tendus.', 'overload:Machine_Assisted_Pull-U
   ('5e58bef7-69c9-59a2-8dc3-0d8733e688a6', null, 'Dips assistés (machine)', 'dips assistes (machine)', 'machine', 'triceps', array['chest', 'shoulders']::text[], 'assisted_bw', 'Règle l''assistance et pose les genoux ou les pieds sur la plateforme.
 Saisis les poignées, bras tendus, épaules basses.
 Descends en fléchissant les coudes jusqu''à ce que les bras soient parallèles au sol.
-Pousse jusqu''à l''extension des bras.', 'overload:Machine_Assisted_Dip', 1767225600000, '00000000-0000-0000-0000-000000000000')
+Pousse jusqu''à l''extension des bras.', 'overload:Machine_Assisted_Dip', 1767225600000, '00000000-0000-0000-0000-000000000000'),
+  ('a7d8c74c-78f6-5b01-a4db-359392a101be', null, 'Développé incliné (machine)', 'developpe incline (machine)', 'machine', 'chest', array['shoulders', 'triceps']::text[], 'weight_reps', 'Règle le siège pour que les poignées soient à hauteur du haut de la poitrine.
+Dos plaqué contre le dossier, pousse vers le haut et l''avant jusqu''à l''extension des bras.
+Reviens lentement sans laisser les charges se reposer.', 'overload:Machine_Incline_Press', 1767225600000, '00000000-0000-0000-0000-000000000000')
 on conflict (id) do update set
   name = excluded.name,
   name_search = excluded.name_search,
