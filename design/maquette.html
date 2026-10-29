@@ -281,6 +281,27 @@ tr.pr .trophy{display:inline}
 .hbar .track{height:10px}
 .hbar .fill{height:10px;border-radius:0 4px 4px 0;background:var(--accent)}
 .hbar .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+/* Statistiques (#103) : 4 vues en onglets, période commune, chiffres clés, répartitions, objectifs */
+.stv{display:none}.stv.on{display:block}
+.st-tabs .seg button{padding:8px 4px;font-size:14px}
+.st-r{text-transform:none;letter-spacing:0;font-weight:600;color:var(--muted);font-size:12px}
+.st-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.st-kpi{background:var(--surface);border-radius:12px;padding:11px 12px}
+.st-kpi .k{font-size:12px;color:var(--muted)}
+.st-kpi .v{font-size:19px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.st-delta{font-size:12px;font-weight:700;margin-top:1px}.st-delta.up{color:var(--done)}.st-delta.down{color:var(--fail)}.st-delta.eq{color:var(--muted);font-weight:500}
+.st-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 8px;text-align:center}
+.st-totals .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}.st-totals .k{font-size:11.5px;color:var(--muted)}
+.st-stack{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px}.st-stack span{display:block;height:100%}
+.st-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:13px;color:var(--text-2)}
+.st-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}.st-legend b{color:var(--text)}
+.st-balance{display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center;font-size:13px;padding:5px 0}
+.st-balance b{display:block}.st-balance .r{text-align:right}.st-balance .st-stack{height:10px}.st-balance .a{background:var(--accent)}.st-balance .b{background:var(--drop)}
+.st-goal{display:block;width:100%;text-align:left;padding:9px 0;border-bottom:1px solid var(--line)}.st-goal:last-child{border:0}
+.st-goal .top{display:flex;justify-content:space-between;font-size:14px;font-weight:600}.st-goal .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.st-track{height:6px;border-radius:3px;background:var(--surface-2);margin-top:7px;overflow:hidden}.st-track span{display:block;height:100%;background:var(--accent)}
+.st-row{display:flex;justify-content:space-between;min-height:44px;align-items:center;border-bottom:1px solid var(--line);font-size:14px}.st-row:last-child{border:0}
+.st-map{height:150px;display:grid;place-items:center;text-align:center;color:var(--muted);font-size:13px}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surface);font-size:15px}
 .set-row+.set-row{border-top:1px solid var(--line)}
 .set-row:first-child{border-radius:var(--radius) var(--radius) 0 0}
@@ -780,17 +801,8 @@ body.board .boardview{display:flex}
         <div class="head"><h2>Profil</h2><div class="right"><button class="icon-btn" data-go="parametres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div></div>
         <div class="profile"><div class="avatar">P</div><div><h3>Paul</h3><div class="muted" style="font-size:14px;margin-top:2px"><b style="color:var(--text)">128</b> séances</div></div></div>
         <div class="section">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div><div class="muted" style="font-size:13px" id="barLabel">Durée · cette semaine</div><div class="hero" style="font-size:24px" id="barHero">3 h 12</div></div>
-            </div>
-            <div class="chart-wrap" id="barChart" style="margin-top:8px"></div>
-            <div class="seg" id="barSeg" style="display:flex;margin-top:10px"><button class="on" style="flex:1" data-m="dur">Durée</button><button style="flex:1" data-m="vol">Volume</button><button style="flex:1" data-m="n">Séances</button></div>
-          </div>
-        </div>
-        <div class="section">
           <div>
-            <button class="row-link" data-go="stats"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Statistiques<span class="end">›</span></button>
+            <button class="row-link" data-go="stats"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Statistiques<span class="end">3 séances cette semaine ›</span></button>
             <button class="row-link" data-go="fiche"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>Exercices et records<span class="end">›</span></button>
             <button class="row-link" data-toast="Mesures : poids, % MG, tours (cou, bras G/D…)"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span>Mesures corporelles<span class="end">78,4 kg ›</span></button>
             <button class="row-link" data-toast="Lien d'invitation copié"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>Inviter un proche<span class="end">Copier ›</span></button>
@@ -801,19 +813,80 @@ body.board .boardview{display:flex}
       <!-- ================= STATISTIQUES ================= -->
       <section class="screen" data-screen="stats" data-tab="profil" data-title="Statistiques">
         <div class="head"><button class="icon-btn" data-action="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="title-sm">Statistiques</span><span style="width:38px"></span></div>
-        <div class="section" style="margin-top:4px">
+        <div class="section st-tabs" style="margin-top:4px"><div class="seg" id="statsTabs" style="display:flex"><button class="on" style="flex:1" data-sv="apercu">Aperçu</button><button style="flex:1" data-sv="muscles">Muscles</button><button style="flex:1" data-sv="progres">Progrès</button><button style="flex:1" data-sv="seances">Séances</button></div></div>
+        <div class="chips" id="statsPeriod" style="margin-top:12px;display:none"><button class="chip on" data-sp="30d">30 j</button><button class="chip" data-sp="3m">3 mois</button><button class="chip" data-sp="1y">1 an</button><button class="chip" data-sp="all">Tout</button></div>
+
+        <div class="stv on" data-pane-sv="apercu">
+          <div class="section">
+            <div class="section-title">Depuis le début<span class="st-r">mars 2024</span></div>
+            <div class="card"><div class="st-totals">
+              <div><div class="v">128</div><div class="k">séances</div></div><div><div class="v">146 h</div><div class="k">d'entraînement</div></div><div><div class="v">902 t</div><div class="k">soulevés</div></div>
+              <div><div class="v">2 734</div><div class="k">séries</div></div><div><div class="v">21 960</div><div class="k">reps</div></div><div><div class="v">48</div><div class="k">exercices</div></div>
+            </div></div>
+          </div>
+          <div class="section">
+            <div class="section-title">30 derniers jours<span class="st-r">vs 30 précédents</span></div>
+            <div class="st-kpis">
+              <div class="st-kpi"><div class="k">Séances</div><div class="v">12</div><div class="st-delta up">+2</div></div>
+              <div class="st-kpi"><div class="k">Durée moyenne</div><div class="v">1 h 08</div><div class="st-delta eq">−4 min</div></div>
+              <div class="st-kpi"><div class="k">Volume</div><div class="v">86,4 t</div><div class="st-delta up">+8 %</div></div>
+              <div class="st-kpi"><div class="k">Records</div><div class="v">14</div><div class="st-delta up">+5</div></div>
+            </div>
+          </div>
+        <div class="section">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div class="muted" style="font-size:13px" id="barLabel">Durée · cette semaine</div><div class="hero" style="font-size:24px" id="barHero">3 h 12</div></div>
+            </div>
+            <div class="chart-wrap" id="barChart" style="margin-top:8px"></div>
+            <div class="seg" id="barSeg" style="display:flex;margin-top:10px"><button class="on" style="flex:1" data-m="dur">Durée</button><button style="flex:1" data-m="vol">Volume</button><button style="flex:1" data-m="n">Séances</button></div>
+          </div>
+        </div>
+        <div class="section">
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Octobre 2026</b><span class="pr-pill" style="color:var(--text)">🔥 6 semaines</span></div>
             <div class="cal" id="cal"></div>
           </div>
         </div>
-        <div class="section">
-          <div class="section-title">Séries par muscle · 30 jours</div>
-          <div class="card" id="muscleBars"></div>
-          <p class="muted" style="font-size:12px;margin-top:6px">Muscle principal = 1 série, secondaire = 0,5.</p>
         </div>
-        <div class="section">
-          <div class="section-title">Records récents</div>
+
+        <div class="stv" data-pane-sv="muscles">
+          <div class="section"><div class="card st-map">Carte musculaire face / dos (tracés de l'app), zones colorées en 4 niveaux selon les séries de la période</div></div>
+          <div class="section">
+            <div class="section-title">Par muscle<div class="seg" id="muscleSeg"><button class="on" data-mm="sets">Séries</button><button data-mm="vol">Volume</button></div></div>
+            <div class="card" id="muscleBars"></div>
+            <p class="muted" style="font-size:12px;margin-top:6px" id="muscleNote">Muscle principal = 1 série, secondaire = 0,5.</p>
+          </div>
+          <div class="section">
+            <div class="section-title">Équilibres<span class="st-r">en séries</span></div>
+            <div class="card">
+              <div class="st-balance"><span>Pousser<b>55 %</b></span><div class="st-stack"><span class="a" style="width:55%"></span><span class="b" style="width:45%"></span></div><span class="r">Tirer<b>45 %</b></span></div>
+              <div class="st-balance"><span>Haut<b>69 %</b></span><div class="st-stack"><span class="a" style="width:69%"></span><span class="b" style="width:31%"></span></div><span class="r">Bas<b>31 %</b></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stv" data-pane-sv="progres">
+          <div class="section">
+            <div class="section-title">Records par mois<span class="st-r">14 sur la période</span></div>
+            <div class="card" id="recMonths"></div>
+          </div>
+          <div class="section">
+            <div class="section-title">Objectifs de séance atteints</div>
+            <div class="card">
+              <div style="display:flex;align-items:baseline;gap:10px"><div class="hero" style="font-size:24px">78 %</div><span class="muted" style="font-size:13px">47 / 60 exercices avec objectif</span></div>
+              <div style="margin-top:10px" id="reasonBars"></div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Objectifs à long terme</div>
+            <div class="card">
+              <button class="st-goal" data-go="fiche"><div class="top"><span>Développé couché (barre)</span><b>100 kg × 5</b></div><div class="st-track"><span style="width:92%"></span></div><div class="sub">92 % du 1RM estimé visé · atteint vers février 2027</div></button>
+              <button class="st-goal" data-go="fiche"><div class="top"><span>Squat (barre)</span><b>140 kg × 5</b></div><div class="st-track"><span style="width:79%"></span></div><div class="sub">79 % du 1RM estimé visé · date non estimée</div></button>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Records récents</div>
           <div class="card">
             <div class="rec-day">Aujourd'hui · dim. 25 oct.</div>
             <ul class="rec-list">
@@ -829,6 +902,31 @@ body.board .boardview{display:flex}
             <ul class="rec-list">
               <li><button class="rec-line" data-go="fiche"><span class="rec-main"><span class="rec-name">Rowing (barre)</span><span class="rec-crit">Meilleur poids à 12 reps</span></span><span class="rec-val"><b>60 kg</b><span class="rec-gain new">🏆 nouveau</span></span><span class="rec-chev">›</span></button></li>
             </ul>
+          </div>
+          </div>
+        </div>
+
+        <div class="stv" data-pane-sv="seances">
+          <div class="section">
+            <div class="st-kpis">
+              <div class="st-kpi"><div class="k">Durée moyenne</div><div class="v">1 h 08</div><div class="st-delta eq">−4 min</div></div>
+              <div class="st-kpi"><div class="k">RPE moyen</div><div class="v">8,2</div><div class="st-delta eq">+0,3</div></div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">Types de séries</div>
+            <div class="card"><div class="st-stack"><span style="width:74%;background:var(--accent)"></span><span style="width:14%;background:var(--warm)"></span><span style="width:5%;background:var(--drop)"></span><span style="width:7%;background:var(--fail)"></span></div>
+              <div class="st-legend"><span><i style="background:var(--accent)"></i>Normales <b>74 %</b></span><span><i style="background:var(--warm)"></i>Échauffement <b>14 %</b></span><span><i style="background:var(--drop)"></i>Dégressives <b>5 %</b></span><span><i style="background:var(--fail)"></i>Échec <b>7 %</b></span></div></div>
+          </div>
+          <div class="section">
+            <div class="section-title">Zones de répétitions</div>
+            <div class="card"><div class="st-stack"><span style="width:18%;background:var(--fail)"></span><span style="width:64%;background:var(--accent)"></span><span style="width:18%;background:var(--done)"></span></div>
+              <div class="st-legend"><span><i style="background:var(--fail)"></i>1-5 reps <b>18 %</b></span><span><i style="background:var(--accent)"></i>6-12 reps <b>64 %</b></span><span><i style="background:var(--done)"></i>13+ reps <b>18 %</b></span></div>
+              <p class="muted" style="font-size:12px;margin-top:6px">Séries de travail chargées (poids et reps, lesté), hors échauffement et dégressives.</p></div>
+          </div>
+          <div class="section">
+            <div class="section-title">Routines les plus utilisées</div>
+            <div class="card"><div class="st-row"><span>Push A</span><b>4 séances</b></div><div class="st-row"><span>Pull A</span><b>4 séances</b></div><div class="st-row"><span>Legs</span><b>3 séances</b></div><div class="st-row"><span>Séances libres</span><b>1 séance</b></div></div>
           </div>
         </div>
       </section>
@@ -1312,14 +1410,27 @@ function drawBars(host) {
   $('#barLabel').textContent = b.label + ' · cette semaine'; $('#barHero').textContent = b.fmt(b.vals[n - 1]);
 }
 
-// Cette méthode permet de construire le calendrier du mois et la répartition musculaire lorsque l'écran Statistiques est préparé.
+// Cette méthode permet d'afficher les barres par muscle en séries ou en volume (vue Muscles des statistiques).
+function drawMuscles(mode) {
+  const M = mode === 'sets'
+    ? [['Dos', 48], ['Pectoraux', 41], ['Quadriceps', 33], ['Épaules', 29.5], ['Triceps', 24], ['Biceps', 19.5], ['Ischios', 16], ['Abdos', 9]]
+    : [['Quadriceps', 21.4], ['Dos', 18.9], ['Pectoraux', 15.2], ['Ischios', 10.8], ['Épaules', 7.1], ['Triceps', 4], ['Biceps', 2.9], ['Abdos', 0.4]];
+  const max = M[0][1];
+  $('#muscleBars').innerHTML = M.map(([m, v]) => `<div class="hbar"><span>${m}</span><div class="track"><div class="fill" style="width:${v / max * 100}%"></div></div><span class="n">${fmtN(v)}${mode === 'sets' ? '' : ' t'}</span></div>`).join('');
+  $('#muscleNote').textContent = mode === 'sets' ? 'Muscle principal = 1 série, secondaire = 0,5.' : 'Volume réparti comme les séries : principal 100 %, secondaire 50 %.';
+}
+
+// Cette méthode permet de construire le calendrier, les barres par muscle, les records par mois et les objectifs lorsque l'écran Statistiques est préparé.
 function renderStats() {
   const on = [1, 2, 5, 6, 8, 9, 12, 13, 15, 19, 20, 21];
   let h = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<div class="h">${d}</div>`).join('') + '<div></div><div></div><div></div>';
   for (let d = 1; d <= 31; d++) h += `<div class="c ${on.includes(d) ? 'on' : ''} ${d === 21 ? 'today' : ''} ${d > 21 ? 'fut' : ''}">${d}</div>`;
   $('#cal').innerHTML = h;
-  const M = [['Dos', 48], ['Pectoraux', 41], ['Quadriceps', 33], ['Épaules', 29.5], ['Triceps', 24], ['Biceps', 19.5], ['Ischios', 16], ['Abdos', 9]];
-  $('#muscleBars').innerHTML = M.map(([m, v]) => `<div class="hbar"><span>${m}</span><div class="track"><div class="fill" style="width:${v / 48 * 100}%"></div></div><span class="n">${fmtN(v)}</span></div>`).join('');
+  drawMuscles('sets');
+  const R = [['mai', 9], ['juin', 12], ['juil.', 7], ['août', 4], ['sept.', 11], ['oct.', 14]];
+  $('#recMonths').innerHTML = R.map(([m, v]) => `<div class="hbar"><span>${m}</span><div class="track"><div class="fill" style="width:${v / 14 * 100}%"></div></div><span class="n">${v}</span></div>`).join('');
+  const T = [['Charge +', 71], ['Reps +', 85], ['Consolider', 80], ['Reprise', 100]];
+  $('#reasonBars').innerHTML = T.map(([m, v]) => `<div class="hbar"><span>${m}</span><div class="track"><div class="fill" style="width:${v}%"></div></div><span class="n">${v} %</span></div>`).join('');
 }
 
 /* =========================================================
@@ -1337,8 +1448,8 @@ const NOTES = {
   live: ['Objectif du jour sous le nom de l\'exercice, avec sa raison (§7.10) : montée de charge (82,5 × 6 par Marzagao), +1 rep, consolidation, +5 % de durée.', 'Valeurs en bleu = pré-remplies par l\'objectif. Un champ modifié repasse en blanc et n\'est plus jamais réécrit.', 'L\'échauffement n\'a pas d\'objectif : il reprend la valeur précédente.', 'Colonnes Série | Précédent | champs du type de mesure | ✓ : voir les 4 types (kg/Reps, +kg/Reps, Temps).', 'Touche le numéro : Normale → É → D → X. « Précédent » suit le type.', 'Cocher une série vide reprend « Précédent » ; sans précédent, le champ est mis en évidence (Gainage série 2 : essaie avec une valeur effacée).', 'Glisse une série vers la gauche pour la supprimer.', 'Minuteur basé sur l\'heure réelle, −15 s / +15 s / Passer.', 'Record strict : la série 3 à 80 × 8 n\'est pas un record après la série 1.'],
   recap: ['Durée, volume, séries, records (au plus un par exercice et critère), objectifs atteints n / m (exercices sans objectif exclus).', 'Titre, note, photo, date, début et durée modifiables.', 'Enregistrer propose la mise à jour de la routine seulement si la structure a changé.'],
   fiche: ['Trois onglets : Résumé, Historique, Consignes (§7.2).', 'Objectif de la prochaine séance en tête du Résumé.', 'Sur le 1RM estimé : tendance projetée en pointillés jusqu\'à +12 semaines, rythme actuel, objectif à long terme en doré et date estimée (§7.10).', 'Réglages de progression : incrément, fourchette par défaut, objectif à long terme.', 'Courbe à une seule série, survol = réticule et info-bulle.', 'Meilleur poids « à au moins N reps ».'],
-  profil: ['Photo, nom, nombre de séances, graphique hebdo au choix (§7.1).', 'Aucune fonction sociale (v0.4).'],
-  stats: ['Calendrier des jours d\'entraînement, séries par muscle (principal 1, secondaire 0,5), records récents.'],
+  profil: ['Photo, nom, nombre de séances (§7.1) ; le lien Statistiques rappelle les séances de la semaine.', 'Le graphique hebdo est passé dans Statistiques › Aperçu (#103).', 'Aucune fonction sociale (v0.4).'],
+  stats: ['4 vues en onglets (§7.6, #103) : Aperçu, Muscles, Progrès, Séances ; vue et période gardées dans l\'URL.', 'Période commune aux vues thématiques (30 j par défaut) ; l\'Aperçu compare les 30 derniers jours aux 30 précédents.', 'Aperçu : totaux depuis le début, histogramme hebdo (déplacé du Profil), calendrier et série.', 'Muscles : carte colorée en 4 niveaux, séries ou volume par muscle (principal 1, secondaire 0,5), pousser/tirer et haut/bas.', 'Progrès : records par mois, objectifs de séance atteints, objectifs à long terme, records récents.', 'Séances : durée et RPE moyens, types de séries, zones de reps (dès 3 séances), routines.', 'Bloc masqué seulement si sa fonction est désactivée et sans donnée (RPE, objectifs), avec un renvoi aux paramètres ; sinon état vide explicatif.'],
   parametres: ['Sombre par défaut (usage en salle).', 'Unités, minuteur, écran allumé, notifications, compte et export.', 'Progression : objectifs activés ou non, ancienneté modifiable (§7.8).', 'À propos : bouton de test de notification (lot L0) et journal d\'erreurs local.']
 };
 function renderNotes(name) {
@@ -1405,6 +1516,10 @@ document.addEventListener('click', e => {
   if (ds.equip) { state.equip = ds.equip; return renderLib(); }
   if (ds.metric) { chartState.metric = ds.metric; return drawLine($('#lineChart')); }
   if (ds.p !== undefined && t.closest('#periodSeg')) { $$('#periodSeg button').forEach(b => b.classList.toggle('on', b === t)); chartState.period = +ds.p; return drawLine($('#lineChart')); }
+  if (ds.sv) { $$('#statsTabs button').forEach(b => b.classList.toggle('on', b === t)); $$('.stv').forEach(p => p.classList.toggle('on', p.dataset.paneSv === ds.sv));
+    $('#statsPeriod').style.display = ds.sv === 'apercu' ? 'none' : 'flex'; return; }
+  if (ds.sp) { $$('#statsPeriod .chip').forEach(b => b.classList.toggle('on', b === t)); return; }
+  if (ds.mm) { $$('#muscleSeg button').forEach(b => b.classList.toggle('on', b === t)); return drawMuscles(ds.mm); }
   if (ds.m) { $$('#barSeg button').forEach(b => b.classList.toggle('on', b === t)); barMetric = ds.m; return drawBars($('#barChart')); }
   if (ds.pane) { $$('#ficheTabs button').forEach(b => b.classList.toggle('on', b === t)); $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === ds.pane)); return; }
   if (t.classList.contains('switch')) return t.classList.toggle('on');

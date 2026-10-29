@@ -55,7 +55,7 @@ async function seedRecordWorkout(seeded: Seeded): Promise<void> {
 test('statistiques : records récents datés, détaillés et cliquables', async ({ page, seeded }) => {
   await seedRecordWorkout(seeded);
   await login(page, seeded.account);
-  await page.goto('/profile/stats');
+  await page.goto('/profile/stats?vue=progres');
 
   const line = page.locator('.rec-line', { hasText: BENCH.name });
   await expect(line).toBeVisible({ timeout: 15_000 });

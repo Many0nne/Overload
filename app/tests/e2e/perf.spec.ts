@@ -136,7 +136,7 @@ test('budgets : séance de 6 exercices < 1 s, historique et statistiques < 2 s',
       await page.getByRole('link', { name: 'Profil' }).click();
       await page.getByRole('button', { name: /Statistiques/ }).click();
     },
-    () => expect(page.locator('.hbar').first()).toBeVisible(),
+    () => expect(page.locator('.st-totals').first()).toBeVisible(),
   );
 
   const history = await timed(

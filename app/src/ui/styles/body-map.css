@@ -29,3 +29,22 @@
 .body-map .bm-primary {
   fill: var(--accent);
 }
+/* Statistiques : carte colorée en 4 niveaux selon la charge de travail (h1 faible → h4 muscle le plus sollicité). */
+.body-pair.heat {
+  margin: 0;
+}
+.body-map .bm-h1 {
+  fill: var(--accent);
+  fill-opacity: 0.25;
+}
+.body-map .bm-h2 {
+  fill: var(--accent);
+  fill-opacity: 0.45;
+}
+.body-map .bm-h3 {
+  fill: var(--accent);
+  fill-opacity: 0.7;
+}
+.body-map .bm-h4 {
+  fill: var(--accent);
+}

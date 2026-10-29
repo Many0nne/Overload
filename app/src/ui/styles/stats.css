@@ -1,0 +1,236 @@
+/* ---------- Statistiques (§F7.6, issue #103) : onglets, chiffres clés, répartitions, objectifs ---------- */
+.st-tabs .seg button {
+  min-height: 36px;
+  font-size: 0.875rem;
+}
+.st-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.st-kpi {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 11px 12px;
+  min-width: 0;
+}
+.st-kpi .k {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.st-kpi .v {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.st-delta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.st-delta.up {
+  color: var(--done);
+}
+.st-delta.down {
+  color: var(--fail);
+}
+.st-delta.eq {
+  color: var(--muted);
+  font-weight: 500;
+}
+.st-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 8px;
+  text-align: center;
+}
+.st-totals .v {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.st-totals .k {
+  font-size: 0.71875rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+/* Barre empilée d'une répartition, avec sa légende */
+.st-stack {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  gap: 2px;
+}
+.st-stack span {
+  display: block;
+  height: 100%;
+}
+.st-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 9px;
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}
+.st-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
+.st-legend b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.st-c-normal {
+  background: var(--accent);
+}
+.st-c-warmup {
+  background: var(--warm);
+}
+.st-c-drop {
+  background: var(--drop);
+}
+.st-c-failure {
+  background: var(--fail);
+}
+.st-c-zone1 {
+  background: var(--fail);
+}
+.st-c-zone2 {
+  background: var(--accent);
+}
+.st-c-zone3 {
+  background: var(--done);
+}
+/* Équilibres pousser/tirer, haut/bas */
+.st-balance {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8125rem;
+  padding: 5px 0;
+}
+.st-balance .r {
+  text-align: right;
+}
+.st-balance b {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.st-balance .st-stack {
+  height: 10px;
+}
+.st-balance .a {
+  background: var(--accent);
+}
+.st-balance .b {
+  background: var(--drop);
+}
+.st-scale {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.71875rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.st-scale i {
+  width: 16px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.st-scale i:first-of-type {
+  background: var(--text);
+  opacity: 0.14;
+}
+/* Objectifs à long terme : ligne cliquable vers la fiche exercice */
+.st-goal {
+  display: block;
+  width: 100%;
+  text-align: left;
+  min-height: 44px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.st-goal:last-child {
+  border: 0;
+  padding-bottom: 2px;
+}
+.st-goal .top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.st-goal .top b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.st-goal .sub {
+  font-size: 0.78125rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.st-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  margin-top: 7px;
+  overflow: hidden;
+}
+.st-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+}
+.st-track.done span {
+  background: var(--done);
+}
+.st-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.st-row:last-child {
+  border: 0;
+}
+.st-row b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* État vide en attente d'un seuil (« Encore 1 séance ») */
+.st-wait .st-track {
+  max-width: 180px;
+  margin: 10px auto 0;
+}
+.st-hint {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  padding: 14px 2px 0;
+  line-height: 1.45;
+}
+.st-hint a {
+  color: var(--accent);
+  font-weight: 600;
+}
+/* Barres par muscle : colonne de valeur élargie pour le volume (« 21,4 t ») */
+.hbar.wide {
+  grid-template-columns: 86px 1fr 58px;
+}

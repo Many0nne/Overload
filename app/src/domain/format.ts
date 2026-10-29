@@ -24,6 +24,14 @@ export function formatKg(kg: number, unit: Units['weight'], digits = 1): string 
   return `${formatNumber(kgTo(kg, unit), digits)} ${unit}`;
 }
 
+// Cette méthode permet d'afficher un volume cumulé (statistiques) : en tonnes ou milliers de lb à partir de 10 000,
+// sinon en kg ou lb entiers (« 8 450 kg », « 94,6 t », « 208,6 k lb »).
+export function formatVolume(kg: number, unit: Units['weight']): string {
+  const v = kgTo(kg, unit);
+  if (v < 10_000) return `${formatNumber(v, 0)} ${unit}`;
+  return `${formatNumber(v / 1000)} ${unit === 'kg' ? 't' : 'k lb'}`;
+}
+
 // Cette méthode permet d'afficher une distance saisie dans l'unité de l'utilisateur.
 export function formatDistance(d: Distance, unit: Units['distance']): string {
   return `${displayDistanceNumber(d, unit)} ${unit}`;
