@@ -2,7 +2,10 @@ import { expect, login, test } from './fixtures';
 
 // Cette méthode permet de vérifier les 4 vues des statistiques (#103) sur l'historique seedé (une séance « Push E2E » il y a
 // 3 jours, 6 séries) : Aperçu par défaut, vue et période communes gardées dans l'URL, états vides des seuils et du RPE désactivé.
-test('statistiques : quatre vues, période commune gardée dans l’URL, états vides', async ({ page, seeded }) => {
+test('statistiques : quatre vues, période commune gardée dans l’URL, états vides', async ({
+  page,
+  seeded,
+}) => {
   await login(page, seeded.account);
   await page.goto('/profile/stats');
 
