@@ -3970,5 +3970,24 @@
     "client_updated_at": 1767225600000,
     "client_device_id": "00000000-0000-0000-0000-000000000000",
     "deleted_at": null
+  },
+  {
+    "id": "a7d8c74c-78f6-5b01-a4db-359392a101be",
+    "user_id": null,
+    "name": "Développé incliné (machine)",
+    "name_search": "developpe incline (machine)",
+    "equipment": "machine",
+    "primary_muscle": "chest",
+    "secondary_muscles": [
+      "shoulders",
+      "triceps"
+    ],
+    "measurement_type": "weight_reps",
+    "instructions": "Règle le siège pour que les poignées soient à hauteur du haut de la poitrine.\nDos plaqué contre le dossier, pousse vers le haut et l'avant jusqu'à l'extension des bras.\nReviens lentement sans laisser les charges se reposer.",
+    "source_id": "overload:Machine_Incline_Press",
+    "archived_at": null,
+    "client_updated_at": 1767225600000,
+    "client_device_id": "00000000-0000-0000-0000-000000000000",
+    "deleted_at": null
   }
 ]
