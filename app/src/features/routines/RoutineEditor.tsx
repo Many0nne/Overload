@@ -14,6 +14,7 @@ import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
 import { useExerciseMap, useFolders, useSettings } from '@/data/queries';
 import { createRoutine, deleteRoutine, updateRoutine } from '@/data/repositories';
+import { maskDuration } from '@/domain/format';
 import { uuidv7 } from '@/domain/ids';
 import { SET_KIND_LABELS, setLabels } from '@/domain/labels';
 import { fieldsFor, hasReps, type SetField, weightUnitLabel } from '@/domain/measurement';
@@ -414,6 +415,9 @@ export default function RoutineEditor() {
                   <input
                     defaultValue={fieldText(editingSet, f, settings.units)}
                     inputMode={f === 'duration' ? 'numeric' : 'decimal'}
+                    onChange={(ev) => {
+                      if (f === 'duration') ev.target.value = maskDuration(ev.target.value);
+                    }}
                     onBlur={(ev) => {
                       const p = parseField(ev.target.value, f, settings.units);
                       if (!p) return toast('Valeur invalide');

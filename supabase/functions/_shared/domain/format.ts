@@ -82,6 +82,20 @@ export function parseDuration(input: string): number | undefined {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
+// Cette méthode permet de mettre en forme une durée en cours de saisie façon minuteur : seuls les chiffres comptent (un « : »
+// tapé à la main ou collé est absorbé), ils entrent par la droite : « 130 » → « 1:30 », « 10000 » → « 1:00:00 », vide si aucun.
+// Le résultat est toujours relisible par parseDuration (c'est lui qui est enregistré). Minutes et secondes plafonnées à 59 ; six chiffres au plus (99:59:59) ; les suivants sont ignorés.
+export function maskDuration(input: string): string {
+  const digits = input.replace(/\D/g, '').replace(/^0+/, '').slice(0, 6);
+  if (!digits) return '';
+  const n = Number(digits);
+  const p = (v: number) => String(v).padStart(2, '0');
+  const h = Math.floor(n / 10000);
+  const m = Math.min(59, Math.floor((n % 10000) / 100));
+  const sec = Math.min(59, n % 100);
+  return h > 0 ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
+}
+
 // Cette méthode permet d'afficher une allure (secondes par km) en min/km ou min/mi.
 export function formatPace(sPerKm: number, unit: Units['distance']): string {
   const perUnit = unit === 'km' ? sPerKm : sPerKm * 1.609344;

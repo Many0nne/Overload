@@ -8,6 +8,7 @@ import {
   formatSetValues,
   formatTargets,
   formatWeight,
+  maskDuration,
   parseDuration,
   recordDayLabel,
   repMilestonesLabel,
@@ -51,6 +52,25 @@ describe('durées', () => {
     expect(formatDuration(90)).toBe('1:30');
     expect(formatDuration(5)).toBe('0:05');
     expect(formatDuration(3723)).toBe('1:02:03');
+  });
+  it('met en forme la saisie façon minuteur', () => {
+    expect(maskDuration('1')).toBe('0:01');
+    expect(maskDuration('13')).toBe('0:13');
+    expect(maskDuration('130')).toBe('1:30');
+    expect(maskDuration('1030')).toBe('10:30');
+    expect(maskDuration('10000')).toBe('1:00:00');
+    expect(maskDuration('0:013')).toBe('0:13');
+    expect(maskDuration('1:3')).toBe('0:13');
+    expect(maskDuration('1:30')).toBe('1:30');
+    expect(maskDuration('1:')).toBe('0:01');
+    expect(maskDuration('0:0')).toBe('');
+    expect(maskDuration('')).toBe('');
+    expect(maskDuration('9999999')).toBe('99:59:59');
+    expect(maskDuration('99')).toBe('0:59');
+    expect(parseDuration(maskDuration('9999999'))).toBe(99 * 3600 + 59 * 60 + 59);
+    for (const s of ['1', '45', '130', '1030', '10000', '123456']) {
+      expect(parseDuration(maskDuration(s))).toBe(parseDuration(s));
+    }
   });
   it('lit m:ss, h:mm:ss et les secondes seules', () => {
     expect(parseDuration('1:30')).toBe(90);

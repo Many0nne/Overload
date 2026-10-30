@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { parseDuration } from '@/domain/format';
+import { maskDuration, parseDuration } from '@/domain/format';
 import { SubHead, toast } from '@/ui/components';
 import { createPastWorkout } from './start';
 
@@ -44,7 +44,11 @@ export default function PastWorkoutPage() {
           </label>
           <label className="field">
             <span>Durée</span>
-            <input value={duration} inputMode="numeric" onChange={(e) => setDuration(e.target.value)} />
+            <input
+              value={duration}
+              inputMode="numeric"
+              onChange={(e) => setDuration(maskDuration(e.target.value))}
+            />
           </label>
         </div>
         <button className="btn btn-primary btn-block mt-20 btn-lg" onClick={() => void create()}>
