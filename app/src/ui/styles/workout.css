@@ -297,6 +297,24 @@ tr.done .rpe-btn {
 .rpe-btn.set {
   color: var(--accent);
 }
+.rpe-btn.set.rpe-tint {
+  color: var(--rpe-ink);
+}
+/* Couleur d'un RPE : fond teinté + chiffre foncé, ou fond plein (variables posées par rpeColor). */
+.rpe-tint {
+  background: color-mix(in srgb, var(--rpe-fill) 18%, transparent);
+  color: var(--rpe-ink);
+}
+.rpe-solid {
+  background: var(--rpe-fill);
+  color: var(--rpe-on);
+}
+.rpe-tag {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
 .sets tr.done .rpe-btn.set {
   box-shadow: none;
 }
@@ -348,9 +366,24 @@ tr.done .rpe-btn {
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
-.rpe-track button.on {
+.rpe-track button.on:not(.rpe-solid) {
   background: var(--accent-fill);
   color: var(--accent-ink);
+}
+.rpe-track button.rpe-tint {
+  background: color-mix(in srgb, var(--rpe-fill) 18%, transparent);
+  color: var(--rpe-ink);
+}
+.rpe-track button.rpe-solid {
+  background: var(--rpe-fill);
+  color: var(--rpe-on);
+}
+.rpe-track button.rpe-tint,
+.rpe-track button.rpe-solid {
+  font-weight: 700;
+}
+.rpe-ink {
+  color: var(--rpe-ink);
 }
 .rpe-clear {
   margin-top: 12px;

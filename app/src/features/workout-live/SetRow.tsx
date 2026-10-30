@@ -14,6 +14,7 @@ import {
 } from '@/domain/units';
 import { PlateBar, plateText } from '@/features/plates/PlateBar';
 import { CheckIcon, GaugeIcon } from '@/ui/icons';
+import { rpeColor } from '@/ui/rpeColor';
 import { KIND_CLASS } from '@/ui/setKind';
 
 type Units = Settings['units'];
@@ -278,6 +279,7 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
   const rowRef = useSwipeToDelete(p.readOnly, () => p.onDelete(p.set.id));
   const kindClass = KIND_CLASS[p.set.kind];
   const [weightFocused, setWeightFocused] = useState(false);
+  const rpe = rpeColor(p.set.rpe);
   const cols = fields.length + 3 + (p.showRpe ? 1 : 0);
 
   return (
@@ -333,7 +335,8 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
         {p.showRpe && (
           <td>
             <button
-              className={`rpe-btn${p.set.rpe !== undefined ? ' set' : ''}`}
+              className={`rpe-btn${p.set.rpe !== undefined ? (rpe ? ' set rpe-tint' : ' set') : ''}`}
+              style={rpe}
               disabled={p.readOnly || !p.set.done}
               aria-label={p.set.rpe !== undefined ? `RPE ${formatRpe(p.set.rpe)}, modifier` : 'Saisir le RPE'}
               onClick={() => p.onOpenRpe(p.set.id)}

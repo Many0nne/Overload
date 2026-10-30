@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { formatRpe } from '@/domain/format';
 import { RPE_VALUES } from '@/domain/measurement';
 import { Sheet } from '@/ui/components';
+import { rpeColor } from '@/ui/rpeColor';
 
 // Libellé et équivalent en reps en réserve de chaque valeur de RPE.
 const RPE_TEXT: Record<number, [string, string]> = {
@@ -48,10 +49,12 @@ export function RpeSheet(p: {
       actions={[{ label: 'Terminé', kind: 'primary', onClick: p.onClose }]}
     >
       <p className="rpe-sub">{p.subtitle}</p>
-      <div className="rpe-big" aria-live="polite">
+      <div className="rpe-big rpe-ink" aria-live="polite" style={rpeColor(shown)}>
         {shown !== undefined ? formatRpe(shown) : '–'}
       </div>
-      <div className="rpe-label">{text?.[0] ?? 'Quel effort pour cette série ?'}</div>
+      <div className="rpe-label rpe-ink" style={rpeColor(shown)}>
+        {text?.[0] ?? 'Quel effort pour cette série ?'}
+      </div>
       <div className="rpe-rir">{text?.[1] ?? '10 = échec · 9 = 1 rep en réserve · 8 = 2…'}</div>
       <div
         className="rpe-track"
@@ -76,7 +79,8 @@ export function RpeSheet(p: {
           <button
             key={v}
             aria-pressed={shown === v}
-            className={shown === v ? 'on' : ''}
+            className={shown === v ? 'on rpe-solid' : 'rpe-tint'}
+            style={rpeColor(v)}
             onClick={() => p.onPick(v)}
           >
             {formatRpe(v)}

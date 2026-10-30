@@ -7,7 +7,6 @@ import {
   criterionLabel,
   formatDurationHuman,
   formatKg,
-  formatRpe,
   formatSetValues,
   formatTarget,
 } from '@/domain/format';
@@ -18,6 +17,7 @@ import { workoutToRoutine } from '@/domain/routineDiff';
 import { workoutSummary } from '@/domain/summary';
 import { Sheet, SubHead, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
+import { RpeTag } from '@/ui/RpeTag';
 import { KIND_CLASS } from '@/ui/setKind';
 import { formatWorkoutDate } from './HistoryCard';
 import { PhotoView } from './PhotoView';
@@ -124,7 +124,7 @@ export default function HistoryDetailPage() {
                   <li key={s.id}>
                     <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                     {formatSetValues(s, e.measurementType, settings.units)}
-                    {s.rpe !== undefined && <span className="muted">@ RPE {formatRpe(s.rpe)}</span>}
+                    {s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
                     {badges?.sets[s.id]?.length ? (
                       <span
                         className="pr-pill"
