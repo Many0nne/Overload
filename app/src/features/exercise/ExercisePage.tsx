@@ -25,7 +25,6 @@ import {
   formatKg,
   formatMetric,
   formatReason,
-  formatRpe,
   formatSetValues,
   formatTargets,
   formatWeight,
@@ -69,6 +68,7 @@ import { BodyMap } from '@/ui/BodyMap';
 import { Chips, Seg, Sheet, SubHead, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { LineChart } from '@/ui/LineChart';
+import { RpeTag } from '@/ui/RpeTag';
 import { KIND_CLASS } from '@/ui/setKind';
 
 type Units = Settings['units'];
@@ -741,7 +741,7 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
                           <li key={s.id}>
                             <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                             {formatSetValues(s, e.measurementType, settings.units)}
-                            {s.rpe !== undefined && <span className="muted">@ RPE {formatRpe(s.rpe)}</span>}
+                            {s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
                             {wb?.sets[s.id]?.length ? <span className="pr-pill">🏆</span> : null}
                             {s.id === goalSet ? <span className="pr-pill">🎯</span> : null}
                           </li>

@@ -41,6 +41,35 @@
   --drop: #b197fc;
   --fail: #f87171;
   --gold: #f5c518;
+  /* RPE, du vert (6) au rouge (10) : -N = fond plein, -N-ink = chiffre sur fond teinté, -N-on = texte sur fond plein.
+     Contrastes ≥ 4,5:1 vérifiés par rpeColor.test.ts. */
+  --rpe-6: #49df7b;
+  --rpe-6-ink: #3df57a;
+  --rpe-6-on: #101318;
+  --rpe-6-5: #4edf49;
+  --rpe-6-5-ink: #43f53d;
+  --rpe-6-5-on: #101318;
+  --rpe-7: #8fdf49;
+  --rpe-7-ink: #93f53d;
+  --rpe-7-on: #101318;
+  --rpe-7-5: #d0df49;
+  --rpe-7-5-ink: #e2f53d;
+  --rpe-7-5-on: #101318;
+  --rpe-8: #dfb749;
+  --rpe-8-ink: #f5c43d;
+  --rpe-8-on: #101318;
+  --rpe-8-5: #df9449;
+  --rpe-8-5-ink: #f6a14c;
+  --rpe-8-5-on: #101318;
+  --rpe-9: #df7649;
+  --rpe-9-ink: #f79369;
+  --rpe-9-on: #101318;
+  --rpe-9-5: #df5d49;
+  --rpe-9-5-ink: #f88d7c;
+  --rpe-9-5-on: #101318;
+  --rpe-10: #e04d4d;
+  --rpe-10-ink: #f98686;
+  --rpe-10-on: #101318;
 }
 [data-theme="light"] {
   --bg: #ffffff;
@@ -60,4 +89,33 @@
   --drop: #7c5cd6;
   --fail: #dc2626;
   --gold: #c99a00;
+  /* RPE, du vert (6) au rouge (10) : -N = fond plein, -N-ink = chiffre sur fond teinté, -N-on = texte sur fond plein.
+     Contrastes ≥ 4,5:1 vérifiés par rpeColor.test.ts. */
+  --rpe-6: #17d356;
+  --rpe-6-ink: #066b27;
+  --rpe-6-on: #101318;
+  --rpe-6-5: #1ed317;
+  --rpe-6-5-ink: #096b06;
+  --rpe-6-5-on: #101318;
+  --rpe-7: #6fd317;
+  --rpe-7-ink: #356b06;
+  --rpe-7-on: #101318;
+  --rpe-7-5: #c0d317;
+  --rpe-7-5-ink: #5c6605;
+  --rpe-7-5-on: #101318;
+  --rpe-8: #d3a117;
+  --rpe-8-ink: #745706;
+  --rpe-8-on: #101318;
+  --rpe-8-5: #d37517;
+  --rpe-8-5-ink: #884707;
+  --rpe-8-5-on: #101318;
+  --rpe-9: #dc5318;
+  --rpe-9-ink: #9b3408;
+  --rpe-9-on: #101318;
+  --rpe-9-5: #d33017;
+  --rpe-9-5-ink: #a51d09;
+  --rpe-9-5-on: #ffffff;
+  --rpe-10: #d31717;
+  --rpe-10-ink: #aa0909;
+  --rpe-10-on: #ffffff;
 }
