@@ -312,6 +312,35 @@ describe('vues', () => {
     expect(q.text).toContain('Objectif');
   });
 
+  it('respecte les réglages de l’exercice : RPE masqué, pas d’objectif à long terme (issue #124)', () => {
+    const w = workout(T0, [entry(SQUAT.id, [{ ...set({ kg: 100, reps: 5 }), rpe: 8 }])]);
+    const off: ViewCtx = {
+      ...ctx(T0 + DAY),
+      prefs: new Map([[SQUAT.id, { schemaVersion: 1, rpe: false }]]),
+    };
+    expect(workoutDetail(w, undefined, ctx(T0 + DAY)).data.exercises[0]?.sets[0]?.rpe).toBe(8);
+    const detail = workoutDetail(w, undefined, off);
+    expect(detail.data.exercises[0]?.sets[0]?.rpe).toBeUndefined();
+    expect(detail.text).not.toContain('RPE');
+    const hist = exerciseHistory(SQUAT, [w], { from: 0, to: T0 + DAY }, off);
+    expect(hist.data.sessions[0]?.sets[0]?.rpe).toBeUndefined();
+    expect(hist.text).not.toContain('RPE');
+
+    const many = Array.from({ length: 10 }, (_, i) =>
+      workout(T0 + i * 7 * DAY, [entry(SQUAT.id, sets(100 + i * 2.5, [5]))]),
+    );
+    const goal = { weight: { v: 160, u: 'kg' as const }, reps: 1, setAt: T0 };
+    const q = progressionView(
+      SQUAT,
+      many,
+      { schemaVersion: 1, longTermGoal: goal, progression: false },
+      settings(),
+      ctx(T0 + 70 * DAY),
+    );
+    expect(q.data.available && q.data.goal).toBeFalsy();
+    expect(q.text).not.toContain('Objectif');
+  });
+
   it('agrège les statistiques par semaine et par muscle', () => {
     const ws = [
       workout(T0, [entry(SQUAT.id, sets(100, [5, 5]))], {

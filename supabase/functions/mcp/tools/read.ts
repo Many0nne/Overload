@@ -27,10 +27,11 @@ import { dayOf, exerciseOf, exerciseRefSchema, instantOf, ok, routineOf, run, tz
 const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 const YEAR_MS = 365.25 * 86_400_000;
 
-// Cette méthode permet de préparer le contexte des vues (unités, fuseau, exercices) pour un appel d'outil.
+// Cette méthode permet de préparer le contexte des vues (unités, fuseau, exercices, préférences) pour un appel d'outil.
 export async function viewCtx(store: Store, tz: string): Promise<ViewCtx> {
-  const [profile, exercises] = await Promise.all([store.profile(), store.exerciseMap()]);
-  return { units: profile.settings.units, tz, now: store.now, exercises };
+  const [profile, exercises, prefs] = await Promise.all([store.profile(), store.exerciseMap(), store.prefs()]);
+  const prefsMap = new Map(prefs.map((p) => [p.exercise_id, p.doc]));
+  return { units: profile.settings.units, tz, now: store.now, exercises, prefs: prefsMap };
 }
 
 // Cette méthode permet de coder un curseur de pagination (dernier élément renvoyé : début et id).
@@ -69,7 +70,7 @@ export function registerReadTools(server: McpServer, store: Store) {
         store.prefs(),
         viewCtx(store, zone),
       ]);
-      const v = profileView(profile, workouts, prefs.map((p) => p.doc), ctx);
+      const v = profileView(profile, workouts, prefs, ctx);
       return ok(v.text, v.data);
     }),
   );

@@ -320,6 +320,7 @@ const PHRASES: [RegExp, string][] = [
   [/\boverhead\b/g, 'au-dessus tete'],
   [/\bpushdown\b/g, 'extension'],
   [/\bshrug\b/g, 'shrugs'],
+  [/\bwarm ?ups?\b/g, 'echauffement'],
 ];
 
 const STOPWORDS = new Set([

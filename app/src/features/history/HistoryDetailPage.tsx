@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useHistoryWithBadges } from '@/data/derived';
-import { useExerciseMap, useSettings, useWorkout } from '@/data/queries';
+import { useExerciseMap, useExercisePrefsMap, useSettings, useWorkout } from '@/data/queries';
 import { createRoutine, deleteWorkout } from '@/data/repositories';
+import { exerciseOptions } from '@/domain/exerciseOptions';
 import {
   criterionLabel,
   formatDurationHuman,
@@ -30,6 +31,7 @@ export default function HistoryDetailPage() {
   const row = useWorkout(id);
   const { badges: all } = useHistoryWithBadges();
   const exercises = useExerciseMap();
+  const prefs = useExercisePrefsMap();
   const settings = useSettings();
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -102,6 +104,8 @@ export default function HistoryDetailPage() {
           const ex = exercises.get(e.exerciseId);
           const labels = setLabels(e.sets.map((s) => s.kind));
           const met = targetsMet(e);
+          // RPE masqué (pas effacé) si l'exercice ne le note plus (issue #124).
+          const rpeOn = exerciseOptions(ex, prefs.get(e.exerciseId)).rpe;
           const missed = e.sets.map((s) => missedTarget(s, e.measurementType));
           return (
             <div key={e.id} className="card hist">
@@ -124,7 +128,7 @@ export default function HistoryDetailPage() {
                   <li key={s.id}>
                     <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                     {formatSetValues(s, e.measurementType, settings.units)}
-                    {s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
+                    {rpeOn && s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
                     {badges?.sets[s.id]?.length ? (
                       <span
                         className="pr-pill"

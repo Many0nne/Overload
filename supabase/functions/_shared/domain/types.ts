@@ -123,6 +123,8 @@ export type ExercisePrefsDoc = {
   increment?: Weight;
   defaultRepRange?: RepRange;
   longTermGoal?: { weight: Weight; reps: number; setAt: number };
+  rpe?: boolean; // noter l'effort (RPE) ; absent = défaut de l'exercice (exerciseOptions.ts, issue #124)
+  progression?: boolean; // objectif de progression ; absent = défaut de l'exercice
 };
 
 export type TrainingAgeBucket = 'none' | 'lt6m' | '6to12m' | '1to2y' | '2to5y' | 'gt5y';

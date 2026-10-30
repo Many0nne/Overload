@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { db } from '@/data/db';
+import { exerciseOptions } from '@/domain/exerciseOptions';
 import {
   criterionLabel,
   criterionShortLabel,
@@ -86,7 +87,9 @@ export default function ProgressView(props: { period: StatsPeriod }) {
     const list = (prefs ?? []).flatMap((p) => {
       const goal = p.doc.longTermGoal;
       const ex = exercises.get(p.exercise_id);
-      return goal && ex?.measurement_type === 'weight_reps' ? [{ exerciseId: p.exercise_id, goal }] : [];
+      // Objectif de progression désactivé pour l'exercice (issue #124) : son objectif à long terme est masqué.
+      const shown = goal && ex?.measurement_type === 'weight_reps' && exerciseOptions(ex, p.doc).progression;
+      return shown ? [{ exerciseId: p.exercise_id, goal }] : [];
     });
     return goalsProgress(list, workouts ?? [], settings, now);
   }, [prefs, exercises, workouts, settings]);

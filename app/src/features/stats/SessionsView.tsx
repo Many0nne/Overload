@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { useRoutines } from '@/data/queries';
+import { useExercisePrefsMap, useRoutines } from '@/data/queries';
+import { rpeHiddenIds } from '@/domain/exerciseOptions';
 import { formatDurationHuman } from '@/domain/format';
 import {
   averageRpe,
@@ -17,23 +18,26 @@ import { delta, Kpi, SettingsHint, Stack, useStatsData, Waiting } from './parts'
 // Cette méthode permet d'afficher la vue Séances sur la période : durée et RPE moyens (écarts à la période précédente),
 // types de séries, zones de répétitions et routines les plus utilisées.
 export default function SessionsView(props: { period: StatsPeriod }) {
-  const { workouts, settings, now } = useStatsData();
+  const { workouts, exercises, settings, now } = useStatsData();
   const routines = useRoutines();
+  const prefs = useExercisePrefsMap();
 
   const data = useMemo(() => {
     const all = workouts ?? [];
     const r = periodRange(props.period, now);
     const prevFrom = r.prevFrom;
+    // Exercices au RPE désactivé (issue #124) : leurs RPE ne comptent pas dans la moyenne.
+    const hidden = rpeHiddenIds(exercises.values(), prefs);
     return {
       cur: totals(all, r.from, r.to),
       prev: prevFrom === undefined ? undefined : totals(all, prevFrom, r.from),
-      rpe: averageRpe(all, r.from, r.to),
-      prevRpe: prevFrom === undefined ? undefined : averageRpe(all, prevFrom, r.from),
+      rpe: averageRpe(all, r.from, r.to, hidden),
+      prevRpe: prevFrom === undefined ? undefined : averageRpe(all, prevFrom, r.from, hidden),
       kinds: setKindSplit(all, r.from, r.to),
       zones: repZones(all, r.from, r.to),
       routines: routineUsage(all, r.from, r.to).slice(0, 5),
     };
-  }, [workouts, props.period, now]);
+  }, [workouts, exercises, prefs, props.period, now]);
 
   if (!workouts) return null;
   const { cur, prev, rpe, kinds, zones } = data;

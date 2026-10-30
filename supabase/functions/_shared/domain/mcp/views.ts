@@ -2,6 +2,7 @@
 // Sorties des outils de lecture du connecteur Claude (docs/spec-mcp.md §6.2) : mêmes calculs que l'app (domaine),
 // JSON structuré (charges saisies gardées en { v, u }) et résumé texte en français dans les unités de l'utilisateur.
 import { dayKey, WEEK_MS, weekStart, weeksBetween } from '../dates.ts';
+import { exerciseOptions } from '../exerciseOptions.ts';
 import {
   criterionLabel,
   formatCanonical,
@@ -41,6 +42,7 @@ import type {
   BodyMeasurementKey,
   BodyMeasurementRow,
   ExercisePrefsDoc,
+  ExercisePrefsRow,
   ExerciseRow,
   FolderRow,
   Muscle,
@@ -62,6 +64,8 @@ export type ViewCtx = {
   tz: string;
   now: number;
   exercises: Map<string, ExerciseRow>;
+  /** Préférences par exercice (RPE et objectif désactivables, issue #124) ; absent = réglages par défaut. */
+  prefs?: Map<string, ExercisePrefsDoc>;
 };
 
 export type Rendered<T> = { data: T; text: string };
@@ -76,6 +80,11 @@ export function kgOut(kg: number, unit: Units['weight']): Weight {
 // Cette méthode permet de lire le nom d'un exercice pour l'affichage (« Exercice supprimé » s'il est introuvable).
 export function exerciseName(ctx: ViewCtx, id: string): string {
   return ctx.exercises.get(id)?.name ?? 'Exercice supprimé';
+}
+
+// Cette méthode permet de savoir si le RPE d'un exercice s'affiche (masqué, pas effacé, s'il est désactivé pour lui).
+export function rpeShown(ctx: ViewCtx, exerciseId: string): boolean {
+  return exerciseOptions(ctx.exercises.get(exerciseId), ctx.prefs?.get(exerciseId)).rpe;
 }
 
 // Cette méthode permet de projeter les séances dans le « temps local » du moteur aligné sur le fuseau demandé, pour
@@ -103,7 +112,7 @@ export type ProfileView = {
 export function profileView(
   profile: Pick<ProfileRow, 'display_name' | 'settings'>,
   workouts: WorkoutRow[],
-  prefs: ExercisePrefsDoc[],
+  prefs: Pick<ExercisePrefsRow, 'exercise_id' | 'doc'>[],
   ctx: ViewCtx,
 ): Rendered<ProfileView> {
   const s = profile.settings;
@@ -118,7 +127,10 @@ export function profileView(
     ...(done[0] ? { firstWorkoutAt: formatInstant(done[0].started_at, ctx.tz) } : {}),
     ...(done.length ? { lastWorkoutAt: formatInstant(done[done.length - 1]!.started_at, ctx.tz) } : {}),
     weekStreak: weekStreak(framed(done, ctx.tz), toLocalFrame(ctx.now, ctx.tz)),
-    longTermGoals: prefs.filter((p) => p.longTermGoal).length,
+    // Un objectif à long terme ne compte pas si l'objectif de progression est désactivé pour l'exercice (#124).
+    longTermGoals: prefs.filter(
+      (p) => p.doc.longTermGoal && exerciseOptions(ctx.exercises.get(p.exercise_id), p.doc).progression,
+    ).length,
   };
   const text = [
     `${data.name} : ${data.workoutCount} séance${data.workoutCount > 1 ? 's' : ''} enregistrée${data.workoutCount > 1 ? 's' : ''}` +
@@ -227,6 +239,7 @@ export function workoutDetail(
     ...(w.doc.note ? { note: w.doc.note } : {}),
     exercises: w.doc.exercises.map((e) => {
       const entryRecords = labels(badges?.entries[e.id], e.measurementType);
+      const rpeOn = rpeShown(ctx, e.exerciseId);
       return {
         exerciseId: e.exerciseId,
         name: exerciseName(ctx, e.exerciseId),
@@ -243,7 +256,7 @@ export function workoutDetail(
             ...(s.durationS !== undefined ? { durationS: s.durationS } : {}),
             ...(s.distance ? { distance: s.distance } : {}),
             done: s.done,
-            ...(s.rpe !== undefined ? { rpe: s.rpe } : {}),
+            ...(rpeOn && s.rpe !== undefined ? { rpe: s.rpe } : {}),
             ...(s.target ? { target: s.target } : {}),
             ...(rec ? { records: rec } : {}),
           };
@@ -264,7 +277,7 @@ export function workoutDetail(
       const kind = s.kind === 'normal' ? '' : ` (${SET_KIND_LABELS[s.kind].toLowerCase()})`;
       const target = s.target ? ` — objectif ${formatSetValues(s.target, e.measurementType, ctx.units)}` : '';
       const rec = sv.records ? ` 🏆 ${sv.records.join(', ')}` : '';
-      const rpe = s.rpe !== undefined ? ` @ RPE ${formatRpe(s.rpe)}` : '';
+      const rpe = sv.rpe !== undefined ? ` @ RPE ${formatRpe(sv.rpe)}` : '';
       lines.push(
         `  ${j + 1}. ${formatSetValues(s, e.measurementType, ctx.units)}${rpe}${kind}${s.done ? '' : ' (non validée)'}${target}${rec}`,
       );
@@ -298,6 +311,7 @@ export function exerciseHistory(
   ctx: ViewCtx,
 ): Rendered<ExerciseHistory> {
   const type = exercise.measurement_type;
+  const rpeOn = rpeShown(ctx, exercise.id);
   const list = sortWorkouts(workouts.filter((w) => w.status === 'completed'))
     .filter((w) => w.started_at >= range.from && w.started_at < range.to)
     .reverse();
@@ -326,7 +340,7 @@ export function exerciseHistory(
         ...(s.durationS !== undefined ? { durationS: s.durationS } : {}),
         ...(s.distance ? { distance: s.distance } : {}),
         done: true,
-        ...(s.rpe !== undefined ? { rpe: s.rpe } : {}),
+        ...(rpeOn && s.rpe !== undefined ? { rpe: s.rpe } : {}),
       })),
       ...(best !== undefined ? { bestE1rm: kgOut(best, ctx.units.weight) } : {}),
       volume: kgOut(volKg, ctx.units.weight),
@@ -336,7 +350,7 @@ export function exerciseHistory(
       .map(
         (s) =>
           formatSetValues(s, type, ctx.units) +
-          (s.rpe !== undefined ? ` @ RPE ${formatRpe(s.rpe)}` : '') +
+          (rpeOn && s.rpe !== undefined ? ` @ RPE ${formatRpe(s.rpe)}` : '') +
           (s.kind === 'normal' ? '' : ` (${SET_KIND_LABELS[s.kind]})`),
       )
       .join(' ; ');
@@ -454,7 +468,8 @@ export type ProgressionView =
     };
 
 // Cette méthode permet de calculer la tendance du 1RM estimé d'un exercice, sa projection à 4 et 12 semaines et la date
-// estimée d'atteinte de l'objectif à long terme, avec les mêmes règles que la fiche exercice (§F7.10).
+// estimée d'atteinte de l'objectif à long terme, avec les mêmes règles que la fiche exercice (§F7.10) ; pas d'objectif
+// si l'objectif de progression est désactivé pour l'exercice (issue #124).
 export function progressionView(
   exercise: ExerciseRow,
   workouts: WorkoutRow[],
@@ -497,7 +512,7 @@ export function progressionView(
       text: `${exercise.name} : ${reason}`,
     };
   }
-  const goal = prefs?.longTermGoal;
+  const goal = exerciseOptions(exercise, prefs).progression ? prefs?.longTermGoal : undefined;
   const goalAt = goal ? goalDate(trend, { ...goal, setAt: toLocalFrame(goal.setAt, tz) }, now) : undefined;
   const achieved = goal ? goalAchievedSet(exercise.id, workouts, goal) : undefined;
   const targetKg = goal ? e1rm(toKg(goal.weight), goal.reps) : undefined;

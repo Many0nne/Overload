@@ -1,11 +1,16 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { db } from '@/data/db';
 import { deviceIdSync } from '@/data/device';
-import { useCompletedWorkouts, useExerciseMap, useSettings, useWorkout } from '@/data/queries';
+import {
+  useCompletedWorkouts,
+  useExerciseMap,
+  useExercisePrefsMap,
+  useSettings,
+  useWorkout,
+} from '@/data/queries';
 import { deleteWorkout, saveExercisePrefs, updateWorkout } from '@/data/repositories';
 import { AppOutdatedError, takeOverWorkout } from '@/data/sync/engine';
+import { exerciseOptions } from '@/domain/exerciseOptions';
 import { formatClock, formatKg } from '@/domain/format';
 import type { SetField } from '@/domain/measurement';
 import { barToRemember, barWeights, exercisePlateSet, type PlateSet } from '@/domain/plates';
@@ -13,7 +18,7 @@ import { checkSet, exerciseInWorkout, lastTime, previousSets } from '@/domain/pr
 import { workoutBadges } from '@/domain/records';
 import { doneSetCount, unvalidatedCount } from '@/domain/summary';
 import { goalAchievedSet } from '@/domain/trend';
-import type { BarType, ExercisePrefsDoc, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
+import type { BarType, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
 import { workoutVolumeKg } from '@/domain/volume';
 import { ExerciseList } from '@/features/library/ExerciseList';
 import { Sheet, toast } from '@/ui/components';
@@ -50,7 +55,7 @@ export default function LiveWorkoutPage() {
   const history = useCompletedWorkouts();
   const exercises = useExerciseMap();
   const settings = useSettings();
-  const prefsRows = useLiveQuery(() => db.exercise_prefs.toArray(), []);
+  const prefs = useExercisePrefsMap();
   const [doc, setDoc] = useState<WorkoutDoc | null>(null);
   const [errors, setErrors] = useState<Record<string, SetField[]>>({});
   const [picker, setPicker] = useState<{ replace?: string } | null>(null);
@@ -98,11 +103,6 @@ export default function LiveWorkoutPage() {
     [id],
   );
 
-  const prefs = useMemo(
-    () => new Map<string, ExercisePrefsDoc>((prefsRows ?? []).map((p) => [p.exercise_id, p.doc])),
-    [prefsRows],
-  );
-
   // Barre et disques de chaque exercice à la barre de la séance, dans l'unité de l'utilisateur (issues #76, #100).
   // Clé par exercice : saisir une série ne recrée pas les jeux de disques (blocs mémoïsés).
   const exerciseKey = doc?.exercises.map((e) => e.exerciseId).join(',');
@@ -148,20 +148,21 @@ export default function LiveWorkoutPage() {
     return workoutBadges({ ...row, doc } as WorkoutRow, history);
   }, [row?.id, row?.started_at, doc, history]);
 
-  // Badge 🎯 : première série qui réalise l'objectif à long terme après sa fixation.
+  // Badge 🎯 : première série qui réalise l'objectif à long terme après sa fixation (sauf objectif désactivé pour l'exercice).
   // biome-ignore lint/correctness/useExhaustiveDependencies: dépendances choisies pour ne pas recalculer à chaque saisie
   const goalSets = useMemo(() => {
     const m = new Map<string, string>();
     if (!row || !doc || !history) return m;
     const all = [...history.filter((h) => h.id !== row.id), { ...row, doc } as WorkoutRow];
     for (const e of doc.exercises) {
-      const goal = prefs.get(e.exerciseId)?.longTermGoal;
-      if (!goal) continue;
+      const p = prefs.get(e.exerciseId);
+      const goal = p?.longTermGoal;
+      if (!goal || !exerciseOptions(exercises.get(e.exerciseId), p).progression) continue;
       const hit = goalAchievedSet(e.exerciseId, all, goal);
       if (hit?.workoutId === row.id) m.set(e.id, hit.setId);
     }
     return m;
-  }, [row?.id, doc, history, prefs]);
+  }, [row?.id, doc, history, prefs, exercises]);
 
   const actions: ExerciseActions = useMemo(
     () => ({
@@ -345,28 +346,33 @@ export default function LiveWorkoutPage() {
         </div>
       )}
 
-      {doc.exercises.map((e, i) => (
-        <ExerciseBlock
-          key={e.id}
-          entry={e}
-          exercise={exercises.get(e.exerciseId)}
-          previous={previousByEntry.get(e.id)}
-          units={settings.units}
-          plateSet={plateSets.get(e.exerciseId) ?? null}
-          bars={bars}
-          onBar={onBar}
-          setBadges={badges?.sets ?? {}}
-          entryRecord={Boolean(badges?.entries[e.id]?.length)}
-          goalSetId={goalSets.get(e.id)}
-          errors={errors}
-          readOnly={readOnly}
-          showRest={live}
-          rpeEnabled={settings.rpeEnabled}
-          isFirst={i === 0}
-          isLast={i === doc.exercises.length - 1}
-          actions={actions}
-        />
-      ))}
+      {doc.exercises.map((e, i) => {
+        const options = exerciseOptions(exercises.get(e.exerciseId), prefs.get(e.exerciseId));
+        return (
+          <ExerciseBlock
+            key={e.id}
+            entry={e}
+            exercise={exercises.get(e.exerciseId)}
+            previous={previousByEntry.get(e.id)}
+            units={settings.units}
+            plateSet={plateSets.get(e.exerciseId) ?? null}
+            bars={bars}
+            onBar={onBar}
+            setBadges={badges?.sets ?? {}}
+            entryRecord={Boolean(badges?.entries[e.id]?.length)}
+            goalSetId={goalSets.get(e.id)}
+            errors={errors}
+            readOnly={readOnly}
+            showRest={live}
+            rpeEnabled={settings.rpeEnabled}
+            rpeAllowed={options.rpe}
+            showTargets={options.progression}
+            isFirst={i === 0}
+            isLast={i === doc.exercises.length - 1}
+            actions={actions}
+          />
+        );
+      })}
       {doc.exercises.length === 0 && (
         <div className="section live-empty">
           <div className="icon">🏋️</div>

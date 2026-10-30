@@ -351,6 +351,48 @@ describe('droits et séances en cours', () => {
     expect(data!.client_updated_at).toBe(future + 1);
   });
 
+  // Cette méthode permet de lire le RPE de la première série d'une séance renvoyée par get_workout.
+  const firstRpe = (data: Record<string, unknown>) =>
+    (data.exercises as { sets: { rpe?: number }[] }[])[0]?.sets[0]?.rpe;
+
+  it('masque le RPE et l’objectif à long terme des exercices qui les désactivent (#124)', async () => {
+    const account = await createAccount();
+    const { accessToken } = await oauthToken(account);
+    const squat = await catalogId(account.app, 'Squat (barre)');
+    const logged = await callTool(accessToken, 'log_workout', {
+      startedAt: '2026-09-01T18:00',
+      exercises: [{ exercise: squat, sets: [{ weight: 100, reps: 5, rpe: 8 }] }],
+    });
+    await callTool(accessToken, 'set_exercise_goal', { exercise: squat, weight: 140, reps: 1 });
+    const before = await callTool(accessToken, 'get_workout', { id: logged.data.id });
+    expect(firstRpe(before.data)).toBe(8);
+    expect((await callTool(accessToken, 'get_profile', {})).data.longTermGoals).toBe(1);
+
+    const { data: prefs } = await account.app
+      .from('exercise_prefs')
+      .select('*')
+      .eq('exercise_id', squat)
+      .single();
+    await account.app.rpc('sync_push', {
+      p_device_id: DEVICE,
+      p_changes: [
+        {
+          table: 'exercise_prefs',
+          row: {
+            ...prefs,
+            doc: { ...prefs!.doc, rpe: false, progression: false },
+            client_updated_at: Date.now() + 1000,
+            client_device_id: DEVICE,
+          },
+        },
+      ],
+    });
+    const after = await callTool(accessToken, 'get_workout', { id: logged.data.id });
+    expect(firstRpe(after.data)).toBeUndefined();
+    expect(after.text).not.toContain('RPE');
+    expect((await callTool(accessToken, 'get_profile', {})).data.longTermGoals).toBe(0);
+  });
+
   it('accepte un client enregistré par Claude Code (boucle locale, port exact)', async () => {
     const clientId = await registerClient('Claude Code', 'http://localhost:33418/callback');
     expect(clientId).toMatch(/^[0-9a-f-]{36}$/);

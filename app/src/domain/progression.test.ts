@@ -14,7 +14,15 @@ import {
   workoutTargetsMet,
 } from './progression';
 import { DAY, entry, set, sets, settings, T0, workout } from './testFixtures';
-import type { MeasurementType, RepRange, SetKind, Settings, WorkoutRow, WorkoutSet } from './types';
+import type {
+  ExercisePrefsDoc,
+  MeasurementType,
+  RepRange,
+  SetKind,
+  Settings,
+  WorkoutRow,
+  WorkoutSet,
+} from './types';
 
 const WEEK = 7 * DAY;
 
@@ -29,17 +37,31 @@ function targetsFrom(
     plannedCount?: number;
     gapAfterLast?: number;
     settings?: Settings;
+    prefs?: Omit<ExercisePrefsDoc, 'schemaVersion'>;
+    catalogSource?: string;
   } = {},
 ) {
   const type = opts.type ?? 'weight_reps';
-  const ex: ExerciseLike = { id: 'ex', equipment: opts.equipment ?? 'barbell', measurement_type: type };
+  const ex: ExerciseLike = {
+    id: 'ex',
+    equipment: opts.equipment ?? 'barbell',
+    measurement_type: type,
+    ...(opts.catalogSource ? { user_id: null, source_id: opts.catalogSource } : {}),
+  };
   const workouts: WorkoutRow[] = history.map((s, i) => workout(T0 + i * 3 * DAY, [entry('ex', s, type)]));
   const last = workouts[workouts.length - 1]!;
   const refEx = last.doc.exercises[0]!;
   const planned = opts.plannedCount ?? refEx.sets.filter((s) => s.kind !== 'warmup').length;
   return computeTargets({
     exercise: ex,
-    prefs: opts.increment ? { schemaVersion: 1, increment: { v: opts.increment, u: 'kg' } } : undefined,
+    prefs:
+      opts.increment || opts.prefs
+        ? {
+            schemaVersion: 1,
+            ...opts.prefs,
+            ...(opts.increment ? { increment: { v: opts.increment, u: 'kg' as const } } : {}),
+          }
+        : undefined,
     settings: opts.settings ?? settings(),
     repRange: opts.range ?? { min: 8, max: 12 },
     plannedSets: Array.from({ length: planned }, () => ({ kind: 'normal' as const })),
@@ -547,5 +569,34 @@ describe('fourchettes', () => {
     expect(parseRepRange('8–12')).toEqual({ min: 8, max: 12 });
     expect(parseRepRange('8')).toEqual({ min: 8, max: 8 });
     expect(parseRepRange('12-8')).toBeUndefined();
+  });
+});
+
+describe('réglages par exercice (issue #124)', () => {
+  it('objectif désactivé pour l’exercice : aucun objectif, même avec la progression globale active', () => {
+    expect(targetsFrom([sets(80, [12, 12, 12])], { prefs: { progression: false } })).toBeUndefined();
+  });
+  it('RPE désactivé pour l’exercice : le RPE saisi ne module plus l’objectif', () => {
+    const r = targetsFrom([rpeLast(sets(80, [12, 12, 12]), 7)], { prefs: { rpe: false } });
+    expect(summary(r)).toEqual(['82.5x10', '82.5x10', '82.5x10']);
+    expect(r?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
+  });
+  it('RPE désactivé : pas de confirmation à RPE 10, la charge monte', () => {
+    const r = targetsFrom([sets(80, [10, 10, 10]), rpeLast(sets(80, [12, 12, 12]), 10)], {
+      prefs: { rpe: false },
+    });
+    expect(r?.reason).toEqual({ kind: 'load_up', reachedReps: 12 });
+  });
+  it('Échauffement du catalogue : pas d’objectif par défaut, réactivable par la préférence', () => {
+    const warm = [[set({ s: 300 })]];
+    const opts = {
+      type: 'duration' as const,
+      equipment: 'other' as const,
+      catalogSource: 'overload:Warm_Up',
+    };
+    expect(targetsFrom(warm, opts)).toBeUndefined();
+    expect(targetsFrom(warm, { ...opts, prefs: { progression: true } })?.reason).toEqual({
+      kind: 'duration_up',
+    });
   });
 });
