@@ -9,7 +9,7 @@ export type RestTimerState = {
   setId: string;
   endsAt: number;
   totalS: number;
-  label: string; // « Développé couché, série 3 »
+  label: string; // « Série 3 · Développé couché »
 };
 
 type Store = {

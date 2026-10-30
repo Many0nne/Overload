@@ -124,7 +124,7 @@ export default function HistoryDetailPage() {
                   <li key={s.id}>
                     <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                     {formatSetValues(s, e.measurementType, settings.units)}
-                    {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
+                    {s.rpe !== undefined && <span className="muted">@ RPE {formatRpe(s.rpe)}</span>}
                     {badges?.sets[s.id]?.length ? (
                       <span
                         className="pr-pill"
@@ -138,7 +138,6 @@ export default function HistoryDetailPage() {
                     {setMeetsTarget(s, e.measurementType) ? <span className="ok">✓</span> : null}
                     {missed[i] ? (
                       <span className="muted">
-                        {' '}
                         · obj. {formatTarget(missed[i], e.measurementType, settings.units)}
                       </span>
                     ) : null}

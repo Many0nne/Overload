@@ -137,6 +137,7 @@ export default function ExercisePage() {
           )
         }
       />
+      <h1 className="ex-title">{exercise.name}</h1>
       <div className="ex-tags">
         <span className="tag acc">{MUSCLE_LABELS[exercise.primary_muscle]}</span>
         {exercise.secondary_muscles.map((m) => (
@@ -740,7 +741,7 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
                           <li key={s.id}>
                             <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                             {formatSetValues(s, e.measurementType, settings.units)}
-                            {s.rpe !== undefined && <span className="muted"> @ RPE {formatRpe(s.rpe)}</span>}
+                            {s.rpe !== undefined && <span className="muted">@ RPE {formatRpe(s.rpe)}</span>}
                             {wb?.sets[s.id]?.length ? <span className="pr-pill">🏆</span> : null}
                             {s.id === goalSet ? <span className="pr-pill">🎯</span> : null}
                           </li>

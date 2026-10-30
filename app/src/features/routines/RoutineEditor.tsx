@@ -110,14 +110,14 @@ function SortableExercise(props: {
           />
         </div>
       )}
-      <div className="re-row items-start">
+      <div className="re-row stacked">
         <div>
           Séries
           <small>
             {ROUTINE_FIELDS(type).length ? 'cible (touche pour modifier)' : 'touche pour modifier'}
           </small>
         </div>
-        <div className="re-sets justify-end">
+        <div className="re-sets">
           {entry.sets.map((s, i) => (
             <button key={s.id} onClick={() => props.onEditSet(s.id)} className="bare">
               <span>

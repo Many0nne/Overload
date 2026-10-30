@@ -71,7 +71,12 @@
   font-size: 1.0625rem;
   font-weight: 700;
   flex: 1;
+  min-width: 0;
   text-align: center;
+  /* Une seule ligne : la hauteur de l'en-tête ne dépend pas de la longueur du titre. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .head .right {
   margin-left: auto;
@@ -191,6 +196,8 @@ button.card {
   font-size: 0.75rem;
   color: var(--text-2);
   font-weight: 550;
+  /* Étiquettes courtes par nature : jamais coupées sur deux lignes. */
+  white-space: nowrap;
 }
 .tag.acc {
   background: var(--accent-soft);
@@ -394,6 +401,11 @@ button.card {
 }
 button.set-row {
   width: 100%;
+}
+/* Valeur courte à droite (« Olympique 20 kg › ») sur une ligne : la description à gauche prend le reste. */
+.set-row > .t2 {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 label.set-row {
   cursor: pointer;
