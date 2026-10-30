@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { formatRpe } from '@/domain/format';
 import { RPE_VALUES } from '@/domain/measurement';
@@ -38,6 +39,7 @@ export function RpeSheet(p: {
   useEffect(() => {
     if (!dragging.current) setShown(p.value);
   }, [p.value]);
+  const shownIndex = shown === undefined ? -1 : RPE_VALUES.indexOf(shown);
   const text = shown !== undefined ? RPE_TEXT[shown] : undefined;
 
   return (
@@ -57,7 +59,12 @@ export function RpeSheet(p: {
       </div>
       <div className="rpe-rir">{text?.[1] ?? '10 = échec · 9 = 1 rep en réserve · 8 = 2…'}</div>
       <div
-        className="rpe-track"
+        className={shownIndex >= 0 ? 'rpe-track filled' : 'rpe-track'}
+        style={
+          shownIndex >= 0
+            ? ({ '--rpe-rest': `${100 - ((shownIndex + 1) / RPE_VALUES.length) * 100}%` } as CSSProperties)
+            : undefined
+        }
         onPointerDown={(e) => {
           dragging.current = true;
           setShown(valueAt(e.currentTarget, e.clientX));
@@ -75,12 +82,12 @@ export function RpeSheet(p: {
           setShown(p.value);
         }}
       >
-        {RPE_VALUES.map((v) => (
+        {RPE_VALUES.map((v, i) => (
           <button
             key={v}
             aria-pressed={shown === v}
-            className={shown === v ? 'on rpe-solid' : 'rpe-tint'}
-            style={rpeColor(v)}
+            className={shown === v ? 'on' : i < shownIndex ? 'lit' : ''}
+            style={i <= shownIndex ? rpeColor(v) : undefined}
             onClick={() => p.onPick(v)}
           >
             {formatRpe(v)}

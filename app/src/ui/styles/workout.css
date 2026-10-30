@@ -305,10 +305,6 @@ tr.done .rpe-btn {
   background: color-mix(in srgb, var(--rpe-fill) 18%, transparent);
   color: var(--rpe-ink);
 }
-.rpe-solid {
-  background: var(--rpe-fill);
-  color: var(--rpe-on);
-}
 .rpe-tag {
   padding: 1px 7px;
   border-radius: 6px;
@@ -348,6 +344,7 @@ tr.done .rpe-btn {
   color: var(--muted);
 }
 .rpe-track {
+  position: relative;
   display: flex;
   margin-top: 18px;
   padding: 3px;
@@ -357,7 +354,32 @@ tr.done .rpe-btn {
   user-select: none;
   -webkit-user-select: none;
 }
+/* Barre de dégradé vert → rouge, révélée de gauche à droite jusqu'à la valeur choisie (rien tant qu'aucune saisie). */
+.rpe-track::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    to right,
+    var(--rpe-6) 5.5%,
+    var(--rpe-6-5) 16.7%,
+    var(--rpe-7) 27.8%,
+    var(--rpe-7-5) 38.9%,
+    var(--rpe-8) 50%,
+    var(--rpe-8-5) 61.1%,
+    var(--rpe-9) 72.2%,
+    var(--rpe-9-5) 83.3%,
+    var(--rpe-10) 94.5%
+  );
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.15s ease-out;
+}
+.rpe-track.filled::before {
+  clip-path: inset(0 var(--rpe-rest) 0 0);
+}
 .rpe-track button {
+  position: relative;
   flex: 1;
   height: 40px;
   border-radius: 20px;
@@ -366,21 +388,18 @@ tr.done .rpe-btn {
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
-.rpe-track button.on:not(.rpe-solid) {
-  background: var(--accent-fill);
-  color: var(--accent-ink);
+.rpe-track button.lit {
+  color: var(--rpe-on);
+  font-weight: 700;
 }
-.rpe-track button.rpe-tint {
-  background: color-mix(in srgb, var(--rpe-fill) 18%, transparent);
-  color: var(--rpe-ink);
-}
-.rpe-track button.rpe-solid {
+/* Valeur choisie : pastille pleine détachée de la barre par un liseré. */
+.rpe-track button.on {
   background: var(--rpe-fill);
   color: var(--rpe-on);
-}
-.rpe-track button.rpe-tint,
-.rpe-track button.rpe-solid {
-  font-weight: 700;
+  font-weight: 800;
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--rpe-fill);
 }
 .rpe-ink {
   color: var(--rpe-ink);
