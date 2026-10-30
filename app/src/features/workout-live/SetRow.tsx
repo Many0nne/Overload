@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { formatDuration, formatRpe, formatSetValues, parseDuration } from '@/domain/format';
+import { formatDuration, formatRpe, formatSetValues, maskDuration, parseDuration } from '@/domain/format';
 import { fieldsFor, type SetField } from '@/domain/measurement';
 import { barCaption, loadBar, type PlateSet } from '@/domain/plates';
 import { activeTarget } from '@/domain/progression';
@@ -131,8 +131,9 @@ function ValueInput(props: {
         }
       }}
       onChange={(e) => {
-        setText(e.target.value);
-        const p = parseField(e.target.value, props.field, props.units);
+        const next = props.field === 'duration' ? maskDuration(e.target.value) : e.target.value;
+        setText(next);
+        const p = parseField(next, props.field, props.units);
         if (p && props.field !== 'duration') props.onCommit(p);
       }}
       onKeyDown={(e) => {

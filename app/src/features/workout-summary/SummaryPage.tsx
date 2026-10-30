@@ -10,6 +10,7 @@ import {
   formatDuration,
   formatDurationHuman,
   formatTargets,
+  maskDuration,
   parseDuration,
 } from '@/domain/format';
 import { uuidv7 } from '@/domain/ids';
@@ -197,7 +198,11 @@ export default function SummaryPage() {
             <p className="t2 fs-14 mt-6">Elle dure plus de 4 h. Corrige la durée avant d'enregistrer.</p>
             <label className="field">
               <span>Durée (h:mm:ss)</span>
-              <input value={duration} onChange={(e) => setDuration(e.target.value)} inputMode="numeric" />
+              <input
+                value={duration}
+                onChange={(e) => setDuration(maskDuration(e.target.value))}
+                inputMode="numeric"
+              />
             </label>
           </div>
         </div>
@@ -318,7 +323,11 @@ export default function SummaryPage() {
           </label>
           <label className="field">
             <span>Durée</span>
-            <input value={duration} onChange={(e) => setDuration(e.target.value)} />
+            <input
+              value={duration}
+              onChange={(e) => setDuration(maskDuration(e.target.value))}
+              inputMode="numeric"
+            />
           </label>
         </div>
         <button className="btn btn-primary btn-block mt-20 btn-lg" onClick={() => void save()}>
