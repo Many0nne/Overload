@@ -14,7 +14,7 @@ describe('mise à niveau des documents locaux (#71)', () => {
     first.close();
 
     const db = new OverloadDb(name);
-    expect((await db.workouts.get('w'))?.doc).toEqual({ schemaVersion: 1, title: 'vieille', exercises: [] });
+    expect((await db.workouts.get('w'))?.doc).toEqual({ schemaVersion: 2, title: 'vieille', exercises: [] });
     expect((await db.meta.get('doc_versions'))?.value).toEqual(DOC_VERSIONS);
 
     // Versions déjà appliquées : la table n'est plus parcourue à l'ouverture suivante.

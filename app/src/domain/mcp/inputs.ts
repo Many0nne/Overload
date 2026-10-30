@@ -209,6 +209,33 @@ export function buildRoutineExercise(
   });
 }
 
+// Cette méthode permet de relier en superset (#77) les exercices dont l'indicateur `superset` est vrai avec le suivant.
+// Un superset relie exactement deux exercices : le dernier exercice et deux indicateurs consécutifs sont refusés.
+export function applySupersets<T extends { id: string; groupId?: string }>(
+  list: T[],
+  flags: (boolean | undefined)[],
+  names: string[],
+  newId: () => string,
+): Result<T[]> {
+  const out = list.map((e) => {
+    const { groupId: _drop, ...rest } = e;
+    return rest as T;
+  });
+  for (const [i, f] of flags.entries()) {
+    if (!f) continue;
+    if (i === list.length - 1)
+      return fail(`${names[i]} : « superset » relie à l'exercice suivant, il n'y en a pas.`);
+    if (flags[i - 1])
+      return fail(
+        `${names[i]} : un superset relie deux exercices, pas plus (les circuits ne sont pas gérés).`,
+      );
+    const groupId = list[i]!.groupId ?? newId();
+    out[i] = { ...out[i]!, groupId };
+    out[i + 1] = { ...out[i + 1]!, groupId };
+  }
+  return ok(out);
+}
+
 // Cette méthode permet de retrouver, pour chaque nouvel exercice, l'entrée existante du même exercice à réutiliser
 // (dans l'ordre, chaque entrée une seule fois) : les ids des exercices conservés sont gardés.
 export function matchPrevious<T extends { exerciseId: string }>(
@@ -224,9 +251,9 @@ export function matchPrevious<T extends { exerciseId: string }>(
   });
 }
 
-// Cette méthode permet de construire un document de routine complet (schemaVersion 1).
+// Cette méthode permet de construire un document de routine complet (schemaVersion 2).
 export function routineDoc(name: string, note: string | undefined, exercises: RoutineExercise[]): RoutineDoc {
-  return { schemaVersion: 1, name: name.trim(), ...(note ? { note } : {}), exercises };
+  return { schemaVersion: 2, name: name.trim(), ...(note ? { note } : {}), exercises };
 }
 
 // Cette méthode permet de construire un document de séance terminée (saisie a posteriori, §F7.5).
@@ -238,7 +265,7 @@ export function workoutDoc(input: {
   exercises: WorkoutExercise[];
 }): WorkoutDoc {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     title: input.title,
     ...(input.note ? { note: input.note } : {}),
     ...(input.photoPath ? { photoPath: input.photoPath } : {}),

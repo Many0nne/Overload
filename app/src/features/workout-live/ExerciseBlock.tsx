@@ -6,6 +6,7 @@ import { columnLabels, fieldsFor, type SetField, weightPerPiece } from '@/domain
 import type { PlateSet } from '@/domain/plates';
 import { previousSets } from '@/domain/previous';
 import { activeTarget } from '@/domain/progression';
+import type { SupersetRole } from '@/domain/superset';
 import type { BarType, ExerciseRow, SetKind, Settings, WorkoutExercise } from '@/domain/types';
 import { weightIn } from '@/domain/units';
 import { initials } from '@/features/library/ExerciseList';
@@ -33,6 +34,7 @@ export type ExerciseActions = {
   onMove: (entryId: string, delta: -1 | 1) => void;
   onReplace: (entryId: string) => void;
   onRemove: (entryId: string) => void;
+  onSuperset: (entryId: string) => void;
 };
 
 // Cette méthode permet d'afficher un exercice de la séance : nom, ligne d'objectif, note, repos et tableau des séries (§F7.4).
@@ -59,6 +61,10 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   showTargets: boolean;
   isFirst: boolean;
   isLast: boolean;
+  /** Place de l'exercice dans un superset (#77) ; undefined s'il est seul. */
+  superset?: SupersetRole;
+  /** Vrai si l'exercice peut être relié au suivant en superset. */
+  canLink: boolean;
   actions: ExerciseActions;
 }) {
   const { entry, actions: a } = props;
@@ -97,7 +103,12 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
     ?.weight;
 
   return (
-    <div className="ex">
+    <div className={`ex${props.superset ? ` ex-ss ex-ss-${props.superset}` : ''}`}>
+      {props.superset && (
+        <div className="ss-tag">
+          Superset · {props.superset === 'first' ? 'puis exercice suivant' : 'avec exercice précédent'}
+        </div>
+      )}
       <div className="ex-top">
         {props.exercise ? (
           <MuscleThumb primary={props.exercise.primary_muscle} secondary={props.exercise.secondary_muscles} />
@@ -140,7 +151,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
       />
       {props.showRest && (
         <button className="rest-link" disabled={props.readOnly} onClick={() => setRestSheet(true)}>
-          ⏱ Repos : {formatRest(entry.restS)}
+          ⏱ Repos : {props.superset === 'first' ? 'à la fin du tour' : formatRest(entry.restS)}
         </button>
       )}
       <table className={`sets${showRpe ? ' with-rpe' : ''}`}>
@@ -231,6 +242,17 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
                   onClick: () => {
                     setMenu(false);
                     a.onMove(entry.id, 1);
+                  },
+                },
+              ]
+            : []),
+          ...(props.superset || props.canLink
+            ? [
+                {
+                  label: props.superset ? 'Défaire le superset' : 'Superset avec le suivant',
+                  onClick: () => {
+                    setMenu(false);
+                    a.onSuperset(entry.id);
                   },
                 },
               ]

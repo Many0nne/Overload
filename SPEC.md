@@ -65,7 +65,7 @@ L'app est un site web que l'on **ajoute à l'écran d'accueil** de l'iPhone (Saf
 8. **Objectifs de progression** : objectif de la prochaine séance par exercice, projection de tendance sur la fiche exercice
 
 ### Versions suivantes (hors V1)
-- Supersets et circuits.
+- Circuits (3 exercices ou plus enchaînés ; les supersets de deux exercices sont disponibles, voir §7.4).
 - Séries d'échauffement calculées automatiquement.
 - Import CSV générique, et import depuis Strong (l'import HEVY est disponible, voir §7.1).
 - Intégration Apple Santé / Health Connect.
@@ -212,6 +212,7 @@ Même parcours que P2, mais en partant d'une séance vide et en ajoutant les exe
   - Les champs sont pré-remplis, par ordre de priorité, avec l'**objectif** (§7.10), sinon les valeurs de la routine, sinon les valeurs précédentes.
   - Quand un objectif existe, une ligne sous le nom de l'exercice le résume avec sa raison (ex. « ↑ 82,5 kg × 10 : 12 reps atteintes sur toutes les séries »). Les champs modifiés par l'utilisateur ne sont jamais écrasés.
   - Si un champ obligatoire est vide au moment de cocher : la coche le remplit avec la valeur « Précédent » si elle existe, sinon elle est refusée et le champ vide est mis en évidence.
+  - **Superset** (#77) : le menu d'un exercice permet de le relier à l'exercice suivant (deux exercices exactement, aussi dans l'éditeur de routine). Les deux s'enchaînent sans repos entre eux : valider une série du premier ne lance pas le minuteur tant que le second a une série au même rang à faire ; le repos du second se déclenche à la fin du tour. Le groupe est défait si un des exercices est supprimé ou séparé par un déplacement.
   - Le numéro de série peut être remplacé par un type : **É** (échauffement), **D** (dégressive), **X** (échec).
   - Ajouter une série recopie les valeurs de la série précédente. Une série se supprime par glissement.
   - **Effort ressenti (RPE)**, facultatif et activable dans les paramètres (désactivé par défaut) : une colonne « RPE » s'ajoute avant la coche. Sa case reste inactive tant que la série n'est pas validée, puis affiche une jauge ; la toucher ouvre une feuille en bas d'écran : rappel de la série (« Série 1 : 60 kg × 8 »), grand chiffre, libellé (« Effort important ») et équivalent en reps en réserve (« J'aurais pu faire 2 reps de plus »), piste 6 · 6,5 · 7 … 10 à toucher ou glisser. Le choix est enregistré dès qu'on lâche la piste ; « Terminé » ou le fond referment la feuille, « Effacer le RPE » retire la valeur. Valider une série n'ouvre pas la feuille (le minuteur de repos reste visible) ; l'ignorer ne bloque rien. La case affiche ensuite la valeur (« 8,5 »). La colonne reste visible si une série de l'exercice porte déjà un RPE, même saisie désactivée. Décocher une série efface son RPE.

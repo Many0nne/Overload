@@ -3,7 +3,7 @@
 // puis ajouter en fin de MIGRATIONS[table] la fonction qui passe de l'ancienne version à la nouvelle.
 import type { ExercisePrefsDoc, RoutineDoc, WorkoutDoc } from './types';
 
-export const DOC_VERSIONS = { workouts: 1, routines: 1, exercise_prefs: 1 } as const;
+export const DOC_VERSIONS = { workouts: 2, routines: 2, exercise_prefs: 1 } as const;
 
 export type DocTable = keyof typeof DOC_VERSIONS;
 type AnyDoc = Record<string, unknown>;
@@ -11,8 +11,8 @@ export type Migration = (doc: AnyDoc) => AnyDoc;
 
 /** MIGRATIONS[table][i] fait passer un document de la version i + 1 à la version i + 2. */
 const MIGRATIONS: Record<DocTable, Migration[]> = {
-  workouts: [],
-  routines: [],
+  workouts: [(doc) => doc], // v1 → v2 : champ facultatif groupId (supersets, #77), rien à convertir
+  routines: [(doc) => doc], // v1 → v2 : idem
   exercise_prefs: [],
 };
 

@@ -1,27 +1,38 @@
 // Différence de structure séance ↔ routine et conversion séance → routine (§F P2.8, §F7.5, §10.5).
 import { hasReps } from './measurement';
+import { normalizeGroups, type SupersetRole, supersetRole } from './superset';
 import type { RepRange, RoutineDoc, RoutineExercise, SetKind, WorkoutDoc, WorkoutExercise } from './types';
 
-type Signature = { exerciseId: string; restS: number | null; kinds: SetKind[] }[];
+type Signature = { exerciseId: string; restS: number | null; role?: SupersetRole; kinds: SetKind[] }[];
+
+// Cette méthode permet d'ajouter à chaque entrée de signature sa place dans un superset (#77).
+function withRoles(list: { groupId?: string }[], sig: Signature): Signature {
+  return sig.map((x, i) => ({ ...x, role: supersetRole(list, i) }));
+}
 
 // Cette méthode permet d'obtenir la signature de structure d'une séance (séries validées uniquement).
 export function workoutSignature(doc: WorkoutDoc): Signature {
-  return doc.exercises
-    .map((e) => ({
+  const kept = normalizeGroups(doc.exercises.filter((e) => e.sets.some((s) => s.done)));
+  return withRoles(
+    kept,
+    kept.map((e) => ({
       exerciseId: e.exerciseId,
       restS: e.restS,
       kinds: e.sets.filter((s) => s.done).map((s) => s.kind),
-    }))
-    .filter((e) => e.kinds.length > 0);
+    })),
+  );
 }
 
 // Cette méthode permet d'obtenir la signature de structure d'une routine (séries cibles).
 export function routineSignature(doc: RoutineDoc): Signature {
-  return doc.exercises.map((e) => ({
-    exerciseId: e.exerciseId,
-    restS: e.restS,
-    kinds: e.sets.map((s) => s.kind),
-  }));
+  return withRoles(
+    doc.exercises,
+    doc.exercises.map((e) => ({
+      exerciseId: e.exerciseId,
+      restS: e.restS,
+      kinds: e.sets.map((s) => s.kind),
+    })),
+  );
 }
 
 const fmtRest = (s: number | null) => (s === null ? 'Off' : `${s} s`);
@@ -42,6 +53,7 @@ export function diffRoutine(
       return (
         x.exerciseId === y.exerciseId &&
         x.restS === y.restS &&
+        x.role === y.role &&
         x.kinds.length === y.kinds.length &&
         x.kinds.every((k, j) => k === y.kinds[j])
       );
@@ -72,6 +84,7 @@ export function diffRoutine(
     if (x.restS !== y.restS)
       summary.push(`Repos ${name.toLowerCase()} : ${fmtRest(x.restS)} → ${fmtRest(y.restS)}`);
   }
+  if (a.some((x, i) => x.role !== b[i]?.role)) summary.push('Supersets modifiés');
   if (!summary.length) summary.push('Structure modifiée');
   return { changed: true, summary };
 }
@@ -100,6 +113,7 @@ export function workoutToRoutine(
       id: kept?.id ?? options.newId(),
       exerciseId: we.exerciseId,
       restS: we.restS,
+      ...(we.groupId ? { groupId: we.groupId } : {}),
       sets: done.map((s) => {
         const set: RoutineExercise['sets'][number] = { id: options.newId(), kind: s.kind };
         if (s.weight) set.weight = { ...s.weight };
@@ -113,7 +127,7 @@ export function workoutToRoutine(
     if (repRange) ex.repRange = repRange;
     exercises.push(ex);
   }
-  const doc: RoutineDoc = { schemaVersion: 1, name: options.name, exercises };
+  const doc: RoutineDoc = { schemaVersion: 2, name: options.name, exercises: normalizeGroups(exercises) };
   const note = options.note ?? options.existing?.note;
   if (note) doc.note = note;
   return doc;

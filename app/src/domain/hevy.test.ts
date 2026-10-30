@@ -236,3 +236,37 @@ describe('mesures HEVY', () => {
     expect(mergeMeasurementValues(existing, { weight: { v: 65, u: 'kg' } })).toBeNull();
   });
 });
+
+describe('supersets HEVY (#77)', () => {
+  const rows = [
+    HEADER,
+    '"S","22 oct. 2026, 16:50","22 oct. 2026, 17:38","","Tractions",7,"",0,"normal",,10,,,',
+    '"S","22 oct. 2026, 16:50","22 oct. 2026, 17:38","","Dips",7,"",0,"normal",,12,,,',
+    '"S","22 oct. 2026, 16:50","22 oct. 2026, 17:38","","Curl",,"",0,"normal",10,8,,,',
+  ].join('\n');
+
+  it('lit superset_id et relie les deux exercices consécutifs', () => {
+    const w = parseHevyWorkouts(rows)[0]!;
+    expect(w.exercises.map((e) => e.supersetId)).toEqual(['7', '7', undefined]);
+    let n = 0;
+    const doc = buildWorkoutDoc(
+      w,
+      () => ({ exerciseId: 'x', measurementType: 'weight_reps' }),
+      () => `id${++n}`,
+    );
+    expect(doc.schemaVersion).toBe(2);
+    expect(doc.exercises[0]!.groupId).toBeDefined();
+    expect(doc.exercises[0]!.groupId).toBe(doc.exercises[1]!.groupId);
+    expect(doc.exercises[2]!.groupId).toBeUndefined();
+  });
+
+  it('aplatit un superset dont un exercice est ignoré', () => {
+    const w = parseHevyWorkouts(rows)[0]!;
+    const doc = buildWorkoutDoc(
+      w,
+      (t) => (t === 'Dips' ? null : { exerciseId: 'x', measurementType: 'weight_reps' }),
+      () => 'i',
+    );
+    expect(doc.exercises.every((e) => !e.groupId)).toBe(true);
+  });
+});

@@ -27,6 +27,7 @@ import {
 } from '../records.ts';
 import { muscleDistribution, trainingDays, weeklyAggregates, weekStreak } from '../stats.ts';
 import { doneSetCount, workoutSummary } from '../summary.ts';
+import { supersetRole } from '../superset.ts';
 import {
   currentRate,
   firstSessionAt,
@@ -218,6 +219,8 @@ export type WorkoutDetail = Omit<WorkoutListItem, 'exercises'> & {
     measurementType: ExerciseRow['measurement_type'];
     note?: string;
     restS: number | null;
+    /** Vrai : superset avec l'exercice suivant. */
+    superset?: true;
     repRange?: { min: number; max: number };
     sets: SetView[];
     records?: string[];
@@ -237,7 +240,7 @@ export function workoutDetail(
     ...item,
     status: w.status,
     ...(w.doc.note ? { note: w.doc.note } : {}),
-    exercises: w.doc.exercises.map((e) => {
+    exercises: w.doc.exercises.map((e, i) => {
       const entryRecords = labels(badges?.entries[e.id], e.measurementType);
       const rpeOn = rpeShown(ctx, e.exerciseId);
       return {
@@ -246,6 +249,7 @@ export function workoutDetail(
         measurementType: e.measurementType,
         ...(e.note ? { note: e.note } : {}),
         restS: e.restS,
+        ...(supersetRole(w.doc.exercises, i) === 'first' ? { superset: true as const } : {}),
         ...(e.repRange ? { repRange: e.repRange } : {}),
         sets: e.sets.map((s) => {
           const rec = labels(badges?.sets[s.id], e.measurementType);
@@ -663,6 +667,8 @@ export type RoutineView = {
     }[];
     repRange?: { min: number; max: number };
     restS: number | null;
+    /** Vrai : superset avec l'exercice suivant (le repos de l'exercice suivant tombe à la fin du tour). */
+    superset?: true;
     note?: string;
   }[];
 };
@@ -674,7 +680,7 @@ export function routineView(r: RoutineRow, folders: FolderRow[], ctx: ViewCtx): 
     name: r.doc.name,
     folder: folders.find((f) => f.id === r.folder_id && f.deleted_at === null)?.name ?? null,
     ...(r.doc.note ? { note: r.doc.note } : {}),
-    exercises: r.doc.exercises.map((e) => ({
+    exercises: r.doc.exercises.map((e, i) => ({
       exerciseId: e.exerciseId,
       name: exerciseName(ctx, e.exerciseId),
       sets: e.sets.map((s) => ({
@@ -685,6 +691,7 @@ export function routineView(r: RoutineRow, folders: FolderRow[], ctx: ViewCtx): 
       })),
       ...(e.repRange ? { repRange: e.repRange } : {}),
       restS: e.restS,
+      ...(supersetRole(r.doc.exercises, i) === 'first' ? { superset: true as const } : {}),
       ...(e.note ? { note: e.note } : {}),
     })),
   };
@@ -700,7 +707,8 @@ export function routineText(v: RoutineView, ctx: ViewCtx): string {
       `  - ${e.name} : ${e.sets.length} série${e.sets.length > 1 ? 's' : ''}` +
         (e.repRange ? `, ${e.repRange.min}–${e.repRange.max} reps` : '') +
         (loads.length ? `, ${loads.join(' / ')}` : '') +
-        `, repos ${e.restS === null ? 'aucun' : `${e.restS} s`}`,
+        `, repos ${e.restS === null ? 'aucun' : `${e.restS} s`}` +
+        (e.superset ? ' (superset avec le suivant)' : ''),
     );
   }
   return lines.join('\n');

@@ -259,9 +259,9 @@ type Settings = {
 };
 ```
 
-Les documents portent un champ `schemaVersion` (1 à la création, absent = 1). Versions et migrations sont dans `domain/schema.ts` (#71) :
+Les documents portent un champ `schemaVersion` (2 à la création pour séances et routines, absent = 1). Versions et migrations sont dans `domain/schema.ts` (#71) :
 `DOC_VERSIONS` donne la version de l'app par table, `MIGRATIONS[table][i]` fait passer un document de la version i + 1 à i + 2
-(aucune migration à ce jour : les `RoutineDoc` sont créés avec `repRange` dès le lot L4). Les documents sont mis au format de l'app :
+(v2 des séances et routines, #77 : champ facultatif `groupId` des supersets, migration vide ; la montée de version empêche un appareil resté en v1 de réécrire un document sans ce champ). Les documents sont mis au format de l'app :
 - au pull, au réalignement (`sync_fetch`) et à la reprise d'une séance, avant l'écriture locale ;
 - à l'ouverture d'IndexedDB (`db.on('ready')`), une seule fois par jeu de versions (`meta.doc_versions`).
 
@@ -531,7 +531,7 @@ Les images de la source ne sont pas reprises : chaque exercice est illustré par
   - `overload-seances-AAAA-MM-JJ.csv` : une ligne par série (date, titre, exercice, type de série, poids, unité, reps, durée, distance, poids visé, reps visées, durée visée, note), séparateur `;`, encodage UTF-8 avec BOM (ouverture correcte dans Excel FR).
   - Partage via `navigator.share({ files })` sur iOS, téléchargement ailleurs.
 - **Import HEVY** (Paramètres › Compte, `features/settings/importHevy.ts`, domaine pur `domain/hevy.ts`) : lecture côté client de `workout_data.csv` et `measurement_data.csv`, reconnus par leur en-tête ; dates FR/EN lues en heure locale.
-  - Séances : id UUID v5 de (`user_id`, début local `AAAA-MM-JJTHH:mm`, titre), donc réimport idempotent ; une séance déjà présente (même supprimée) est ignorée. Types de série `dropset` → `drop` ; RPE importé s'il est entre 6 et 10 (arrondi au demi-point) ; supersets ignorés ; repos `null` ; durée = fin − début.
+  - Séances : id UUID v5 de (`user_id`, début local `AAAA-MM-JJTHH:mm`, titre), donc réimport idempotent ; une séance déjà présente (même supprimée) est ignorée. Types de série `dropset` → `drop` ; RPE importé s'il est entre 6 et 10 (arrondi au demi-point) ; supersets de deux exercices repris via `superset_id` en `groupId` (circuits aplatis) ; repos `null` ; durée = fin − début.
   - Exercices : suggestion par nom (exact sans accents, sinon Dice pondéré sur les mots, pénalisé si matériel ou type de mesure diffère), présélectionnée au-delà de `MATCH_THRESHOLD` ; sinon exercice perso au type de mesure déduit des colonnes remplies, matériel et muscle devinés.
   - Mesures : une par jour ; une mesure existante n'est complétée que sur ses champs vides. Colonnes avant-bras et abdomen ignorées.
   - Écriture en une transaction Dexie (outbox comprise), poussée ensuite par la synchro normale.
