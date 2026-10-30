@@ -238,6 +238,8 @@ type ExercisePrefsDoc = {
   defaultRepRange?: RepRange;
   longTermGoal?: { weight: Weight; reps: number; setAt: number };   // reps 1..12
   bar?: 'olympic' | 'women' | 'ez' | 'trap';   // barre choisie au calculateur de disques ; absent = détectée ou par défaut (#100)
+  rpe?: boolean;                      // noter l'effort ; absent = défaut de l'exercice (actif, sauf exceptions du catalogue) (#124)
+  progression?: boolean;              // objectif de progression ; absent = défaut de l'exercice (#124)
 };
 
 type Settings = {

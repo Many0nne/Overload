@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import {
   type CompletedWorkout,
   DEFAULT_SETTINGS,
+  type ExercisePrefsDoc,
   type ExerciseRow,
   type FolderRow,
   type ProfileRow,
@@ -34,6 +35,12 @@ export function useAllExercises(): ExerciseRow[] | undefined {
 export function useExerciseMap(): Map<string, ExerciseRow> {
   const all = useAllExercises();
   return useMemo(() => new Map((all ?? []).map((e) => [e.id, e])), [all]);
+}
+
+// Cette méthode permet d'obtenir un index id d'exercice → préférences de l'utilisateur (réglages de progression, RPE…).
+export function useExercisePrefsMap(): Map<string, ExercisePrefsDoc> {
+  const rows = useLiveQuery(() => db.exercise_prefs.filter((p) => p.deleted_at == null).toArray(), []);
+  return useMemo(() => new Map((rows ?? []).map((p) => [p.exercise_id, p.doc])), [rows]);
 }
 
 // Cette méthode permet de lire un exercice par son id.

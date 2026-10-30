@@ -171,6 +171,15 @@ describe('correspondance des exercices', () => {
     expect(suggestMatch('Rowing Poulie Assis', 'weight_reps', CANDIDATES)!.candidate.id).toBe('b');
     expect(suggestMatch('Leg Curl Allongé (Machine)', 'weight_reps', CANDIDATES)!.candidate.id).toBe('f');
   });
+  it('relie « Warm Up » à l’Échauffement du catalogue (issue #124)', () => {
+    const list: MatchCandidate[] = [
+      ...CANDIDATES,
+      { id: 'w', name: 'Échauffement', measurementType: 'duration' },
+    ];
+    expect(suggestMatch('Warm Up', 'duration', list)).toEqual({ candidate: list.at(-1), score: 1 });
+    expect(suggestMatch('Warm-up', 'duration', list)?.candidate.id).toBe('w');
+    expect(suggestMatch('Échauffement', 'duration', list)?.candidate.id).toBe('w');
+  });
   it('préfère un type de mesure compatible', () => {
     expect(suggestMatch('Marche', 'distance_duration', CANDIDATES)!.candidate.id).toBe('e');
   });

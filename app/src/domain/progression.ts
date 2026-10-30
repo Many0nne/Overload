@@ -1,5 +1,6 @@
 // Objectifs de la prochaine séance (§F7.10, §10.7). Calculés une fois au démarrage, puis figés dans la séance.
 import { WEEK_MS } from './dates';
+import { exerciseOptions } from './exerciseOptions';
 import { hasReps, hasTargets, isWorkingKind } from './measurement';
 import {
   BODYWEIGHT_COMEBACK_DROP,
@@ -38,7 +39,9 @@ import type {
 } from './types';
 import { ceilTo, clean, floorTo, toKg, weightIn } from './units';
 
-export type ExerciseLike = Pick<ExerciseRow, 'id' | 'equipment' | 'measurement_type'>;
+// user_id et source_id donnent les réglages par défaut d'un exercice du catalogue (issue #124).
+export type ExerciseLike = Pick<ExerciseRow, 'id' | 'equipment' | 'measurement_type'> &
+  Partial<Pick<ExerciseRow, 'user_id' | 'source_id'>>;
 
 // Cette méthode permet d'obtenir le coefficient de conversion de Marzagao pour une charge en kg.
 export function marzagaoK(wKg: number): number {
@@ -173,7 +176,9 @@ export function comebackDrop(weeksOff: number): number {
 // Reprise et plateau s'évaluent sur l'exercice ; montée, consolidation et +1 rep se choisissent série par série (§F7.10).
 export function computeTargets(input: TargetsInput): TargetsResult | undefined {
   const type = input.exercise.measurement_type;
-  if (!input.settings.progressionEnabled || !hasTargets(type) || !input.reference) return undefined;
+  const options = exerciseOptions(input.exercise, input.prefs);
+  if (!input.settings.progressionEnabled || !options.progression || !hasTargets(type) || !input.reference)
+    return undefined;
   const refWork = workingSets(input.reference.exercise);
   if (!refWork.length) return undefined;
 
@@ -215,8 +220,9 @@ export function computeTargets(input: TargetsInput): TargetsResult | undefined {
   const comeback = weeksOff > COMEBACK_MIN_WEEKS;
   const run = sessionsAtSameLoad(input, refWork);
   const plateau = isPlateau(run, range);
-  // Effort ressenti de la dernière série de travail : il module chaque série (§F7.10, issue #19).
-  const rpe = lastRpe(refWork);
+  // Effort ressenti de la dernière série de travail : il module chaque série (§F7.10, issue #19),
+  // sauf si le RPE est désactivé pour l'exercice (issue #124).
+  const rpe = options.rpe ? lastRpe(refWork) : undefined;
   const easy = rpe !== undefined && rpe <= RPE_EASY_MAX;
   const repsStep = easy ? RPE_EASY_REPS_STEP : 1;
 

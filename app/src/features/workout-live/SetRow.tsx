@@ -262,6 +262,8 @@ export type SetRowProps = {
   errors: SetField[];
   readOnly: boolean;
   showRpe: boolean;
+  /** Faux si l'objectif est désactivé pour l'exercice : pas de style « objectif » sur les valeurs (issue #124). */
+  showTarget: boolean;
   /** Barre et disques si l'exercice se fait à la barre : le bandeau de disques suit alors la saisie du poids. */
   plates: PlateSet | null;
   onPatch: (setId: string, patch: SetPatch) => void;
@@ -324,7 +326,7 @@ export const SetRow = memo(function SetRow(p: SetRowProps) {
               set={p.set}
               units={p.units}
               placeholder={p.previous ? fieldText(p.previous, f, p.units) : ''}
-              target={!p.set.done && isTargetValue(p.set, f)}
+              target={p.showTarget && !p.set.done && isTargetValue(p.set, f)}
               error={p.errors.includes(f)}
               disabled={p.readOnly}
               onCommit={(patch) => p.onPatch(p.set.id, patch)}

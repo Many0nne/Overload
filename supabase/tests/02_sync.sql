@@ -1,7 +1,7 @@
 -- sync_push (dernier gagne, appartenance, séance en cours) et sync_pull (curseurs, pagination, catalogue).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(33);
 
 select tests.create_user('aaaaaaaa-0000-0000-0000-000000000001', 'a@test.local');
 select tests.create_user('bbbbbbbb-0000-0000-0000-000000000002', 'b@test.local');
@@ -64,7 +64,7 @@ select isnt((select invite_code from public.profiles), 'XXXXXXXXXXXX', 'invite_c
 
 -- Ordre des dépendances : réglage poussé avant son exercice perso dans le même lot.
 select is((select string_agg(e ->> 'status', ',') from jsonb_array_elements(public.sync_push('11111111-0000-0000-0000-000000000000'::uuid, jsonb_build_array(
-  jsonb_build_object('table', 'exercise_prefs', 'row', jsonb_build_object('id', gen_random_uuid(), 'user_id', 'aaaaaaaa-0000-0000-0000-000000000001',
+  jsonb_build_object('table', 'exercise_prefs', 'row', jsonb_build_object('id', 'aaaaaaaa-5555-0000-0000-000000000001', 'user_id', 'aaaaaaaa-0000-0000-0000-000000000001',
     'exercise_id', 'aaaaaaaa-4444-0000-0000-000000000001', 'doc', '{"schemaVersion":1}'::jsonb, 'client_updated_at', 1,
     'client_device_id', '11111111-0000-0000-0000-000000000000')),
   jsonb_build_object('table', 'exercises', 'row', jsonb_build_object('id', 'aaaaaaaa-4444-0000-0000-000000000001',
@@ -72,6 +72,16 @@ select is((select string_agg(e ->> 'status', ',') from jsonb_array_elements(publ
     'secondary_muscles', '["chest"]'::jsonb, 'measurement_type', 'duration', 'client_updated_at', 1,
     'client_device_id', '11111111-0000-0000-0000-000000000000'))))) e),
   'accepted,accepted', 'exercice appliqué avant ses réglages');
+
+-- Réglages par exercice (#124) : champs facultatifs rpe et progression gardés tels quels, sans montée de version.
+select is((select string_agg(e ->> 'status', ',') from jsonb_array_elements(public.sync_push('11111111-0000-0000-0000-000000000000'::uuid, jsonb_build_array(
+  jsonb_build_object('table', 'exercise_prefs', 'row', jsonb_build_object('id', 'aaaaaaaa-5555-0000-0000-000000000001',
+    'user_id', 'aaaaaaaa-0000-0000-0000-000000000001', 'exercise_id', 'aaaaaaaa-4444-0000-0000-000000000001',
+    'doc', '{"schemaVersion":1,"rpe":false,"progression":false}'::jsonb, 'client_updated_at', 2,
+    'client_device_id', '11111111-0000-0000-0000-000000000000'))))) e),
+  'accepted', 'réglages RPE et objectif acceptés');
+select is((select doc from public.exercise_prefs where id = 'aaaaaaaa-5555-0000-0000-000000000001'),
+  '{"schemaVersion":1,"rpe":false,"progression":false}'::jsonb, 'réglages RPE et objectif stockés tels quels');
 
 -- Séance en cours et reprise sur un autre appareil
 select is(pg_temp.push1('11111111-0000-0000-0000-000000000000', jsonb_build_object('table', 'workouts', 'row', jsonb_build_object(

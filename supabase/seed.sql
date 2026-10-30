@@ -1,5 +1,5 @@
 -- Fichier généré par scripts/build-catalog.ts : ne pas modifier à la main.
--- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 + scripts/catalog-extra.json (221 exercices).
+-- Source : free-exercise-db @ f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5 + scripts/catalog-extra.json (222 exercices).
 insert into public.exercises
   (id, user_id, name, name_search, equipment, primary_muscle, secondary_muscles, measurement_type, instructions, source_id, client_updated_at, client_device_id)
 values
@@ -669,7 +669,10 @@ Descends en fléchissant les coudes jusqu''à ce que les bras soient parallèles
 Pousse jusqu''à l''extension des bras.', 'overload:Machine_Assisted_Dip', 1767225600000, '00000000-0000-0000-0000-000000000000'),
   ('a7d8c74c-78f6-5b01-a4db-359392a101be', null, 'Développé incliné (machine)', 'developpe incline (machine)', 'machine', 'chest', array['shoulders', 'triceps']::text[], 'weight_reps', 'Règle le siège pour que les poignées soient à hauteur du haut de la poitrine.
 Dos plaqué contre le dossier, pousse vers le haut et l''avant jusqu''à l''extension des bras.
-Reviens lentement sans laisser les charges se reposer.', 'overload:Machine_Incline_Press', 1767225600000, '00000000-0000-0000-0000-000000000000')
+Reviens lentement sans laisser les charges se reposer.', 'overload:Machine_Incline_Press', 1767225600000, '00000000-0000-0000-0000-000000000000'),
+  ('4ff42ce0-783f-5a33-859b-f15abf07b3ad', null, 'Échauffement', 'echauffement', 'other', 'cardio', '{}'::text[], 'duration', 'Commence par quelques minutes de cardio léger (vélo, rameur, marche rapide) pour monter en température.
+Enchaîne des mouvements de mobilité des articulations sollicitées par la séance.
+Termine par des séries légères du premier exercice avant les séries de travail.', 'overload:Warm_Up', 1767225600000, '00000000-0000-0000-0000-000000000000')
 on conflict (id) do update set
   name = excluded.name,
   name_search = excluded.name_search,

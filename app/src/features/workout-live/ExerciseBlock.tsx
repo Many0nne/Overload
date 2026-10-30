@@ -53,6 +53,10 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   readOnly: boolean;
   showRest: boolean;
   rpeEnabled: boolean;
+  /** Faux si le RPE est désactivé pour l'exercice (issue #124) : ni colonne ni bouton, même avec des RPE saisis. */
+  rpeAllowed: boolean;
+  /** Faux si l'objectif de progression est désactivé pour l'exercice : objectifs déjà figés masqués. */
+  showTargets: boolean;
   isFirst: boolean;
   isLast: boolean;
   actions: ExerciseActions;
@@ -77,10 +81,11 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
   const reason = entry.targetReason
     ? formatReason(entry.targetReason, entry.measurementType, props.units)
     : undefined;
-  const targets = entry.sets.map(activeTarget);
+  const targets = props.showTargets ? entry.sets.map(activeTarget) : [];
   const hasTargets = targets.some(Boolean);
-  // La colonne RPE suit le réglage, mais reste visible si une série porte déjà un RPE (saisi ou importé).
-  const showRpe = props.rpeEnabled || entry.sets.some((s) => s.rpe !== undefined);
+  // La colonne RPE suit le réglage, mais reste visible si une série porte déjà un RPE (saisi ou importé),
+  // sauf si le RPE est désactivé pour l'exercice (issue #124).
+  const showRpe = props.rpeAllowed && (props.rpeEnabled || entry.sets.some((s) => s.rpe !== undefined));
   const rpeIndex = entry.sets.findIndex((s) => s.id === rpeFor);
   const rpeSet = entry.sets[rpeIndex];
   const kindIndex = entry.sets.findIndex((s) => s.id === kindFor);
@@ -168,6 +173,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
               readOnly={props.readOnly}
               onPatch={(id, patch) => a.onPatchSet(entry.id, id, patch)}
               showRpe={showRpe}
+              showTarget={props.showTargets}
               plates={plates}
               onCheck={(id) => a.onCheck(entry.id, id)}
               onOpenRpe={setRpeFor}
@@ -251,7 +257,7 @@ export const ExerciseBlock = memo(function ExerciseBlock(props: {
         ]}
       />
       <RpeSheet
-        open={Boolean(rpeSet?.done) && !props.readOnly}
+        open={Boolean(rpeSet?.done) && showRpe && !props.readOnly}
         subtitle={
           rpeSet
             ? `Série ${labels[rpeIndex] ?? ''} : ${formatSetValues(rpeSet, entry.measurementType, props.units)}`

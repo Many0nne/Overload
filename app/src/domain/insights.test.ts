@@ -176,6 +176,10 @@ describe('séances', () => {
     expect(averageRpe([w], ...ALL)).toEqual({ avg: 8.5, count: 2 });
     expect(averageRpe([workout(T0, [entry('bench', sets(60, [8]))])], ...ALL)).toBeUndefined();
   });
+  it('ignore le RPE des exercices où il est désactivé (issue #124)', () => {
+    expect(averageRpe([w], ...ALL, new Set(['bench']))).toBeUndefined();
+    expect(averageRpe([w], ...ALL, new Set(['plank']))).toEqual({ avg: 8.5, count: 2 });
+  });
   it('classe les routines par nombre de séances, séances libres regroupées', () => {
     const ws = [
       workout(T0, [], {

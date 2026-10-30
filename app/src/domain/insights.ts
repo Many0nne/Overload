@@ -226,17 +226,19 @@ export function repZones(workouts: WorkoutRow[], from: number, to: number): RepZ
 }
 
 // Cette méthode permet de calculer le RPE moyen des séries validées (hors échauffement) qui en ont un, sur une fenêtre ;
-// undefined si aucune série n'est notée.
+// undefined si aucune série n'est notée. Les exercices au RPE désactivé (rpeHidden, issue #124) sont ignorés.
 export function averageRpe(
   workouts: WorkoutRow[],
   from: number,
   to: number,
+  rpeHidden: ReadonlySet<string> = new Set(),
 ): { avg: number; count: number } | undefined {
   let sum = 0;
   let count = 0;
   for (const w of workouts) {
     if (!inRange(w, from, to)) continue;
     for (const we of w.doc.exercises) {
+      if (rpeHidden.has(we.exerciseId)) continue;
       for (const s of we.sets) {
         if (!countsForVolume(s) || s.rpe === undefined) continue;
         sum += s.rpe;

@@ -3989,5 +3989,21 @@
     "client_updated_at": 1767225600000,
     "client_device_id": "00000000-0000-0000-0000-000000000000",
     "deleted_at": null
+  },
+  {
+    "id": "4ff42ce0-783f-5a33-859b-f15abf07b3ad",
+    "user_id": null,
+    "name": "Échauffement",
+    "name_search": "echauffement",
+    "equipment": "other",
+    "primary_muscle": "cardio",
+    "secondary_muscles": [],
+    "measurement_type": "duration",
+    "instructions": "Commence par quelques minutes de cardio léger (vélo, rameur, marche rapide) pour monter en température.\nEnchaîne des mouvements de mobilité des articulations sollicitées par la séance.\nTermine par des séries légères du premier exercice avant les séries de travail.",
+    "source_id": "overload:Warm_Up",
+    "archived_at": null,
+    "client_updated_at": 1767225600000,
+    "client_device_id": "00000000-0000-0000-0000-000000000000",
+    "deleted_at": null
   }
 ]

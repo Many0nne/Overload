@@ -19,6 +19,7 @@ import {
   exerciseSeries,
 } from '@/domain/charts';
 import type { Period } from '@/domain/dates';
+import { exerciseOptions, optionPatch } from '@/domain/exerciseOptions';
 import {
   criterionLabel,
   formatCanonical,
@@ -65,7 +66,7 @@ import { ExerciseForm } from '@/features/library/ExerciseForm';
 import { PlateSheet } from '@/features/plates/PlateSheet';
 import { buildWorkoutExercise, loadBuildContext } from '@/features/workout-live/start';
 import { BodyMap } from '@/ui/BodyMap';
-import { Chips, Seg, Sheet, SubHead, toast } from '@/ui/components';
+import { Chips, Seg, Sheet, SubHead, Switch, toast } from '@/ui/components';
 import { DotsIcon } from '@/ui/icons';
 import { LineChart } from '@/ui/LineChart';
 import { RpeTag } from '@/ui/RpeTag';
@@ -249,6 +250,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   const settings = useSettings();
   const units = settings.units;
   const prefs = usePrefs(ex.id);
+  const progressionOn = exerciseOptions(ex, prefs).progression;
   const { workouts } = useHistoryWithBadges();
   const all = workouts ?? [];
   const metrics = chartMetricsFor(type);
@@ -264,16 +266,16 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
   // Charge proposée au calculateur : celle de la prochaine série de travail visée, sinon la barre seule.
   const nextWeight = next?.sets.find((s) => isWorkingKind(s.kind) && s.weight)?.weight;
 
-  // Objectif de la prochaine séance, calculé comme au démarrage d'une séance vide (§F7.10).
+  // Objectif de la prochaine séance, calculé comme au démarrage d'une séance vide (§F7.10), sauf objectif désactivé (#124).
   // biome-ignore lint/correctness/useExhaustiveDependencies: workouts et prefs déclenchent le recalcul (le contexte est relu dans Dexie)
   useEffect(() => {
-    if (!hasTargets(type) || !settings.progressionEnabled) return setNext(undefined);
+    if (!hasTargets(type) || !settings.progressionEnabled || !progressionOn) return setNext(undefined);
     let alive = true;
     void loadBuildContext(null).then((ctx) => alive && setNext(buildWorkoutExercise(ex, ctx)));
     return () => {
       alive = false;
     };
-  }, [ex, type, workouts, prefs, settings.progressionEnabled]);
+  }, [ex, type, workouts, prefs, settings.progressionEnabled, progressionOn]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: now volontairement exclu pour ne pas recalculer à chaque rendu
   const points = useMemo(() => exerciseSeries(ex.id, all, metric, period, now), [ex.id, all, metric, period]);
@@ -285,7 +287,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
     const first = firstSessionAt(ex.id, all);
     if (first === undefined) return undefined;
     const trend = fitTrend(weeklyE1rmPoints(ex.id, all), trainingOrigin(settings, first), now);
-    const goal = prefs?.longTermGoal;
+    const goal = progressionOn ? prefs?.longTermGoal : undefined;
     return {
       trend,
       projection: trend ? projectionPoints(trend, now) : [],
@@ -294,7 +296,7 @@ function SummaryTab(props: { exercise: ExerciseRow }) {
       goalAt: trend && goal ? goalDate(trend, goal, now) : undefined,
       achieved: goal ? goalAchievedSet(ex.id, all, goal) : undefined,
     };
-  }, [ex.id, type, all, prefs, settings.trainingAge]);
+  }, [ex.id, type, all, prefs, progressionOn, settings.trainingAge]);
 
   const unit = CHART_METRIC_UNITS[metric];
   const fmt = (v: number) => formatMetric(v, unit, type, units);
@@ -559,7 +561,8 @@ function RecordsSection(props: {
   );
 }
 
-// Cette méthode permet de modifier les réglages de progression de l'exercice : incrément, fourchette par défaut, objectif à long terme.
+// Cette méthode permet de modifier les réglages de l'exercice : RPE et objectif (issue #124), puis incrément,
+// fourchette par défaut et objectif à long terme (masqués avec l'objectif de progression, sauf la fourchette).
 function ProgressionSettings(props: {
   exercise: ExerciseRow;
   prefs: ExercisePrefsDoc | undefined;
@@ -570,10 +573,10 @@ function ProgressionSettings(props: {
   const [sheet, setSheet] = useState<'increment' | 'range' | 'goal' | null>(null);
   const [a, setA] = useState('');
   const [b, setB] = useState('');
-  const showIncrement = WEIGHTED.includes(type);
+  const options = exerciseOptions(exercise, prefs);
+  const showIncrement = options.progression && WEIGHTED.includes(type);
   const showRange = hasReps(type) && hasTargets(type);
-  const showGoal = type === 'weight_reps';
-  if (!showIncrement && !showRange && !showGoal) return null;
+  const showGoal = options.progression && type === 'weight_reps';
 
   const increment = incrementFor(exercise, prefs, units.weight);
   const range = prefs?.defaultRepRange;
@@ -622,9 +625,33 @@ function ProgressionSettings(props: {
     setSheet(null);
   };
 
+  // Cette méthode permet d'activer ou de désactiver le RPE ou l'objectif de progression de l'exercice.
+  const toggle = (key: 'rpe' | 'progression', value: boolean) =>
+    void saveExercisePrefs(exercise.id, optionPatch(exercise, key, value));
+
   return (
     <div className="section">
-      <div className="section-title">Réglages de progression</div>
+      <div className="section-title">Réglages de l'exercice</div>
+      <div className="set-row">
+        <span>
+          Noter l'effort (RPE)
+          <small className="muted d-block fs-12">colonne RPE en séance et dans l'historique</small>
+        </span>
+        <Switch label="Noter l'effort (RPE)" on={options.rpe} onChange={(v) => toggle('rpe', v)} />
+      </div>
+      {hasTargets(type) && (
+        <div className="set-row">
+          <span>
+            Objectif de progression
+            <small className="muted d-block fs-12">objectif calculé et pré-rempli en séance</small>
+          </span>
+          <Switch
+            label="Objectif de progression"
+            on={options.progression}
+            onChange={(v) => toggle('progression', v)}
+          />
+        </div>
+      )}
       {showIncrement && (
         <button className="set-row" onClick={() => open('increment')}>
           Incrément<span className="t2">{formatWeight(increment, units.weight)} ›</span>
@@ -699,6 +726,7 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
   const navigate = useNavigate();
   const settings = useSettings();
   const prefs = usePrefs(props.exercise.id);
+  const options = exerciseOptions(props.exercise, prefs);
   const { workouts, badges } = useHistoryWithBadges();
   const list = useMemo(
     () =>
@@ -709,10 +737,10 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
   );
   const goalSet = useMemo(
     () =>
-      prefs?.longTermGoal
+      prefs?.longTermGoal && options.progression
         ? goalAchievedSet(props.exercise.id, workouts ?? [], prefs.longTermGoal)?.setId
         : undefined,
-    [prefs, workouts, props.exercise.id],
+    [prefs, options.progression, workouts, props.exercise.id],
   );
 
   if (workouts && list.length === 0) return <p className="empty">Pas encore de séance avec cet exercice.</p>;
@@ -741,7 +769,7 @@ function HistoryTab(props: { exercise: ExerciseRow }) {
                           <li key={s.id}>
                             <b className={KIND_CLASS[s.kind] || undefined}>{labels[i]}</b>
                             {formatSetValues(s, e.measurementType, settings.units)}
-                            {s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
+                            {options.rpe && s.rpe !== undefined && <RpeTag rpe={s.rpe} />}
                             {wb?.sets[s.id]?.length ? <span className="pr-pill">🏆</span> : null}
                             {s.id === goalSet ? <span className="pr-pill">🎯</span> : null}
                           </li>
