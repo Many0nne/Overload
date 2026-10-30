@@ -1,6 +1,7 @@
 // Modifications pures d'un WorkoutDoc (séance en direct, saisie a posteriori et modification d'une séance passée).
 import { uuidv7 } from '@/domain/ids';
 import { pickValues } from '@/domain/measurement';
+import { normalizeGroups, toggleSuperset } from '@/domain/superset';
 import type { SetKind, WorkoutDoc, WorkoutExercise, WorkoutSet } from '@/domain/types';
 
 // Cette méthode permet de remplacer un exercice de la séance par sa version modifiée.
@@ -49,22 +50,27 @@ export function moveExercise(doc: WorkoutDoc, entryId: string, delta: -1 | 1): W
   if (i < 0 || j < 0 || j >= doc.exercises.length) return doc;
   const list = [...doc.exercises];
   [list[i], list[j]] = [list[j]!, list[i]!];
-  return { ...doc, exercises: list };
+  return { ...doc, exercises: normalizeGroups(list) };
 }
 
 // Cette méthode permet de réordonner les exercices selon une liste d'ids (glisser-déposer).
 export function reorderExercises(doc: WorkoutDoc, ids: string[]): WorkoutDoc {
   const byId = new Map(doc.exercises.map((e) => [e.id, e]));
-  return { ...doc, exercises: ids.map((id) => byId.get(id)!).filter(Boolean) };
+  return { ...doc, exercises: normalizeGroups(ids.map((id) => byId.get(id)!).filter(Boolean)) };
 }
 
 // Cette méthode permet de retirer un exercice de la séance.
 export function removeExercise(doc: WorkoutDoc, entryId: string): WorkoutDoc {
-  return { ...doc, exercises: doc.exercises.filter((e) => e.id !== entryId) };
+  return { ...doc, exercises: normalizeGroups(doc.exercises.filter((e) => e.id !== entryId)) };
 }
 
 // Cette méthode permet d'insérer un exercice déjà construit, à la fin ou à la place d'un autre (remplacement).
 export function insertExercise(doc: WorkoutDoc, we: WorkoutExercise, replaceEntryId?: string): WorkoutDoc {
   if (!replaceEntryId) return { ...doc, exercises: [...doc.exercises, we] };
-  return { ...doc, exercises: doc.exercises.map((e) => (e.id === replaceEntryId ? we : e)) };
+  return { ...doc, exercises: normalizeGroups(doc.exercises.map((e) => (e.id === replaceEntryId ? we : e))) };
+}
+
+// Cette méthode permet de relier un exercice au suivant en superset, ou de défaire son superset (#77).
+export function toggleExerciseSuperset(doc: WorkoutDoc, entryId: string): WorkoutDoc {
+  return { ...doc, exercises: toggleSuperset(doc.exercises, entryId, uuidv7) };
 }

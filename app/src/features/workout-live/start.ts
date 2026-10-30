@@ -6,6 +6,7 @@ import { useSession } from '@/data/session';
 import { uuidv7 } from '@/domain/ids';
 import { exerciseInWorkout, lastTime, prefillValues, previousSets } from '@/domain/previous';
 import { applyTargets, computeTargets, lastRoutineRepRange, resolveRepRange } from '@/domain/progression';
+import { normalizeGroups } from '@/domain/superset';
 import {
   DEFAULT_SETTINGS,
   type ExercisePrefsDoc,
@@ -126,7 +127,7 @@ async function assertNoRunningWorkout(): Promise<void> {
 // Cette méthode permet de démarrer une séance vide.
 export async function startEmptyWorkout(): Promise<string> {
   await assertNoRunningWorkout();
-  const doc: WorkoutDoc = { schemaVersion: 1, title: '', exercises: [] };
+  const doc: WorkoutDoc = { schemaVersion: 2, title: '', exercises: [] };
   const row = await createWorkout({ doc, routineId: null, startedAt: Date.now(), status: 'in_progress' });
   return row.id;
 }
@@ -141,16 +142,16 @@ export async function startFromRoutine(routineId: string): Promise<string> {
   for (const re of routine.doc.exercises) {
     const ex = await db.exercises.get(re.exerciseId);
     if (!ex || ex.deleted_at != null) continue;
-    exercises.push(buildWorkoutExercise(ex, ctx, re));
+    exercises.push({ ...buildWorkoutExercise(ex, ctx, re), ...(re.groupId ? { groupId: re.groupId } : {}) });
   }
-  const doc: WorkoutDoc = { schemaVersion: 1, title: '', exercises };
+  const doc: WorkoutDoc = { schemaVersion: 2, title: '', exercises: normalizeGroups(exercises) };
   const row = await createWorkout({ doc, routineId, startedAt: ctx.now, status: 'in_progress' });
   return row.id;
 }
 
 // Cette méthode permet de créer une séance passée (saisie a posteriori), sans minuteur ni objectif (§F7.4).
 export async function createPastWorkout(startedAt: number, durationS: number): Promise<string> {
-  const doc: WorkoutDoc = { schemaVersion: 1, title: '', durationS, exercises: [] };
+  const doc: WorkoutDoc = { schemaVersion: 2, title: '', durationS, exercises: [] };
   const row = await createWorkout({ doc, routineId: null, startedAt, status: 'completed' });
   return row.id;
 }

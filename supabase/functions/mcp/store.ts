@@ -131,7 +131,7 @@ export class Store {
       if (filter.light)
         for (const w of rows) {
           w.exercise_ids = [];
-          w.doc = { schemaVersion: 1, title: '', exercises: [] };
+          w.doc = { schemaVersion: 2, title: '', exercises: [] };
         }
       return rows;
     });

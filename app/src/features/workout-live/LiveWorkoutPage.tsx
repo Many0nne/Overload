@@ -17,6 +17,7 @@ import { barToRemember, barWeights, exercisePlateSet, type PlateSet } from '@/do
 import { checkSet, exerciseInWorkout, lastTime, previousSets } from '@/domain/previous';
 import { workoutBadges } from '@/domain/records';
 import { doneSetCount, unvalidatedCount } from '@/domain/summary';
+import { canLinkNext, skipsRest, supersetRole } from '@/domain/superset';
 import { goalAchievedSet } from '@/domain/trend';
 import type { BarType, ExerciseRow, WorkoutDoc, WorkoutRow } from '@/domain/types';
 import { workoutVolumeKg } from '@/domain/volume';
@@ -35,6 +36,7 @@ import {
   removeExercise,
   removeSet,
   setKind,
+  toggleExerciseSuperset,
 } from './editor';
 import { RestPanel } from './RestPanel';
 import { listenAudioUnlock, useRestTimer } from './restTimer';
@@ -192,7 +194,7 @@ export default function LiveWorkoutPage() {
           return;
         }
         commit((x) => mapSet(x, entryId, setId, () => res.set));
-        if (live && entry.restS) {
+        if (live && entry.restS && !skipsRest(d.exercises, entryId, idx)) {
           const name = exercises.get(entry.exerciseId)?.name ?? 'Exercice';
           void timer.start(
             {
@@ -235,6 +237,7 @@ export default function LiveWorkoutPage() {
       onMove: (entryId, delta) => commit((d) => moveExercise(d, entryId, delta)),
       onReplace: (entryId) => setPicker({ replace: entryId }),
       onRemove: (entryId) => commit((d) => removeExercise(d, entryId)),
+      onSuperset: (entryId) => commit((d) => toggleExerciseSuperset(d, entryId)),
     }),
     [commit, previousByEntry, exercises, live, row, settings.restNotification, timer.start],
   );
@@ -369,6 +372,8 @@ export default function LiveWorkoutPage() {
             showTargets={options.progression}
             isFirst={i === 0}
             isLast={i === doc.exercises.length - 1}
+            superset={supersetRole(doc.exercises, i)}
+            canLink={canLinkNext(doc.exercises, i)}
             actions={actions}
           />
         );

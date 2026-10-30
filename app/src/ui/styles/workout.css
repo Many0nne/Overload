@@ -35,6 +35,15 @@
   padding: 16px 0 6px;
   border-bottom: 8px solid var(--surface);
 }
+.ex-ss {
+  border-left: 3px solid var(--accent);
+}
+.ss-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 0 18px 6px;
+}
 .ex-top {
   display: flex;
   align-items: center;

@@ -1,7 +1,9 @@
 // Import des exports CSV de HEVY (workout_data.csv, measurement_data.csv) : lecture, regroupement et correspondance
 // avec les exercices d'Overload. Module pur : les écritures en base sont dans features/settings/importHevy.ts.
+
 import { normalizeRpe } from './measurement';
 import { normalizeSearch } from './search';
+import { normalizeGroups } from './superset';
 import type {
   BodyMeasurementKey,
   BodyMeasurementValues,
@@ -22,7 +24,7 @@ export type HevySet = {
   rpe?: number;
 };
 
-export type HevyExercise = { title: string; note?: string; sets: HevySet[] };
+export type HevyExercise = { title: string; note?: string; supersetId?: string; sets: HevySet[] };
 
 export type HevyWorkout = {
   key: string; // « AAAA-MM-JJTHH:mm|titre » : identifiant stable, indépendant de la langue et du fuseau
@@ -217,9 +219,10 @@ export function parseHevyWorkouts(text: string): HevyWorkout[] {
       byKey.set(key, w);
     }
     const exTitle = r.exercise_title || 'Exercice';
+    const supersetId = r.superset_id || undefined;
     let ex = w.exercises.at(-1);
-    if (!ex || ex.title !== exTitle) {
-      ex = { title: exTitle, note: r.exercise_notes || undefined, sets: [] };
+    if (!ex || ex.title !== exTitle || ex.supersetId !== supersetId) {
+      ex = { title: exTitle, note: r.exercise_notes || undefined, supersetId, sets: [] };
       w.exercises.push(ex);
     }
     const set: HevySet = { kind: SET_KINDS[r.set_type ?? ''] ?? 'normal' };
@@ -271,11 +274,14 @@ export function buildWorkoutDoc(
   newId: () => string,
 ): WorkoutDoc {
   const exercises: WorkoutDoc['exercises'] = [];
+  const groups = new Map<string, string>();
   for (const ex of w.exercises) {
     const target = resolve(ex.title);
     if (!target) continue;
+    if (ex.supersetId && !groups.has(ex.supersetId)) groups.set(ex.supersetId, newId());
     exercises.push({
       id: newId(),
+      ...(ex.supersetId ? { groupId: groups.get(ex.supersetId) } : {}),
       exerciseId: target.exerciseId,
       measurementType: target.measurementType,
       ...(ex.note ? { note: ex.note } : {}),
@@ -291,7 +297,8 @@ export function buildWorkoutDoc(
       }),
     });
   }
-  const doc: WorkoutDoc = { schemaVersion: 1, title: w.title, exercises };
+  // Seuls les supersets de deux exercices sont gardés (circuits et groupes cassés par un exercice ignoré : aplatis, #128).
+  const doc: WorkoutDoc = { schemaVersion: 2, title: w.title, exercises: normalizeGroups(exercises) };
   if (w.description) doc.note = w.description;
   if (w.endedAt !== undefined) doc.durationS = Math.round((w.endedAt - w.startedAt) / 1000);
   return doc;

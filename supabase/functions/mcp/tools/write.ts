@@ -4,6 +4,7 @@ import type { McpServer } from 'npm:@modelcontextprotocol/sdk@1.32.1/server/mcp.
 import { z } from 'npm:zod@4.6.7';
 import { prefsId, uuidv7 } from '../../_shared/domain/ids.ts';
 import {
+  applySupersets,
   buildRoutineExercise,
   buildWorkoutExercise,
   checkRepRange,
@@ -57,6 +58,11 @@ const WRITE = { readOnlyHint: false, destructiveHint: false, idempotentHint: fal
 const DESTRUCTIVE = { ...WRITE, destructiveHint: true };
 const DEFAULT_DURATION_S = 3600;
 
+const supersetSchema = z
+  .boolean()
+  .optional()
+  .describe('Vrai : cet exercice et le suivant forment un superset (enchaînés sans repos entre eux, repos à la fin du tour). Deux exercices exactement.');
+
 const routineSetSchema = z.object({
   kind: setKindSchema,
   weight: weightSchema.optional(),
@@ -79,6 +85,7 @@ const routineExerciseSchema = z.object({
     .optional()
     .describe('Repos en secondes ; absent = repos par défaut de l’utilisateur ; null = sans minuteur.'),
   note: z.string().max(500).optional(),
+  superset: supersetSchema,
 });
 
 const workoutSetSchema = z.object({
@@ -102,6 +109,7 @@ const workoutExerciseSchema = z.object({
         'distance et durée (distance, durationS).',
     ),
   note: z.string().max(500).optional(),
+  superset: supersetSchema,
 });
 
 type RoutineExIn = z.infer<typeof routineExerciseSchema>;
@@ -127,7 +135,7 @@ async function resolveAll(store: Store, refs: string[]): Promise<ExerciseRow[]> 
 async function routineExercises(store: Store, input: RoutineExIn[], previous: RoutineExercise[]): Promise<RoutineExercise[]> {
   const [exercises, profile] = await Promise.all([resolveAll(store, input.map((e) => e.exercise)), store.profile()]);
   const prev = matchPrevious(previous, exercises.map((e) => e.id));
-  return input.map((e, i) => {
+  const built = input.map((e, i) => {
     const r = buildRoutineExercise(
       exercises[i]!,
       { sets: e.sets as RoutineSetIn[] | number, repRange: e.repRange, restS: e.restS, note: e.note },
@@ -136,13 +144,16 @@ async function routineExercises(store: Store, input: RoutineExIn[], previous: Ro
     if (!r.ok) throw new ToolError(r.message);
     return r.value;
   });
+  const grouped = applySupersets(built, input.map((e) => e.superset), exercises.map((e) => e.name), uuidv7);
+  if (!grouped.ok) throw new ToolError(grouped.message);
+  return grouped.value;
 }
 
 // Cette méthode permet de construire les exercices d'une séance terminée, en réutilisant les entrées existantes.
 async function workoutExercises(store: Store, input: WorkoutExIn[], previous: WorkoutExercise[]): Promise<WorkoutExercise[]> {
   const [exercises, profile] = await Promise.all([resolveAll(store, input.map((e) => e.exercise)), store.profile()]);
   const prev = matchPrevious(previous, exercises.map((e) => e.id));
-  return input.map((e, i) => {
+  const built = input.map((e, i) => {
     const r = buildWorkoutExercise(
       exercises[i]!,
       { sets: e.sets as SetIn[], note: e.note },
@@ -151,6 +162,9 @@ async function workoutExercises(store: Store, input: WorkoutExIn[], previous: Wo
     if (!r.ok) throw new ToolError(r.message);
     return r.value;
   });
+  const grouped = applySupersets(built, input.map((e) => e.superset), exercises.map((e) => e.name), uuidv7);
+  if (!grouped.ok) throw new ToolError(grouped.message);
+  return grouped.value;
 }
 
 // Cette méthode permet de renvoyer une routine écrite (texte et JSON relus après écriture).

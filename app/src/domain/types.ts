@@ -80,6 +80,7 @@ export type WorkoutExercise = {
   measurementType: MeasurementType;
   note?: string;
   restS: number | null;
+  groupId?: string; // superset (#77) : deux exercices consécutifs de même groupId s'enchaînent sans repos entre eux
   repRange?: RepRange;
   targetReason?: TargetReason;
   targetCount?: number; // nombre de séries ayant reçu un objectif au démarrage (une série supprimée compte comme non atteinte)
@@ -87,7 +88,7 @@ export type WorkoutExercise = {
 };
 
 export type WorkoutDoc = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   title: string;
   note?: string;
   photoPath?: string;
@@ -101,13 +102,14 @@ export type RoutineExercise = {
   id: string;
   exerciseId: string;
   restS: number | null;
+  groupId?: string; // superset (#77), voir WorkoutExercise.groupId
   note?: string;
   repRange?: RepRange;
   sets: RoutineSet[];
 };
 
 export type RoutineDoc = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   name: string;
   note?: string;
   exercises: RoutineExercise[];

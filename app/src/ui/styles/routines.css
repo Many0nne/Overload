@@ -134,3 +134,11 @@
 .re-sets em.X {
   color: var(--fail);
 }
+
+.re-ex.re-ss {
+  border-left: 3px solid var(--accent);
+}
+.re-ex .ss-tag {
+  padding: 0;
+  margin-left: 8px;
+}

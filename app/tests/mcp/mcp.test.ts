@@ -238,6 +238,30 @@ describe('outils', () => {
     expect((routines.data.routines as { name: string }[]).map((r) => r.name)).toContain('Jambes A');
   });
 
+  it('relie deux exercices en superset (#77) et refuse un superset sans exercice suivant', async () => {
+    const created = await callTool(token, 'create_routine', {
+      name: 'Superset A',
+      exercises: [
+        { exercise: squat, sets: 3, superset: true },
+        { exercise: 'Gainage latéral', sets: 2 },
+      ],
+    });
+    expect(created.isError).toBeFalsy();
+    const view = created.data.exercises as { superset?: boolean }[];
+    expect(view.map((e) => e.superset)).toEqual([true, undefined]);
+    const { data: row } = await account.app.from('routines').select('doc').eq('id', created.data.id).single();
+    const doc = row!.doc as { schemaVersion: number; exercises: { groupId?: string }[] };
+    expect(doc.schemaVersion).toBe(2);
+    expect(doc.exercises[0]?.groupId).toBeTruthy();
+    expect(doc.exercises[0]?.groupId).toBe(doc.exercises[1]?.groupId);
+
+    const bad = await callTool(token, 'create_routine', {
+      name: 'X',
+      exercises: [{ exercise: squat, sets: 3, superset: true }],
+    });
+    expect(bad.isError).toBe(true);
+  });
+
   it('complète la mesure du jour sans écraser, sauf overwrite', async () => {
     await callTool(token, 'add_body_measurement', { date: '2026-10-20', values: { weight: 81.4 } });
     const again = await callTool(token, 'add_body_measurement', {

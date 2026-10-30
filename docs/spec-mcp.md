@@ -161,7 +161,7 @@ Toutes passent par `sync_push` (§7.2) et exigent `can_write`.
 
 | Outil | Entrée | Effet et règles |
 |---|---|---|
-| `create_routine` | `name`, `folder?`, `note?`, `exercises[]` : `{ exercise, sets: [{ kind, weight? }], repRange?, restS? }` | Crée une `RoutineDoc` (schemaVersion 1). `restS` absent = repos par défaut de l'utilisateur. `repRange` refusé pour les types sans reps. Placée en fin de dossier. |
+| `create_routine` | `name`, `folder?`, `note?`, `exercises[]` : `{ exercise, sets: [{ kind, weight? }], repRange?, restS? }` | Crée une `RoutineDoc` (schemaVersion 2). `superset: true` sur un exercice le relie au suivant (deux exercices exactement, repos à la fin du tour, #77). `restS` absent = repos par défaut de l'utilisateur. `repRange` refusé pour les types sans reps. Placée en fin de dossier. |
 | `update_routine` | `id`, champs à changer (mêmes formes) | Remplace le document entier après fusion des champs fournis. Les ids des exercices conservés sont gardés. |
 | `log_workout` | `startedAt`, `title?`, `durationS?` (défaut 1 h), `note?`, `routine?`, `exercises[]` : `{ exercise, sets: [{ kind, weight?, reps?, durationS?, distance?, rpe? }] }` | Saisie a posteriori (§F7.5) : séance `completed`, séries `done = true`, sans objectif (comme la saisie a posteriori de l'app). Champs requis selon le type de mesure (`measurement.ts`). Unité absente = unité de l'utilisateur. |
 | `update_workout` | `id`, champs à changer | Séance **terminée** uniquement ; `in_progress` → erreur « séance en cours sur un appareil ». Les records et objectifs atteints se recalculent seuls dans l'app (§10.3). |

@@ -19,6 +19,13 @@ import { uuidv7 } from '@/domain/ids';
 import { SET_KIND_LABELS, setLabels } from '@/domain/labels';
 import { fieldsFor, hasReps, type SetField, weightUnitLabel } from '@/domain/measurement';
 import { parseRepRange } from '@/domain/progression';
+import {
+  canLinkNext,
+  normalizeGroups,
+  type SupersetRole,
+  supersetRole,
+  toggleSuperset,
+} from '@/domain/superset';
 import type { ExerciseRow, RoutineDoc, RoutineExercise, RoutineSet, SetKind, Settings } from '@/domain/types';
 import { ExerciseList } from '@/features/library/ExerciseList';
 import { fieldText, parseField } from '@/features/workout-live/SetRow';
@@ -62,6 +69,7 @@ function SortableExercise(props: {
   onMenu: () => void;
   onEditSet: (setId: string) => void;
   onRest: () => void;
+  superset?: SupersetRole;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.entry.id,
@@ -73,7 +81,7 @@ function SortableExercise(props: {
   return (
     <div
       ref={setNodeRef}
-      className={`card re-ex${isDragging ? ' dragging' : ''}`}
+      className={`card re-ex${isDragging ? ' dragging' : ''}${props.superset ? ' re-ss' : ''}`}
       // Position et animation calculées par dnd-kit à chaque déplacement : seules valeurs laissées inline.
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
@@ -83,6 +91,7 @@ function SortableExercise(props: {
           ⠿
         </span>
         <b>{exercise?.name ?? 'Exercice supprimé'}</b>
+        {props.superset && <span className="ss-tag">Superset {props.superset === 'first' ? '↓' : '↑'}</span>}
         <button className="icon-btn" aria-label="Actions" onClick={props.onMenu}>
           <DotsIcon />
         </button>
@@ -161,7 +170,7 @@ export default function RoutineEditor() {
   const folders = useFolders();
   const exercises = useExerciseMap();
   const [doc, setDoc] = useState<RoutineDoc | null>(
-    isNew ? { schemaVersion: 1, name: '', exercises: [] } : null,
+    isNew ? { schemaVersion: 2, name: '', exercises: [] } : null,
   );
   const [folderId, setFolderId] = useState<string | null>(null);
   const [picker, setPicker] = useState<{ replace?: string } | null>(null);
@@ -232,10 +241,11 @@ export default function RoutineEditor() {
       if (!d) return d;
       const from = d.exercises.findIndex((e) => e.id === active.id);
       const to = d.exercises.findIndex((e) => e.id === over.id);
-      return { ...d, exercises: arrayMove(d.exercises, from, to) };
+      return { ...d, exercises: normalizeGroups(arrayMove(d.exercises, from, to)) };
     });
   };
 
+  const menuIndex = menu ? doc.exercises.findIndex((e) => e.id === menu) : -1;
   const editing = setEdit && doc.exercises.find((e) => e.id === setEdit.entryId);
   const editingSet = editing?.sets.find((s) => s.id === setEdit?.setId);
   const editingEx = editing ? exercises.get(editing.exerciseId) : undefined;
@@ -282,7 +292,7 @@ export default function RoutineEditor() {
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={doc.exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-            {doc.exercises.map((e) => (
+            {doc.exercises.map((e, i) => (
               <SortableExercise
                 key={e.id}
                 entry={e}
@@ -292,6 +302,7 @@ export default function RoutineEditor() {
                 onMenu={() => setMenu(e.id)}
                 onEditSet={(setId) => setSetEdit({ entryId: e.id, setId })}
                 onRest={() => setRestFor(e.id)}
+                superset={supersetRole(doc.exercises, i)}
               />
             ))}
           </SortableContext>
@@ -337,11 +348,25 @@ export default function RoutineEditor() {
               setMenu(null);
             },
           },
+          ...(menuIndex >= 0 &&
+          (supersetRole(doc.exercises, menuIndex) || canLinkNext(doc.exercises, menuIndex))
+            ? [
+                {
+                  label: supersetRole(doc.exercises, menuIndex)
+                    ? 'Défaire le superset'
+                    : 'Superset avec le suivant',
+                  onClick: () => {
+                    setDoc({ ...doc, exercises: toggleSuperset(doc.exercises, menu!, uuidv7) });
+                    setMenu(null);
+                  },
+                },
+              ]
+            : []),
           {
             label: "Retirer l'exercice",
             kind: 'danger',
             onClick: () => {
-              setDoc({ ...doc, exercises: doc.exercises.filter((e) => e.id !== menu) });
+              setDoc({ ...doc, exercises: normalizeGroups(doc.exercises.filter((e) => e.id !== menu)) });
               setMenu(null);
             },
           },
